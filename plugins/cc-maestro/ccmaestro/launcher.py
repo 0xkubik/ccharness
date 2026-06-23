@@ -34,4 +34,5 @@ def start(task, *, repo=None, model=None, budget=None, name=None, yolo=False):
     log = open(adir / "stream.log", "w")
     subprocess.Popen(argv, cwd=cwd, stdin=subprocess.DEVNULL, stdout=log, stderr=subprocess.STDOUT,
                      start_new_session=True)
+    log.close()
     return agent_id
