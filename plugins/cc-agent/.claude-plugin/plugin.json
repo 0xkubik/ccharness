@@ -1,0 +1,9 @@
+{
+  "name": "cc-agent",
+  "version": "0.1.0",
+  "description": "cc-agent — the self-driving agent layer: /autopilot runs the cc-tools funnel (point-it -> grill-it -> implement-it) in a never-stop loop that only /autopilot-cancel halts, enforced by a Stop hook. Depends on cc-tools.",
+  "author": {
+    "name": "kubik",
+    "email": "dev@noxlabs.xyz"
+  }
+}
