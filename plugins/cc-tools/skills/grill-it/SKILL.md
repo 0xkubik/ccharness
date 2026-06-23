@@ -36,7 +36,7 @@ leave nothing to decide.
 for a `## Product North Star` heading in the repo-root `CLAUDE.md` (the heading is the stable
 contract — its marker comment / parenthetical owner may read `point-it` or `chart-it`, both count).
 **Absent → stop and route to `/chart-it`:** _"No North Star yet — this product has no captured goal,
-and ccharness builds from the goal outward. Run `/chart-it` to set it (it captures the North Star,
+and cc-tools builds from the goal outward. Run `/chart-it` to set it (it captures the North Star,
 then offers to chart the roadmap), then re-issue this command. Your prompt isn't discarded — re-issue
 it after `/chart-it`."_ grill-it leans on the North Star's **Level** to set its depth (Phase 0), so
 it does not run ungrounded.

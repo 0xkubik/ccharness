@@ -66,7 +66,7 @@ richness feeds the roadmap in Phase 2 — but the **durable artifact is the stab
 Then write it, appending to the project-root `CLAUDE.md` and **preserving everything already there**:
 
 ```markdown
-## Product North Star (ccharness)
+## Product North Star (cc-tools)
 <!-- managed by chart-it · edit freely, the harness re-reads this · captured: <YYYY-MM-DD> -->
 - **Vision:** <a few sentences — how the finished product looks at the end>
 - **Core problem:** <the main problem the product solves>

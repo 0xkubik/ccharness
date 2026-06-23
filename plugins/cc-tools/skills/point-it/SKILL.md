@@ -76,7 +76,7 @@ or `chart-it`, both count.
 
 | State | Path |
 | --- | --- |
-| **Absent** | **Not grounded — route to `/chart-it` and stop.** point-it does **not** bootstrap the North Star anymore; goal-setting moved to chart-it (the grounding loop). Say: *"No North Star yet — this product has no captured goal, and ccharness builds from the goal outward. Run `/chart-it` to set it (it captures the North Star, then offers to chart the roadmap), then re-issue this command. Your prompt isn't discarded — re-issue it after `/chart-it`."* If a theme/prompt was given, tell the human it did not run and to re-issue `/point-it <their theme>` after — **never silently discard the prompt.** |
+| **Absent** | **Not grounded — route to `/chart-it` and stop.** point-it does **not** bootstrap the North Star anymore; goal-setting moved to chart-it (the grounding loop). Say: *"No North Star yet — this product has no captured goal, and cc-tools builds from the goal outward. Run `/chart-it` to set it (it captures the North Star, then offers to chart the roadmap), then re-issue this command. Your prompt isn't discarded — re-issue it after `/chart-it`."* If a theme/prompt was given, tell the human it did not run and to re-issue `/point-it <their theme>` after — **never silently discard the prompt.** |
 | **Present** | **Read it = the goal.** A prompt (if given) scopes the run to a theme/area; no prompt = full survey. Then read the roadmap (below) and proceed to Phase 1. |
 
 **Read the roadmap (if any).** Look for `.claude/ccharness/roadmap.md`. If present, read it and derive

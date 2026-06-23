@@ -1,8 +1,8 @@
 ---
-description: "Stop the running ccharness autopilot loop — the one manual brake. Removes the autopilot state so the Stop hook stops re-feeding, then reports how many cycles ran and what's waiting in the blocked review queue."
+description: "Stop the running autopilot loop — the one manual brake. Removes the autopilot state so the Stop hook stops re-feeding, then reports how many cycles ran and what's waiting in the blocked review queue."
 ---
 
-Stop the ccharness autopilot loop. This is the **only** thing that ends it. Do exactly this:
+Stop the autopilot loop. This is the **only** thing that ends it. Do exactly this:
 
 1. If `.claude/ccharness/autopilot/state.json` does **not** exist → say *"No autopilot is running."*
    and stop.

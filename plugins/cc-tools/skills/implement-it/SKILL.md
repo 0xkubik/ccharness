@@ -21,11 +21,11 @@ stage. Do not declare done while the Stage-1 checklist has open items.
 
 ## Grounding precondition (the gate — before Stage 0)
 
-ccharness builds from the product's goal outward, so before the clarity gate, confirm the product is
+cc-tools builds from the product's goal outward, so before the clarity gate, confirm the product is
 grounded: look for a `## Product North Star` heading in the repo-root `CLAUDE.md` (the heading is the
 stable contract — its marker comment / parenthetical owner may read `point-it` or `chart-it`, both
 count). **Absent → STOP and route to `/chart-it`:** _"No North Star yet — this product has no captured
-goal, and ccharness builds from the goal outward. Run `/chart-it` to set it (it captures the North
+goal, and cc-tools builds from the goal outward. Run `/chart-it` to set it (it captures the North
 Star, then offers to chart the roadmap), then re-issue this command. Your prompt isn't discarded —
 re-issue it after `/chart-it`."_ Arriving from grill-it or under autopilot, the North Star already
 exists — the gate just passes.

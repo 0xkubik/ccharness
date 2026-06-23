@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# ccharness autopilot — Stop hook (the "hard muscle").
+# autopilot — Stop hook (the "hard muscle").
 #
 # While the autopilot state file is ACTIVE for THIS session, this hook re-feeds
 # the autopilot prompt on every Stop so the model cannot exit on its own. It is
@@ -51,7 +51,7 @@ fi
 
 # --- ACTIVE for this session (or present-but-unparseable) → RE-FEED. Fail closed. ---
 REFEED="$(cat <<'PROMPT'
-🔄 ccharness autopilot is ACTIVE — continue the loop. Do NOT stop. Only the user stops you, via /autopilot-cancel.
+🔄 autopilot is ACTIVE — continue the loop. Do NOT stop. Only the user stops you, via /autopilot-cancel.
 
 Resume the `autopilot` skill for the next cycle:
 1. Read .claude/ccharness/autopilot/state.json and .claude/ccharness/autopilot/blocked.jsonl.
@@ -70,7 +70,7 @@ if command -v jq >/dev/null 2>&1; then
     '{decision:"block", reason:$r, systemMessage:$m}'
 else
   # jq unavailable — still re-feed (fail closed) with minimal single-line JSON.
-  printf '%s' '{"decision":"block","reason":"ccharness autopilot is active — continue the loop: read .claude/ccharness/autopilot/state.json and blocked.jsonl, run exactly one funnel cycle, do not stop. Only /autopilot-cancel stops you."}'
+  printf '%s' '{"decision":"block","reason":"autopilot is active — continue the loop: read .claude/ccharness/autopilot/state.json and blocked.jsonl, run exactly one funnel cycle, do not stop. Only /autopilot-cancel stops you."}'
 fi
 
 exit 0

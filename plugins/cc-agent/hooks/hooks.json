@@ -1,5 +1,5 @@
 {
-  "description": "ccharness autopilot — Stop hook that re-feeds the autopilot loop so it cannot self-stop (only /autopilot-cancel stops it).",
+  "description": "autopilot — Stop hook that re-feeds the autopilot loop so it cannot self-stop (only /autopilot-cancel stops it).",
   "hooks": {
     "Stop": [
       {

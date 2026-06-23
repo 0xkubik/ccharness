@@ -1,5 +1,5 @@
 ---
-description: "Run the ccharness funnel autonomously in a continuous loop — point-it → grill-it → implement-it, one committed improvement per cycle, re-surveying as it goes. Never stops on its own; only /autopilot-cancel stops it. Needs a North Star (run /chart-it once first); if a roadmap exists, the loop walks it milestone by milestone."
+description: "Run the cc-tools funnel autonomously in a continuous loop — point-it → grill-it → implement-it, one committed improvement per cycle, re-surveying as it goes. Never stops on its own; only /autopilot-cancel stops it. Needs a North Star (run /chart-it once first); if a roadmap exists, the loop walks it milestone by milestone."
 argument-hint: "[optional focus — a theme to scope each survey]"
 ---
 

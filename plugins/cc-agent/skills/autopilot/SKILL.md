@@ -1,11 +1,11 @@
 ---
 name: autopilot
-description: Use when you want the ccharness funnel (point-it → grill-it → implement-it) to run autonomously and continuously instead of one step at a time — driving improvement after improvement on its own until you stop it by hand. Invoked by /autopilot; runs until /autopilot-cancel. Not for a single concrete task (use implement-it) or one decision (use grill-it).
+description: Use when you want the cc-tools funnel (point-it → grill-it → implement-it) to run autonomously and continuously instead of one step at a time — driving improvement after improvement on its own until you stop it by hand. Invoked by /autopilot; runs until /autopilot-cancel. Not for a single concrete task (use implement-it) or one decision (use grill-it).
 ---
 
 # autopilot — the never-stop funnel loop
 
-You are running **autopilot**: drive the ccharness funnel in a **continuous loop**, one full
+You are running **autopilot**: drive the cc-tools funnel in a **continuous loop**, one full
 pass per turn, producing one committed improvement at a time — and **never stop on your own.**
 Only the user stops you, via `/autopilot-cancel`. You are the **soft brain**; the `Stop` hook is
 the **hard muscle** that re-feeds you so you cannot exit. Your job is to make each turn _productive_,
