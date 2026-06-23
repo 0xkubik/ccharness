@@ -1,9 +1,19 @@
-import json, subprocess, tempfile, unittest
+import json, os, shutil, subprocess, tempfile, unittest
 from pathlib import Path
 
 HOOK = Path(__file__).resolve().parent.parent / "hooks" / "semipilot-stop.sh"
 SESSION = "11111111-1111-1111-1111-111111111111"
 OTHER = "22222222-2222-2222-2222-222222222222"
+
+
+def nojq_env():
+    """PATH with coreutils (cat, grep) symlinked but NOT jq — simulates jq-absent/coreutils-present."""
+    tmpbin = tempfile.mkdtemp()
+    for tool in ("cat", "grep"):
+        src = shutil.which(tool)
+        if src:
+            os.symlink(src, os.path.join(tmpbin, tool))
+    return {"PATH": tmpbin}
 
 
 def run_hook(repo, stdin_obj):
@@ -56,6 +66,21 @@ class TestSemipilotHook(unittest.TestCase):
                            env={"PATH": "/nonexistent"})
         self.assertEqual(r.returncode, 0)
         self.assertIn('"decision"', r.stdout)
+        self.assertIn("block", r.stdout)
+
+    def test_nojq_active_false_releases(self):
+        # jq absent (coreutils present): active:false must STILL release via the grep fallback.
+        repo = repo_with({"active": False, "session_id": SESSION})
+        r = subprocess.run(["/bin/bash", str(HOOK)], input=json.dumps({"session_id": SESSION}),
+                           cwd=repo, capture_output=True, text=True, env=nojq_env())
+        self.assertEqual(r.returncode, 0)
+        self.assertEqual(r.stdout.strip(), "")
+
+    def test_nojq_active_true_blocks(self):
+        # The semipilot half of the no-jq partition: an active semipilot still blocks.
+        repo = repo_with({"active": True, "session_id": SESSION})
+        r = subprocess.run(["/bin/bash", str(HOOK)], input=json.dumps({"session_id": SESSION}),
+                           cwd=repo, capture_output=True, text=True, env=nojq_env())
         self.assertIn("block", r.stdout)
 
 

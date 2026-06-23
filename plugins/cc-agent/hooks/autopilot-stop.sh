@@ -29,6 +29,16 @@ if command -v jq >/dev/null 2>&1; then
   [ -f "$SEMI_FILE" ] && SEMI_ACTIVE="$(jq -r '.active' "$SEMI_FILE" 2>/dev/null || true)"
 fi
 
+# jq-free fallbacks for the two CRITICAL flags (jq absent, coreutils present):
+# STATE_ACTIVE=false lets a hard-stop/cancel release; SEMI_ACTIVE=true preserves the
+# partition (autopilot must YIELD while a semipilot is in flight) instead of double-blocking.
+if [ -z "$STATE_ACTIVE" ] && command -v grep >/dev/null 2>&1; then
+  grep -Eq '"active"[[:space:]]*:[[:space:]]*false' "$STATE_FILE" && STATE_ACTIVE=false
+fi
+if [ -z "$SEMI_ACTIVE" ] && [ -f "$SEMI_FILE" ] && command -v grep >/dev/null 2>&1; then
+  grep -Eq '"active"[[:space:]]*:[[:space:]]*true' "$SEMI_FILE" && SEMI_ACTIVE=true
+fi
+
 # Exit #2 — autopilot cancelled or hard-stopped.
 [ "$STATE_ACTIVE" = "false" ] && exit 0
 

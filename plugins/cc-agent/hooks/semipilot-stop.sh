@@ -29,6 +29,12 @@ if command -v jq >/dev/null 2>&1; then
   TARGET="$(jq -r '.target_milestone // "?"'   "$STATE_FILE" 2>/dev/null || echo '?')"
 fi
 
+# jq-free fallback for the critical active flag (jq absent, coreutils present):
+# without this the achieved/gave-up release (active:false) is invisible and the loop can't self-stop.
+if [ -z "$STATE_ACTIVE" ] && command -v grep >/dev/null 2>&1; then
+  grep -Eq '"active"[[:space:]]*:[[:space:]]*false' "$STATE_FILE" && STATE_ACTIVE=false
+fi
+
 # Exit #2 — milestone achieved / gave up / cancelled.
 [ "$STATE_ACTIVE" = "false" ] && exit 0
 
