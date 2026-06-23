@@ -12,7 +12,7 @@ execution; the human owns direction.** Drive the seven stages below in order. Do
 stage. Do not declare done while the Stage-1 checklist has open items.
 
 **Core invariants — non-negotiable:**
-- **Refuse, don't guess** (Stage 0). A serious fork goes to grill-it; a vague task goes to brainstorming — never a guessed default.
+- **Refuse, don't guess** (Stage 0 — and the fork-test stays armed all the way through Stage 3). A serious fork goes to grill-it; a vague task goes to brainstorming — never a guessed default.
 - **Verify before you claim** (Stage 4). Evidence, not assertion.
 - **Never commit unverified code** (Stage 6 only runs after Stage 4 is green).
 - **3 strikes on one problem → reset, don't keep patching** (slap) — then pick the fresh approach yourself; **implementation never hands back to the human.**
@@ -119,7 +119,7 @@ Stage 4 verify and Stage 6 commit.
 
 Execute with the chosen tools. **Your own loop is the engine:** work the Stage-1 checklist top
 to bottom and do not stop while any item is open. Use TDD where a test harness exists. This is
-where the strike counter lives — see Escalation.
+where the strike counter and the still-armed fork-test live — see Escalation.
 
 ---
 
@@ -157,7 +157,28 @@ If you change anything, return to Stage 4 and re-verify.
 
 ---
 
-## Escalation: 3 strikes → slap (forcing function)
+## Escalation — route upward, never to the human
+
+Past the Stage-0 gate you own the build to its end, and **implementation never escalates to the
+human.** The only human touchpoints are the Stage-0 gate (before the build) and the optional
+push offer (after Stage 6) — never the middle. Two things still route *upward to the right
+machinery*, and neither is the user: a **decision** goes to grill-it, a **stuck fix** goes to slap.
+
+### A serious fork surfaces mid-build → `grill-it`
+
+The Stage-0 fork-test **does not expire at the gate — it stays armed through Stage 3.** As you
+learn the terrain you will hit technical choices that weren't visible at the start. For each,
+apply the same test: it is a **serious fork** only when it has **(a)** materially different
+consequences, **(b)** no obvious winner, **and (c)** is costly to reverse. All three → stop and
+hand it **up to `ccharness:grill-it`**; it's the decision loop (not the user), it rules the fork,
+and its fork-free decision flows back into the build. Not all three → it's a **routine call:
+decide it yourself and keep moving** — a strict executor keeps momentum on anything it can later
+undo. A fork grill-it has already ruled is fork-free; never send the same one up twice.
+
+*This is a **decision** — a choice between approaches that all work. Distinct from slap below,
+which is for an approach that **isn't working.***
+
+### A fix won't take after 3 tries → `slap`
 
 Keep an **explicit running tally per distinct problem** (a specific failing test, build error,
 or bug) in your working notes — `problem X: attempt N`. A genuine fix attempt that does not
@@ -170,14 +191,9 @@ yourself**: where slap would present alternatives *to the user* or ask which way
 weigh the fresh approaches and pick the best one. Adopt it, continue, and **reset that problem's
 tally to zero.** A new, distinct problem starts its own tally.
 
-**Implementation never escalates to the human.** Past the Stage-0 gate you own the build to its
-end. If slap fires again on the same problem, run it *again* — each time reconsidering the
-approach more fundamentally (wrong layer? wrong tool? wrong decomposition? is the whole approach
-unsound?) and deciding the next move yourself. Keep driving until the work is done and verified.
-The only things that ever reach the human are the Stage-0 gate (before the build) and the
-optional push offer (after Stage 6) — never the middle. (The one rare exception: if
-reconsidering reveals the blocker is not technical but a genuine *direction* fork, that goes
-**up the funnel to `ccharness:grill-it`** — never straight to the user.)
+If slap fires again on the same problem, run it *again* — each time reconsidering the approach
+more fundamentally (wrong layer? wrong tool? wrong decomposition? is the whole approach unsound?)
+and deciding the next move yourself. Keep driving until the work is done and verified.
 
 ---
 
@@ -187,4 +203,5 @@ reconsidering reveals the blocker is not technical but a genuine *direction* for
 announce · `3` Build — goal-loop to done · `4` Verify — evidence, debug to green · `5`
 Review+simplify — only if non-trivial · `6` Commit — local only, then offer push.
 
-Strike 3 on one problem → **slap**, then pick the fresh approach yourself. Implementation never hands back to the human — slap again and re-decide as needed.
+Mid-build, a serious fork (material · no clear winner · costly to reverse) → **grill-it**; routine/reversible calls you make yourself.
+Strike 3 on one problem → **slap**, then pick the fresh approach yourself. Implementation never hands back to the human — re-decide as needed.

@@ -93,6 +93,11 @@ failed attempts at the same problem → it runs the **slap** protocol, picks a f
 on its own (slapping again as needed) until the work is done and verified. The gate,
 verification, and slap are the forcing functions that keep it strict.
 
+**Forks aren't only caught at the gate:** Stage 0's fork-test stays armed through the build, so a
+serious technical fork that only surfaces mid-implementation (materially different, no obvious
+winner, costly to reverse) also routes up to `/grill-it` to be decided — never silently guessed.
+Routine, reversible calls it just makes, and keeps moving.
+
 ## What it orchestrates
 
 ccharness is glue — it routes to skills/plugins you already have installed: `superpowers`
