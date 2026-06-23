@@ -45,3 +45,24 @@ def stop_agent(info, *, sender=os.killpg):
     if send_signal(pid, signal.SIGTERM, sender=sender):
         return ("stopped", str(pid))
     return ("not-found", "signal failed (process gone?)")
+
+def pause_agent(info, *, sender=os.killpg):
+    return ("paused", str(info.get("pid"))) if send_signal(info.get("pid"), signal.SIGSTOP, sender=sender) else ("no-pid", "")
+
+def resume_agent(info, *, sender=os.killpg):
+    return ("resumed", str(info.get("pid"))) if send_signal(info.get("pid"), signal.SIGCONT, sender=sender) else ("no-pid", "")
+
+def steer_agent(info, message, *, sender=os.killpg, spawn=None):
+    if info.get("is_autopilot"):
+        return ("refused-autopilot", "redirect an autopilot via its own funnel, not steer")
+    sid = info.get("sessionId")
+    if not sid:
+        return ("no-session", "no sessionId to resume")
+    send_signal(info.get("pid"), signal.SIGTERM, sender=sender)  # stop the live run first
+    from . import launcher
+    meta = info.get("meta") or {}
+    argv = launcher.build_resume_argv(sid, message, model=meta.get("model"),
+                                      budget=meta.get("budget"), yolo=meta.get("yolo", False))
+    spawn = spawn or launcher.spawn_resume
+    pid = spawn(argv, info.get("cwd"))
+    return ("steered", str(pid))

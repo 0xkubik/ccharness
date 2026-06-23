@@ -40,6 +40,24 @@ def _stop(args):
     print(f"{args.id}: {result}" + (f" ({detail})" if detail else ""))
     return 0 if result in ("stopped", "autopilot-cancelled") else 1
 
+def _steer(args):
+    info = control.resolve(args.id)
+    if not info:
+        print(f"no agent matching {args.id}", file=sys.stderr); return 1
+    result, detail = control.steer_agent(info, args.message)
+    print(f"{args.id}: {result}" + (f" ({detail})" if detail else ""))
+    return 0 if result == "steered" else 1
+
+def _pause(args):
+    info = control.resolve(args.id)
+    if not info: print(f"no agent matching {args.id}", file=sys.stderr); return 1
+    result, _ = control.pause_agent(info); print(f"{args.id}: {result}"); return 0 if result == "paused" else 1
+
+def _resume(args):
+    info = control.resolve(args.id)
+    if not info: print(f"no agent matching {args.id}", file=sys.stderr); return 1
+    result, _ = control.resume_agent(info); print(f"{args.id}: {result}"); return 0 if result == "resumed" else 1
+
 def build_parser():
     p = argparse.ArgumentParser(prog="ccmaestro", description="Watch and control Claude Code agents.")
     sub = p.add_subparsers(dest="cmd")
@@ -59,6 +77,10 @@ def build_parser():
     sp = sub.add_parser("stop", help="stop an agent (autopilot -> graceful cancel)")
     sp.add_argument("id")
     sp.set_defaults(func=_stop)
+    se = sub.add_parser("steer", help="stop an agent and resume it with a new instruction")
+    se.add_argument("id"); se.add_argument("message"); se.set_defaults(func=_steer)
+    pa = sub.add_parser("pause", help="pause an agent (SIGSTOP)"); pa.add_argument("id"); pa.set_defaults(func=_pause)
+    re_ = sub.add_parser("resume", help="resume a paused agent (SIGCONT)"); re_.add_argument("id"); re_.set_defaults(func=_resume)
     return p
 
 def main(argv=None):

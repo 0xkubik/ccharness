@@ -75,5 +75,37 @@ class TestControl(unittest.TestCase):
         result, _ = self.control.stop_agent({"is_autopilot": False, "pid": None}, sender=lambda p, s: None)
         self.assertEqual(result, "no-pid")
 
+    def test_pause_sends_sigstop(self):
+        import signal as sig
+        sent = []
+        self.control.pause_agent({"pid": 7}, sender=lambda p, s: sent.append((p, s)))
+        self.assertEqual(sent, [(7, sig.SIGSTOP)])
+
+    def test_resume_sends_sigcont(self):
+        import signal as sig
+        sent = []
+        self.control.resume_agent({"pid": 7}, sender=lambda p, s: sent.append((p, s)))
+        self.assertEqual(sent, [(7, sig.SIGCONT)])
+
+    def test_steer_stops_then_respawns(self):
+        import signal as sig
+        sent = []; spawned = []
+        info = {"is_autopilot": False, "pid": 7, "sessionId": "sid-7", "cwd": "/r",
+                "meta": {"agent_id": "aid7", "model": None, "budget": None, "yolo": False}}
+        result, _ = self.control.steer_agent(
+            info, "go left",
+            sender=lambda p, s: sent.append((p, s)),
+            spawn=lambda argv, cwd: spawned.append((argv, cwd)) or 4321)
+        self.assertEqual(result, "steered")
+        self.assertEqual(sent, [(7, sig.SIGTERM)])            # stopped first
+        self.assertIn("--resume", spawned[0][0])              # then resumed
+        self.assertIn("go left", spawned[0][0])
+        self.assertEqual(spawned[0][1], "/r")
+
+    def test_steer_refuses_autopilot(self):
+        result, _ = self.control.steer_agent({"is_autopilot": True, "cwd": "/r"}, "x",
+                                             sender=lambda p, s: None, spawn=lambda a, c: 1)
+        self.assertEqual(result, "refused-autopilot")
+
 if __name__ == "__main__":
     unittest.main()

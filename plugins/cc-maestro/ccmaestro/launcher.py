@@ -1,6 +1,6 @@
 import json, os, shlex, subprocess, uuid
 from datetime import datetime, timezone
-from . import paths
+from . import paths, config
 
 # Curated safe Bash subset for unattended-but-restricted runs (acceptEdits handles file edits).
 DEFAULT_ALLOWED_TOOLS = "Read,Edit,Write,Glob,Grep,Bash(git status),Bash(git diff:*),Bash(git log:*),Bash(ls:*),Bash(cat:*)"
@@ -36,6 +36,14 @@ def build_launch_argv(session_id, task, *, model=None, budget=None, yolo=False):
     if budget is not None:
         argv += ["--max-budget-usd", str(budget)]
     return argv
+
+def spawn_resume(argv, cwd):
+    import os as _os
+    log_dir = config.STATE_DIR / "agents" / "_resume"
+    log_dir.mkdir(parents=True, exist_ok=True)
+    proc = subprocess.Popen(argv, cwd=cwd or _os.getcwd(), stdin=subprocess.DEVNULL,
+                            stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, start_new_session=True)
+    return proc.pid
 
 def start(task, *, repo=None, model=None, budget=None, name=None, yolo=False):
     paths.ensure_state_dir()
