@@ -1,0 +1,15 @@
+{
+  "description": "ccharness autopilot — Stop hook that re-feeds the autopilot loop so it cannot self-stop (only /autopilot-cancel stops it).",
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/autopilot-stop.sh\""
+          }
+        ]
+      }
+    ]
+  }
+}

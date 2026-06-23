@@ -1,0 +1,289 @@
+To view keyboard shortcuts, press question mark
+View keyboard shortcuts
+
+
+Context Engineering for AI Agents: The Complete Playbook
+Rahul
+@sairahul1
+·
+5h
+
+Your AI agent works great for the first 10 steps.
+Then somewhere around step 15, it starts getting sloppy.
+Wrong tool calls. Forgetting your original instructions. Low-quality outputs.
+Most people blame the model.
+It's almost never the model.
+It's what the model is seeing.
+Organizing what the model sees is called context engineering.
+It is quickly becoming the most important skill for anyone building AI agents.
+Here is the complete playbook.
+Prompt engineering is dead. Context engineering is what matters now.
+You've heard of prompt engineering.
+Writing clear instructions. Good examples. Telling the model what role to play.
+That works perfectly for a chatbot.
+It stops working the moment you build an agent.
+Here's why.
+A chatbot answers one question and stops.
+An agent takes actions — browsing the web, calling APIs, writing code, running commands — step after step after step, sometimes for dozens of steps.
+Every single step produces output that gets added to the model's context.
+And that context is finite.
+Anthropic's engineering team defines it like this:
+"Context is the set of tokens included when you sample from an LLM. Context engineering is optimizing the utility of those tokens to consistently achieve a desired outcome."
+Put simply: make sure your agent sees the right information, in the right format, at the right time.
+Prompt engineering is a subset of context engineering.
+Context engineering is everything.
+Your agent's context window is RAM. And it's filling up.
+LangChain has the right analogy for this.
+Think of an LLM like a new kind of operating system.
+The model is the CPU — it does the thinking.
+The context window is RAM — the working memory where everything the model can currently see and reason about lives.
+Just like your computer slows down when RAM fills up, your agent's reasoning degrades when the context window gets crowded.
+This is called context rot.
+Chroma ran a study evaluating 18 frontier models — GPT-4.1, Claude 4, Gemini 2.5, Qwen3, and others.
+Every single model's performance degraded as input length increased.
+Not at the hard limit. Well before it.
+A model with a 200K-token window might show significant degradation at 50K tokens.
+The decline is continuous. Not a cliff.
+Why? Transformers work by having every token attend to every other token — creating n-squared relationships. As context grows, the model's ability to hold all those relationships thins out.
+And then there's the "Lost in the Middle" problem.
+LLMs show a U-shaped attention curve.
+→ Beginning of context: remembered well 
+→ End of context: remembered well 
+→ Middle: largely ignored
+Researchers measured a 30+ percentage point accuracy drop when relevant information moved from the beginning of context to the middle.
+Your original instructions — buried under 50,000 tokens of tool outputs — effectively disappear.
+Claude Code users have found output quality degrades at 40–60% of context capacity. Well before any hard limit.
+What's actually competing for space in your agent's context
+7 categories. All fighting for the same finite window.
+1. System Prompt
+The agent's identity. Behavioral rules. Control flow logic. Instructions for different task types. In an agent, this isn't just "be helpful." It can define the entire architecture.
+2. Tool Definitions
+Every tool the agent could call needs a schema describing what it does, what parameters it takes, and when to use it.
+3. Tool Call Results
+Every tool call adds its output to context. A web page retrieval: 5,000–10,000 tokens. A file read: similar. These accumulate fast.
+4. Retrieved Knowledge (RAG)
+Documents pulled from vector databases, search results, API responses — anything retrieved to inform the agent's decisions.
+5. Conversation History
+The full transcript of everything that's happened. User messages, agent responses, reasoning, prior decisions. Grows linearly with every turn.
+6. Memory
+Short-term memory from the current session. Long-term memory from previous sessions — user preferences, prior outcomes, learned patterns.
+7. Agent State
+Current plan, todo list, progress markers, scratchpad notes. The meta-information tracking where the agent is in a multi-step task.
+All 7 competing for the same window.
+Context engineering is deciding what wins.
+The 4 Core Strategies
+LangChain published the framework that organizes every context engineering technique into 4 buckets.
+Every technique you will ever learn fits into one of these.
+Write. Select. Compress. Isolate.
+Strategy 1 — Write (Agents forget. Give them a way to remember.)
+When an agent's context fills up and gets compacted, it loses information.
+If the agent didn't write anything down before that happened — that information is gone forever.
+Write means giving the agent ways to persist information outside the context window.
+Three forms:
+Scratchpads
+Give the agent a tool that lets it take notes during a task. Intermediate findings. Decisions made. Information it knows it will need later.
+Anthropic built a "think" tool — a dedicated space for Claude to work through problems.
+On the tau-bench benchmark, this improved performance by up to 54% on certain tasks.
+Rules Files
+Persistent procedural memory.
+If you've used Claude Code, you've seen CLAUDE.md.
+Instructions loaded at the start of every session — project architecture, conventions, how to run tests, what to be careful about.
+The agent reads it every time it starts.
+It never forgets the fundamentals.
+Memory Extraction
+The agent saves facts, user preferences, and learned patterns so it can retrieve them across sessions.
+Lives outside the context window entirely.
+Information the agent needs tomorrow is there waiting when tomorrow comes.
+Strategy 2 — Select (Don't give the agent everything. Give it what it needs right now.)
+An agent with 40 tools, a large knowledge base, and several sessions of history cannot load all of that at once.
+Something has to decide what's relevant for this step.
+Traditional RAG: the system decides. 
+User asks → retrieve documents → stuff into prompt → done. 
+Static. One-shot. The model has no say.
+Agentic RAG: the agent decides. It searches for what it needs, refines queries, picks tools, determines when it has enough information.
+Retrieval as an iterative process, not a one-shot pipeline.
+This matters because what's relevant changes at every step — and only the agent knows what it needs next.
+The tool selection problem is the one that trips people up most.
+If your agent has 40+ tools, that's potentially 10,000 tokens of tool definitions sitting in context before any work begins.
+The fix: RAG over tool descriptions.
+Instead of dumping all tool definitions in every call, use semantic search to surface only the tools relevant to the current step.
+A paper called RAG-MCP tested this.
+Tool-selection accuracy: 14% → 43% (3x improvement). Token usage: cut roughly in half.
+Anthropic calls it a hybrid strategy: load essential context up front (like CLAUDE.md), let the agent do just-in-time retrieval for everything else.
+Front-load the basics. Retrieve the rest on demand.
+Strategy 3 — Compress (Context accumulates. Keep the meaning, cut the tokens.)
+Even with good selection, context accumulates.
+Every tool call, retrieved document, and decision stays in the window.
+Imagine your agent has made 20 tool calls.
+Context: 80,000 tokens of accumulated tool outputs, conversation history, reasoning traces.
+Most of that is no longer relevant. The agent already acted on it.
+But it's still there, taking space, degrading attention, driving up cost and latency.
+You can compress at 3 points.
+Before information enters context:
+→ Chunk large documents into coherent pieces before retrieval 
+→ Rerank so only the most useful chunks make it in 
+→ Summarize tool outputs on the fly before they enter the main context
+While the agent is working:
+→ Rolling summary of conversation history — continuously updated 
+→ Popular hybrid: keep last 10 messages verbatim + summarize everything older 
+→ Hard trimming: remove older messages once context hits a size threshold 
+→ Claude Code auto-compaction: triggers at 95% capacity, automatically summarizes full trajectory
+After the agent has acted on something:
+→ Tool result clearing: once a tool result was used 15 steps ago, drop it 
+→ Replace with a one-line summary or remove entirely 
+→ The agent does not need the full text of a web page it fetched 20 steps ago
+The goal: reduce token count. Preserve what actually matters.
+Strategy 4 — Isolate (The most powerful strategy. Enables multi-agent systems.)
+Here is the deeper problem with long agent runs.
+It's not just space. It's contamination.
+The detailed file searches from the research phase are still sitting in context when the agent moves to writing code.
+That old research context is now noise. It's distracting the model during a phase where it needs to focus on clean implementation.
+Isolation means giving different parts of the work their own separate context windows.
+Sub-agents
+A parent agent delegates a focused subtask — "search the codebase for all authentication-related files" — to a sub-agent.
+The sub-agent works in its own clean context window.
+When it reports back, it returns only a condensed summary.
+All the messy search operations stay isolated in the sub-agent's context and never pollute the parent.
+State schema isolation (LangGraph's approach)
+Design the agent's state so different fields store different types of context.
+The LLM only sees the fields relevant to the current step.
+Tool results sit in a "backstage" field — invisible to the model until explicitly surfaced.
+Fine-grained control over what the agent sees at each step without spinning up separate sub-agents.
+Isolation is what makes complex multi-step workflows actually reliable.
+Different jobs. Different context windows. No contamination.
+4 Ways Agents Fail (Name the failure. Fix it.)
+Drew Breunig identified four distinct failure modes as agent context grows.
+Every broken agent you've ever seen falls into one of these.
+Failure 1: Context Poisoning
+A hallucination or error enters context.
+The agent references it again and again in subsequent steps.
+Bad data from step 5 compounds into every step after.
+Fix: Validate tool outputs before they enter context. After recovering from an error, compress the failed-attempt history. Don't leave 10 steps of dead-end debugging visible when only the resolution matters.
+━━━
+Failure 2: Context Distraction
+Context gets so long the model starts over-relying on recent history.
+Instead of synthesizing a novel plan, it just rehashes what it recently did.
+It stops thinking. It starts repeating.
+Fix: Summarize and prune aggressively. Even when you have a large context window available. Big window does not mean fill it.
+━━━
+Failure 3: Context Confusion
+Superfluous content leads the model to low-quality decisions.
+Classic example: a model failing on a benchmark when given 46 tools — even though the context was well within limits — but working fine with only 19 tools.
+The tools were not too many for the context to hold.
+They were too many for the model to reason about clearly.
+Fix: Dynamic tool management. Use RAG-MCP to surface only the tools relevant to the current step. Keep the tool set matched to the current phase.
+━━━
+Failure 4: Context Clash
+New information contradicts something already in context.
+The system prompt says one thing. A retrieved document says something different.
+The agent cannot reconcile the contradiction. Produces inconsistent behavior.
+Fix: Establish a clear authority ordering. System prompt > retrieved facts > conversation history. Validate new information against existing context before injecting. Use XML tags and clear headers so the model knows which source to trust.
+How to Write System Prompts for Agents (Not chatbots. Agents.)
+A chatbot system prompt sets a tone.
+"You are a helpful assistant. Be concise and friendly."
+An agent system prompt defines architecture.
+It specifies control flow — how to approach task types, which tools to use when, what to do on errors, what guardrails to follow.
+It is closer to writing a job description for an autonomous employee than a personality prompt.
+Anthropic calls it writing at the "right altitude."
+Too prescriptive:"If the user mentions billing AND mentions a refund AND the amount is over $100, call tool X." Fragile. Breaks on every edge case you didn't anticipate.
+Too vague:"Be helpful and use the appropriate tools." Gives the agent nothing. It can't make good autonomous decisions without concrete signals.
+The sweet spot:Specific enough to guide autonomous behavior. Flexible enough for the model to apply judgment in novel situations. Strong heuristics. Not rigid rules.
+Practical tips:
+→ Organize with XML tags or markdown headers — Background, Instructions, Tool Guidance 
+→ Start minimal and iterate on failures — don't try to anticipate every edge case up front 
+→ Minimal doesn't mean short — a complex agent system prompt can be thousands of tokens and that's fine as long as every token earns its place 
+→ Use few-shot examples — show the agent what good behavior looks like rather than trying to describe every rule in words
+The KV-Cache: The $$$  reason to care about context order
+Most agent builders don't know this exists.
+When you send tokens to an LLM, the model computes key-value representations for each token.
+Computationally expensive.
+So inference providers cache these representations.
+If the beginning of your context — the prefix — stays the same between API calls, the provider reuses the cached computation and only processes the new tokens at the end.
+Fast. Cheap.
+But if you rearrange or change the early part of your context between calls — you invalidate the cache. The provider recomputes everything from scratch.
+The cost difference on Claude Sonnet: 
+→ Cached input tokens: $0.30 per million
+→ Uncached input tokens: $3.00 per million
+10x difference.
+For an agent making 30–40 API calls per task, this adds up fast.
+Practical rules for KV-cache efficiency:
+→ Stable content goes at the TOP of context — system prompt, tool definitions, anything that doesn't change between turns 
+→ Dynamic content goes at the BOTTOM — conversation history, current step, agent state → Don't dynamically add and remove tools mid-conversation — it invalidates the cache 
+→ Use tool masking instead of tool removal — keep all tool definitions stable in the prefix (cached), just mark irrelevant ones as unavailable for the current phase
+The Workflow That Ships 35,000 Lines of Code in 7 Hours
+Dex Horthy (CEO of HumanLayer) presented this at the AI Engineer Code Summit.
+His team reportedly used it to ship ~35,000 lines of code to a large Rust codebase in one 7-hour session.
+The method: Frequent Intentional Compaction.
+Structure agent work into phases. Each phase produces a compacted artifact. Each new phase starts with a fresh context window containing only that artifact.
+Stay deliberately below 40–60% of the context window at all times.
+Phase 1 — Research
+Sub-agents explore the codebase. Read files. Trace data flows. Map architecture.
+All the messy grep results and file contents stay in sub-agent contexts. Never touch the parent. (Isolate)
+Output: a compact research.md — file paths, function signatures, patterns, gotchas. (Write)
+Context reset: raw research used 60–80% of the window. The research artifact compresses it down to 15–20%. (Compress)
+Phase 2 — Planning
+New context window. Contains only: research document + problem definition.
+Agent produces a detailed implementation plan.
+This is the most important human review checkpoint.
+Catch logic errors here where fixing them is easy and free. Later it costs hours.
+Phase 3 — Implementation
+Another fresh context window. Contains only: the plan.
+Agent follows it step by step.
+For complex tasks: a progress.md tracks what's been completed and what remains. (Write)
+The result: a clean, focused agent at every phase. No contamination. No context rot. No "sloppy step 20."
+How the best platforms handle this differently
+Claude Code
+Hybrid retrieval. CLAUDE.md loads up front. Tools like glob and grep handle just-in-time codebase navigation.
+Auto-compaction at 95% — preserves architectural decisions and the 5 most recently accessed files.
+Can spawn sub-agents for complex subtasks, each with their own clean context.
+Philosophy: "do the simplest thing that works." Let the model be smart about what it needs and give it tools to go find it.
+Manus
+KV-cache-aware context ordering: stable prefix, dynamic suffix. Tool masking not removal.
+Observation compression pipeline — every tool output is processed before entering the agent's context.
+Persistent todo list for state tracking.
+File system as overflow memory for evicted context.
+Built for scale. Serving hundreds of thousands of users where efficiency is a cost-of-business problem.
+ChatGPT Agent
+Visual-first approach. The agent interacts with a GUI browser.
+Screenshots added to context as visual snapshots. Model reasons over what it sees.
+Visual tokens are expensive so the agent is selective about screenshot count.
+Uses RL to learn optimal tool-use strategies across thousands of virtual machines rather than explicitly programming them.
+Google ADK
+The most principled architectural approach.
+Three design principles:
+Separate storage from presentation — durable state is not the same as what appears in each API call
+Explicit transformations — named, ordered processors that transform context in testable, composable steps
+Scope context by default — every model call sees only the minimum required information
+Engineering discipline over prompt crafting.
+The universal agent turn pipeline
+Every serious platform converges on the same 5-step loop per agent turn:
+→ Collect — user input, conversation history, tool results, retrieved docs, agent state 
+→ Select — what's relevant for this step within the remaining token budget 
+→ Compress — summarize, truncate, or restructure to fit the context → Arrange — stable content first (cache), dynamic content last 
+→ Assemble + call — final context → API call → get output → loop
+This is the loop running inside every production agent you've ever used.
+Understanding it is what separates builders who ship reliable agents from builders who wonder why their agent goes sloppy at step 15.
+The summary
+Context rot is real and starts well before your context limit.
+The 4 strategies that fix it: 
+→ Write — persist info outside context so agents don't forget 
+→ Select — pull in only what's needed for this step 
+→ Compress — cut tokens, keep meaning, proactively not reactively 
+→ Isolate — separate contexts for separate jobs, no contamination
+The 4 failure modes to watch for: 
+→ Poisoning — bad data compounds through every step 
+→ Distraction — long history makes agents rehash instead of think 
+→ Confusion — too many tools degrades decision quality 
+→ Clash — contradictions produce inconsistent behavior
+The KV-cache is worth 10x cost savings. Put stable content first.
+The best workflow: research → compact → plan → compact → implement. Fresh context at every phase.
+Context engineering is not optional for serious agent work.
+It is the work.
+If this was useful:
+→ Repost to share it with every agent builder you know 
+→ Follow @sairahul1 for more systems that work while you sleep 
+→ Bookmark this — you will come back to the 4 strategies framework
+I write about AI, building products, and systems that actually work.
+Rahul
+@sairahul1
+Building with AI. Sharing what's wild, what's practical, and what's next. Founder of NicheTrafficKit

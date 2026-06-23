@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "ccharness",
+  "description": "ccharness — a product harness for Claude Code, a diverge → decide → build funnel: /point-it (rank where a product could go next), /grill-it (think one fork to ONE answer), /implement-it (drive one task to done), /slap (reset when a fix is stuck), /autopilot (run the whole funnel in a never-stop loop).",
+  "owner": {
+    "name": "kubik",
+    "email": "dev@noxlabs.xyz"
+  },
+  "plugins": [
+    {
+      "name": "ccharness",
+      "description": "A product harness — a diverge → decide → build funnel. /point-it surveys a product and ranks where it could go next (capturing the product's North Star on first run); /grill-it thinks a fork-laden decision through to ONE reasoned answer; /implement-it drives one well-scoped task from understood → built → verified → committed through a gated 0→6 pipeline; /slap resets a stuck fix; /autopilot runs the entire funnel in a continuous loop that stops only on /autopilot-cancel. Zero-config.",
+      "author": {
+        "name": "kubik"
+      },
+      "category": "workflow",
+      "source": "./plugins/ccharness"
+    }
+  ]
+}
