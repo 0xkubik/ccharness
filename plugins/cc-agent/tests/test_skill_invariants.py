@@ -30,6 +30,14 @@ class TestSemipilotSkill(unittest.TestCase):
     def test_roadmap_gate(self):
         self.assertIn("chart-it", self.text)
 
+    def test_qualified_funnel_skill_names(self):
+        # The directly-invoked funnel skills must be referenced by QUALIFIED name.
+        for name in ("cc-tools:point-it", "cc-tools:grill-it", "cc-tools:implement-it"):
+            self.assertIn(name, self.text)
+
+    def test_semipilot_state_path(self):
+        self.assertIn(".claude/ccharness/semipilot/", self.text)
+
 
 if __name__ == "__main__":
     unittest.main()
