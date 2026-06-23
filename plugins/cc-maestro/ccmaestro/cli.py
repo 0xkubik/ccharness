@@ -1,6 +1,6 @@
-import argparse, sys
+import argparse, json, sys
 from datetime import datetime, timezone
-from . import config, registry, transcript, paths, render, control
+from . import config, registry, transcript, paths, render, control, report
 
 def _ls(args):
     cfg = config.load_config()
@@ -48,6 +48,27 @@ def _steer(args):
     print(f"{args.id}: {result}" + (f" ({detail})" if detail else ""))
     return 0 if result == "steered" else 1
 
+def _check(args):
+    cfg = config.load_config()
+    now = datetime.now(timezone.utc)
+    entries = registry.merge(registry.native_agents(), registry.load_meta_records())
+    summarizer = lambda sid: transcript.parse_transcript(paths.transcript_path(sid)) if sid else transcript.parse_transcript(None)
+    rows = render.build_rows(entries, now, summarizer=summarizer, config=cfg)
+    cur = report.snapshot(rows)
+    snap_file = config.STATE_DIR / "last_snapshot.json"
+    prev = {}
+    if snap_file.exists():
+        try: prev = json.loads(snap_file.read_text())
+        except (json.JSONDecodeError, OSError): prev = {}
+    events = report.diff(prev, cur)
+    for e in events:
+        report.record(e)
+        if args.notify and cfg.get("report_endpoint"):
+            report.post(cfg["report_endpoint"], e)
+    paths.atomic_write(snap_file, json.dumps(cur))
+    print(json.dumps(events, indent=2) if args.json else f"{len(events)} new event(s)")
+    return 0
+
 def _pause(args):
     info = control.resolve(args.id)
     if not info: print(f"no agent matching {args.id}", file=sys.stderr); return 1
@@ -81,6 +102,10 @@ def build_parser():
     se.add_argument("id"); se.add_argument("message"); se.set_defaults(func=_steer)
     pa = sub.add_parser("pause", help="pause an agent (SIGSTOP)"); pa.add_argument("id"); pa.set_defaults(func=_pause)
     re_ = sub.add_parser("resume", help="resume a paused agent (SIGCONT)"); re_.add_argument("id"); re_.set_defaults(func=_resume)
+    ck = sub.add_parser("check", help="detect agent state changes; record + optionally notify")
+    ck.add_argument("--notify", action="store_true", help="POST new events to report_endpoint")
+    ck.add_argument("--json", action="store_true")
+    ck.set_defaults(func=_check)
     return p
 
 def main(argv=None):
