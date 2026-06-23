@@ -24,10 +24,17 @@ autopilot only decides which milestone runs next and what to do when one fails.
 
 - **Requires a roadmap.** No roadmap (or no North Star) → `/chart-it` first. The old
   "drive directly toward the North Star without a roadmap" path is removed.
-- **Give-up ladder:** if a semipilot gives up → retry once → if still stuck, judge whether
-  the next milestone **depends** on the stuck one:
-  - **Independent** → park the stuck milestone (add to parked queue) and advance.
-  - **Dependent** → **HARD STOP**: autopilot sets itself inactive, reports, and ends the session.
+- **Give-up ladder:** if a semipilot gives up → retry once → if still stuck, the **stage test**
+  reads the dependency off the roadmap's layers (no guessing) — is another open milestone in the
+  **same `## Stage`** as the stuck one?
+  - **Independent** (a same-stage sibling is open) → park the stuck milestone (add to parked queue)
+    and advance to that sibling.
+  - **Dependent** (stuck one is the last open milestone in its stage → next work is in a later stage
+    that needs it) → **HARD STOP**: autopilot sets itself inactive, reports, and ends the session.
+
+  The same stage boundary holds after a *success*: autopilot only ever advances within the current
+  frontier stage and never crosses into a later stage while an earlier one still has a parked
+  (unfinished) milestone — a later stage gated by parked work is itself a dependency block (HARD STOP).
 - **Two ways autopilot stops:** `/autopilot-cancel` (manual brake, works any time) OR a hard
   dependency block (a legitimate self-stop — no longer only cancel can end it).
 - When the roadmap is exhausted (all milestones done or parked), autopilot cheap-idles — it
@@ -53,8 +60,9 @@ autopilot only decides which milestone runs next and what to do when one fails.
 ```
 
 Two-level logging: semipilot logs cycle detail; autopilot logs milestone-level events.
-Parked milestones live in `autopilot/blocked.jsonl` (not in `roadmap.md`), so the roadmap
-file format is unchanged.
+Parked milestones live in `autopilot/blocked.jsonl` (not in `roadmap.md`), so parking never
+edits the roadmap — the roadmap is just checkboxes under `## Stage` headings (or a plain checkbox
+list for a legacy linear roadmap).
 
 ## Hook partition
 

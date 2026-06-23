@@ -1,6 +1,6 @@
 ---
 name: point-it
-description: "Use when you want product *direction* rather than one answer — to look at a product and surface where it could go next as a ranked menu of moves (new features, finishing half-built work, rebuilding rough parts, paying down tech debt). Invoked by /point-it, with or without a prompt. Requires the product's North Star (set once via /chart-it) — if it's missing, point-it routes you to /chart-it. With it present, point-it reads the North Star (and the roadmap, if one exists, biasing toward the current milestone) and lets you check off (via a built-in choice prompt) which directions to pursue and hand that list to grill-it. It explores and ranks; it never decides *how* — that is grill-it. Not for deciding a known fork (grill-it) or building a task (implement-it)."
+description: "Use when you want product *direction* rather than one answer — to look at a product and surface where it could go next as a ranked menu of moves (new features, finishing half-built work, rebuilding rough parts, paying down tech debt). Invoked by /point-it, with or without a prompt. Requires the product's North Star (set once via /chart-it) — if it's missing, point-it routes you to /chart-it. With it present, point-it reads the North Star (and the roadmap, if one exists, biasing toward the current frontier — the parallel milestones open right now) and lets you check off (via a built-in choice prompt) which directions to pursue and hand that list to grill-it. It explores and ranks; it never decides *how* — that is grill-it. Not for deciding a known fork (grill-it) or building a task (implement-it)."
 ---
 
 # point-it — the direction loop
@@ -29,9 +29,9 @@ asking only one question: _what moves us toward that goal, and how far?_
 - **Ground before you diverge.** No North Star block in CLAUDE.md → you do NOT guess the
   business and you do NOT bootstrap it here. You **route the human to `/chart-it`** (the grounding
   loop owns goal-setting) and stop. (Phase 0.)
-- **Roadmap biases, never gates.** If a roadmap exists, it boosts moves that advance the current
-  milestone — but every lane still runs and off-roadmap directions still surface. A menu that hides
-  off-roadmap moves is a bug.
+- **Roadmap biases, never gates.** If a roadmap exists, it boosts moves that advance any milestone on
+  the current **frontier** (the parallel milestones open in the earliest unfinished stage) — but every
+  lane still runs and off-roadmap directions still surface. A menu that hides off-roadmap moves is a bug.
 - **A menu, never a decision.** point-it ranks and hands off. It never picks the winner — that
   is grill-it. Emitting one recommended direction as "the answer" is a bug.
 - **The empty-lane valve.** A move-lens with nothing real to propose says so and stops. It
@@ -80,10 +80,12 @@ or `chart-it`, both count.
 | **Present** | **Read it = the goal.** A prompt (if given) scopes the run to a theme/area; no prompt = full survey. Then read the roadmap (below) and proceed to Phase 1. |
 
 **Read the roadmap (if any).** Look for `.claude/ccharness/roadmap.md`. If present, read it and derive
-the **current milestone** = the first unchecked `[ ]` box (current-tracking is checkboxes only — no
-separate pointer). This biases Phase 2 and Phase 3. If absent, point-it runs exactly as before
-(unbiased) — you may emit a one-line nudge *("no roadmap yet — `/chart-it` charts the route far
-ahead")*, then proceed.
+the **frontier** = the unchecked `[ ]` milestones of the **earliest `## Stage` that still has any
+unchecked box** (tracking is checkboxes only — no separate pointer; the frontier is a *set*, often
+just one). A roadmap with **no stage headings** is a legacy line → each milestone its own stage → the
+frontier is exactly the first unchecked box (unchanged behaviour). The frontier biases Phase 2 and
+Phase 3. If absent, point-it runs exactly as before (unbiased) — you may emit a one-line nudge *("no
+roadmap yet — `/chart-it` charts the route far ahead")*, then proceed.
 
 ---
 
@@ -95,25 +97,25 @@ three paragraphs, not an audit. This is the **"now"**; the North Star is the **"
 distance between them is the working field every lens explores. Hand this picture to all four
 lenses so none re-reads the whole repo from scratch.
 
-**Milestone check (only if a roadmap exists).** Compare the survey against the **current
-milestone's `done when:`**. If it now appears met:
-- *Interactive run:* offer to check the milestone off (`[ ]` → `[x]` in `roadmap.md`), advancing
-  current to the next unchecked milestone.
-- *Autopilot run:* **auto-mark it `[x]`** (no human mid-loop to confirm; current must advance for the
-  loop to keep walking the route). See autopilot's contract.
+**Milestone check (only if a roadmap exists).** Compare the survey against the `done when:` of **each
+frontier milestone** (there may be several parallel ones). For every one that now appears met:
+- *Interactive run:* offer to check it off (`[ ]` → `[x]` in `roadmap.md`). When the **last**
+  unchecked milestone of the current stage gets checked, the frontier advances to the next stage.
+- *Autopilot run:* **auto-mark it `[x]`** (no human mid-loop to confirm; the frontier must advance for
+  the loop to keep walking the route). See autopilot's contract.
 
 ---
 
 ## Phase 2 — Fan-out (four move-lenses, parallel)
 
 Dispatch four subagents in parallel, one per move. Give each: the **North Star block**, the
-**Phase-1 survey**, its **move mandate**, and — **if a roadmap exists** — the **current (+ next)
-milestone** as *orienting context*. The milestone is a **steer, not a gate**: each lens still scans
-its whole lane freely, still honours the empty-lane valve, and may still surface off-roadmap
-candidates — it just also actively looks for material that advances the current milestone. (Ranking
-in Phase 3 can only reorder what the lenses produce, so the roadmap must reach them here, not only at
-ranking.) Each lens may read deeper _in its own lane_ but stays in that lane — ADD does not propose
-refactors, REFACTOR does not propose features.
+**Phase-1 survey**, its **move mandate**, and — **if a roadmap exists** — the **current frontier
+milestones (+ the next stage's)** as *orienting context*. The frontier is a **steer, not a gate**:
+each lens still scans its whole lane freely, still honours the empty-lane valve, and may still surface
+off-roadmap candidates — it just also actively looks for material that advances *any* frontier
+milestone. (Ranking in Phase 3 can only reorder what the lenses produce, so the roadmap must reach
+them here, not only at ranking.) Each lens may read deeper _in its own lane_ but stays in that lane —
+ADD does not propose refactors, REFACTOR does not propose features.
 
 **Lens mandates:**
 
@@ -161,10 +163,10 @@ One pass in the main thread. Collect all candidates, then:
 | **3 — in production**     | REBUILD is expensive (live users); favour FINISH/REFACTOR + careful ADD | incremental only                         | reversibility is the dominant multiplier |
 
 3. **Roadmap-fit** (only if a roadmap exists). Apply a final adjustment from each candidate's
-   `advances`: advances the **current** milestone → **boost**; the **next** milestone → light boost;
-   **off-roadmap → no boost, but never dropped.** This is *bias, not a gate* — a strong off-roadmap
-   candidate that ranks high on its own merits still ranks high and still appears. Hiding off-roadmap
-   moves is a bug.
+   `advances`: advances **any frontier** milestone → **boost**; a **next-stage** milestone → light
+   boost; **off-roadmap → no boost, but never dropped.** This is *bias, not a gate* — a strong
+   off-roadmap candidate that ranks high on its own merits still ranks high and still appears. Hiding
+   off-roadmap moves is a bug.
 4. **Rank** into a single ordered menu. Drop nothing silently — if a strong-looking candidate
    ranks low _because of Level or roadmap-fit_, keep it and say why.
 
@@ -217,10 +219,11 @@ point-it's.
 ## Quick reference
 
 `0` Ground — `## Product North Star` heading? no → **route to `/chart-it`**, stop (point-it does not
-bootstrap it); yes → read = goal, then read `.claude/ccharness/roadmap.md` (current = first `[ ]`) ·
-`1` Survey — repo = where we are now; if roadmap, check current milestone's `done when` (interactive:
-offer to check off · autopilot: auto-mark) · `2` Fan-out — four lenses (ADD / FINISH / REBUILD /
-REFACTOR), parallel, empty-lane valve, **fed the current milestone as a steer (not a gate)** · `3`
+bootstrap it); yes → read = goal, then read `.claude/ccharness/roadmap.md` (**frontier** = unchecked
+`[ ]` of the earliest open `## Stage`; no headings = first `[ ]`) · `1` Survey — repo = where we are
+now; if roadmap, check **each frontier milestone's** `done when` (interactive: offer to check off ·
+autopilot: auto-mark) · `2` Fan-out — four lenses (ADD / FINISH / REBUILD / REFACTOR), parallel,
+empty-lane valve, **fed the frontier milestones as a steer (not a gate)** · `3`
 Rank — dedupe + score × Level + **roadmap-fit** → menu (off-roadmap never dropped) · `4` Boundary —
 interactive: `AskUserQuestion` multiSelect per lens → checked **list** → grill-it; under autopilot:
 emit menu as data, **no `AskUserQuestion`**, caller auto-picks.

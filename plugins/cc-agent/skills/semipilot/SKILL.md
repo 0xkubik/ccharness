@@ -26,8 +26,9 @@ When `/semipilot` first invokes you, do this before cycle 1:
    - North Star present but no roadmap → tell the user _"No roadmap yet — run `/chart-it` to
      build one, then `/semipilot`."_ Same: no state, normal exit.
    - Roadmap present → resolve the **target milestone**: the id passed as argument (e.g. `M3`),
-     or if none, the **current** = the first unchecked `[ ]` milestone in the roadmap. Copy its
-     `done when:` text into state.
+     or if none, the **current** = the first unchecked `[ ]` milestone **in document order** (under a
+     layered roadmap that's a milestone on the current stage's frontier). Copy its `done when:` text
+     into state.
 2. **Nested-awareness.** Check `.claude/ccharness/autopilot/state.json`. If it exists and its
    `active == true` and its `session_id` matches `$CLAUDE_CODE_SESSION_ID`, semipilot is running
    **under autopilot**. In that mode, exit reports are terse (one log line + outcome). Standalone
@@ -79,11 +80,16 @@ skip arming, run the next cycle directly.
 
 ## Milestone-scoped, not roadmap-biased
 
-Under autopilot, the roadmap **biases** point-it toward the current milestone — but it does not
+Under autopilot, the roadmap **biases** point-it toward the current frontier — but it does not
 filter out anything. Under semipilot, point-it is **filtered**: you keep ONLY directions whose
 `advances` field matches the target milestone. An empty filtered set is itself a no-progress
 signal — it feeds the same `no_progress_streak` counter as a failed build. This is how "all paths
 to the goal are blocked" eventually reaches the give-up exit without spinning.
+
+The **direction filter** is target-only. The **milestone done-check** (point-it Phase 1) is not: if a
+*sibling* frontier milestone's `done when:` is observably met, marking it `[x]` is a truthful state
+update and is fine — semipilot still only ever *targets*, *builds toward*, and *exits on* its own
+milestone. A sibling getting checked off as a side effect just saves autopilot a later cycle.
 
 **Do not re-pick directions already in `blocked.jsonl`** — the slug/direction is the exclusion key.
 Append to `blocked.jsonl` whenever implement-it hands back (unbuildable, forked, or slap fired

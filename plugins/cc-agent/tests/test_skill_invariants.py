@@ -75,6 +75,14 @@ class TestAutopilotSkill(unittest.TestCase):
         self.assertIn("same stage", self.text.lower())
         self.assertIn("document order", self.text.lower())
 
+    def test_advance_stays_in_frontier_stage(self):
+        # Advancing (after success OR after parking) must not cross a stage boundary while the
+        # frontier stage still holds unfinished/parked work — a later stage gated by parked work
+        # is a dependency block (HARD STOP), not a milestone to jump to.
+        self.assertIn("FRONTIER STAGE", self.text)
+        self.assertIn("ADVANCE-OR-STALL", self.text)
+        self.assertIn("parked", self.text.lower())
+
 
 if __name__ == "__main__":
     unittest.main()

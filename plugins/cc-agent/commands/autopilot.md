@@ -1,5 +1,5 @@
 ---
-description: "Walk the roadmap milestone by milestone via semipilot — arms a fresh /semipilot on the current milestone, and when it finishes advances to the next (with a retry-once, then dependency-judge: park+advance or hard-stop). Requires a roadmap (/chart-it first). Stops on /autopilot-cancel OR a hard dependency block."
+description: "Walk the roadmap milestone by milestone via semipilot — arms a fresh /semipilot on the current milestone, and when it finishes advances to the next (with a retry-once, then a stage-test: same-stage sibling → park+advance, else hard-stop). Requires a roadmap (/chart-it first). Stops on /autopilot-cancel OR a hard dependency block."
 argument-hint: "[optional focus — passed to each semipilot cycle]"
 ---
 
@@ -18,11 +18,13 @@ path is removed.)
 
 **Give-up ladder** — when a semipilot gives up on a milestone, autopilot:
 1. **Retries once** (re-arms a fresh semipilot on the same milestone).
-2. If it gives up again, **judges whether the next milestone depends on the stuck one**:
-   - **Independent** → parks the stuck milestone (adds it to the parked queue) and advances to
-     the next non-parked unchecked milestone.
-   - **Dependent** → **HARD STOP**: sets itself inactive, reports the stuck milestone and the
-     parked queue, and ends the session.
+2. If it gives up again, the **stage test** reads the dependency straight off the roadmap's layers
+   (no guessing): is another open milestone in the **same `## Stage`** as the stuck one?
+   - **Independent** (a same-stage sibling is still open) → parks the stuck milestone (adds it to the
+     parked queue) and advances to that sibling.
+   - **Dependent** (the stuck one is the last open milestone in its stage → the next work is in a later
+     stage that needs this one) → **HARD STOP**: sets itself inactive, reports the stuck milestone and
+     the parked queue, and ends the session.
 
 **Two ways it stops:**
 - **`/autopilot-cancel`** — the manual brake, works at any time.

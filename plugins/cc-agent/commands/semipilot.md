@@ -10,5 +10,5 @@ Invoke the `semipilot` skill to arm and run the BOUNDED goal-seeking loop, with 
 semipilot takes ONE roadmap milestone as its goal and drives the funnel (point-it → grill-it →
 implement-it) toward it, **stopping itself** the moment the milestone's `done when:` is met. It has a
 second exit — **give up** after N cycles with no progress (default 3) or a hard cycle cap (default 20),
-the token-burn backstop. No milestone id → the current (first unchecked) milestone. It needs a roadmap;
+the token-burn backstop. No milestone id → the current (first unchecked in document order) milestone. It needs a roadmap;
 with none it routes you to **`/chart-it`**. Stop it early with **`/semipilot-cancel`**.

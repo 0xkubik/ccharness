@@ -1,5 +1,5 @@
 ---
-description: "Set product direction — survey a product and surface where it could go next as a ranked menu of moves (add / finish / rebuild / refactor), scored against the product's goal. Runs with or without a prompt. Requires the product's North Star (set once via /chart-it) — without it, routes you there; with it, reads the North Star and the roadmap (if any) and biases the menu toward the current milestone. Emits a menu and decides nothing — you pick, then grill-it decides how."
+description: "Set product direction — survey a product and surface where it could go next as a ranked menu of moves (add / finish / rebuild / refactor), scored against the product's goal. Runs with or without a prompt. Requires the product's North Star (set once via /chart-it) — without it, routes you there; with it, reads the North Star and the roadmap (if any) and biases the menu toward the current frontier (the parallel milestones open now). Emits a menu and decides nothing — you pick, then grill-it decides how."
 argument-hint: "[optional theme or area — omit for a full survey]"
 ---
 
@@ -10,6 +10,7 @@ Invoke the `point-it` skill (the direction loop) with this scope:
 point-it is the mouth of the funnel (point-it → grill-it → implement-it), grounded by `/chart-it`
 upstream. It runs with or without an argument, but it **requires the product's North Star**: if none
 is set, it routes you to **`/chart-it`** (which captures it) and stops. With the North Star present,
-it reads it — plus the roadmap, if one exists, **biasing the menu toward the current milestone** —
-and proposes a **ranked menu of directions** toward the goal; then you pick one and hand it to
+it reads it — plus the roadmap, if one exists, **biasing the menu toward the current frontier** (the
+parallel milestones open in the earliest unfinished stage) — and proposes a **ranked menu of
+directions** toward the goal; then you pick one and hand it to
 `/grill-it` to decide *how*.
