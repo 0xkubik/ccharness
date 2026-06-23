@@ -39,5 +39,26 @@ class TestSemipilotSkill(unittest.TestCase):
         self.assertIn(".claude/ccharness/semipilot/", self.text)
 
 
+AUTO = (ROOT / "skills" / "autopilot" / "SKILL.md")
+
+
+class TestAutopilotSkill(unittest.TestCase):
+    def setUp(self):
+        self.text = AUTO.read_text()
+
+    def test_is_meta_loop_over_semipilot(self):
+        self.assertIn("semipilot", self.text)
+
+    def test_give_up_ladder(self):
+        for token in ("current_retries", "retry", "DEPEND", "park", "HARD STOP"):
+            self.assertIn(token, self.text)
+
+    def test_roadmap_required(self):
+        self.assertIn("chart-it", self.text)
+
+    def test_idle_on_exhaustion(self):
+        self.assertIn("idle", self.text)
+
+
 if __name__ == "__main__":
     unittest.main()

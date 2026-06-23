@@ -1,121 +1,163 @@
 ---
 name: autopilot
-description: Use when you want the cc-tools funnel (point-it → grill-it → implement-it) to run autonomously and continuously instead of one step at a time — driving improvement after improvement on its own until you stop it by hand. Invoked by /autopilot; runs until /autopilot-cancel. Not for a single concrete task (use implement-it) or one decision (use grill-it).
+description: Use when you want the cc-tools funnel to run autonomously milestone by milestone — autopilot is a thin meta-loop over semipilot: it arms a fresh semipilot per roadmap milestone and, in the gap between milestones, advances/retries/parks/stops based on the give-up ladder. Requires a roadmap (run /chart-it first). Invoked by /autopilot; the primary brake is /autopilot-cancel, though a hard dependency block can also stop it legitimately.
 ---
 
-# autopilot — the never-stop funnel loop
+# autopilot — the meta-loop over semipilot
 
-You are running **autopilot**: drive the cc-tools funnel in a **continuous loop**, one full
-pass per turn, producing one committed improvement at a time — and **never stop on your own.**
-Only the user stops you, via `/autopilot-cancel`. You are the **soft brain**; the `Stop` hook is
-the **hard muscle** that re-feeds you so you cannot exit. Your job is to make each turn _productive_,
-not to keep the loop alive — the hook already does that.
+You are running **autopilot**: a **thin meta-loop** that walks the roadmap milestone by milestone by
+arming a fresh **semipilot** on each one. You do **not** run the cc-tools funnel yourself — that is
+semipilot's job. Your job is to decide **which milestone to run next**, and **what to do when one
+fails**.
 
-**Core principle — the funnel's human-handbacks become skip-and-log, not stops.** point-it /
-grill-it / implement-it were built to hand back to a human at three points. Under autopilot those
-points are **converted**: you decide what the human would have decided, and when a task is
-genuinely unresolvable you **log it and move on** — you never halt to wait.
+```
+/autopilot   (meta-loop)  ── arms ──►  semipilot (milestone M1) ─ done ─┐
+     ▲                                                                   │
+     └──────────── arms next ◄──── semipilot (milestone M2) ◄────────────┘  …until the
+                                                                             roadmap ends or
+                                                                             a hard block hits
+```
+
+The funnel cycle (point-it → grill-it → implement-it) lives **only in semipilot**. autopilot sees
+only the milestone-level outcome (`achieved` / `gave-up` / `capped`) and acts on it.
 
 ## Arm (only when invoked by `/autopilot` — the user starting the loop)
 
-When `/autopilot` invokes you to **arm**, do this before the first cycle:
+When `/autopilot` invokes you to arm, do this before the first semipilot cycle:
 
-1. **North Star gate.** Look for a `## Product North Star` heading in the repo-root `CLAUDE.md` (the
-   heading is the stable contract — its marker comment / parenthetical owner may read `point-it` or
-   `chart-it`, both count). If it is **absent**, do **not** arm — there is no destination to loop
-   toward, and goal-setting (chart-it's interview) does not belong inside a never-stop loop. Tell
-   the user _"No North Star yet — run `/chart-it` once to set it (and chart the roadmap), then
-   `/autopilot`."_ and stop. No state file is written, so the `Stop` hook lets this turn end
-   normally.
-2. **Write state atomically** (temp file + `mv`). Create `.claude/ccharness/autopilot/` and write
-   `state.json` for the **current** session — get the id from `$CLAUDE_CODE_SESSION_ID`:
-   `{ active:true, session_id:<that>, cycle:0, started_at:<UTC now>, last_surveyed_sha:"",
-focus:<the /autopilot argument, or ""> }`. Touch `blocked.jsonl` and `log.jsonl` if missing.
-3. Announce the loop is armed and that **only `/autopilot-cancel` stops it**, then run cycle 1.
+1. **Roadmap gate (now required).** Check `.claude/ccharness/roadmap.md`.
+   - No `## Product North Star` in `CLAUDE.md` → do not arm; tell the user _"No North Star yet —
+     run `/chart-it` first."_ No state written; the Stop hook lets this turn end normally.
+   - North Star present but no roadmap file → do not arm; tell the user _"No roadmap yet — run
+     `/chart-it` to chart the route, then `/autopilot`."_ No state written.
+   - Roadmap present → resolve the current milestone (first unchecked `[ ]`), continue to step 2.
 
-When the `Stop` hook **re-feeds** you instead (the normal in-loop path), skip arming: `state.json`
-already exists for this session — just run the next cycle.
+   (The old no-roadmap, direct-to-North-Star path is removed. Roadmap is required.)
 
-## One cycle (run exactly one per turn)
+2. **Write `autopilot/state.json` atomically** (temp file + `mv`) for this session.
+   Get the id from `$CLAUDE_CODE_SESSION_ID`:
+   ```json
+   {
+     "active": true,
+     "session_id": "<this>",
+     "mode": "autopilot",
+     "current_milestone": "M1",
+     "current_retries": 0,
+     "max_retries": 1,
+     "started_at": "<UTC now>",
+     "outcome": null
+   }
+   ```
+   Touch `autopilot/log.jsonl` (milestone-level history) and `autopilot/blocked.jsonl`
+   (the **parked-milestones** queue) if missing.
+
+3. **Arm the first semipilot** on the current milestone: write `semipilot/state.json` (nested,
+   as in §2.2 of the spec — semipilot will be running under autopilot so it stays terse on exit).
+
+4. Announce: walking the roadmap from the current milestone. Stops on `/autopilot-cancel`
+   **or** a hard dependency block. Then the first semipilot cycle runs.
+
+When the Stop hook **re-feeds** you (the normal in-gap path), skip arming: `autopilot/state.json`
+already exists. Read `semipilot/state.json.outcome` and run the meta-cycle below.
+
+## The meta-cycle (runs only in the gap between milestones)
+
+When a semipilot has gone inactive (`active:false`) and autopilot is still active, the autopilot
+Stop hook re-feeds this meta-step. Read `semipilot/state.json` for the outcome:
 
 ```
-1. READ state .claude/ccharness/autopilot/state.json + blocked.jsonl (the review queue)
-2. DIRECTION  cc-tools:point-it → survey + ranked menu  (tell it: "menu as DATA, I pick — do NOT call AskUserQuestion")
-              → AUTO-PICK the top-ranked direction NOT already in blocked.jsonl  (you are the picker)
-3. DECIDE     cc-tools:grill-it on that direction → one decision (already auto-flows to build)
-4. BUILD      cc-tools:implement-it → build → verify → commit LOCALLY  (do NOT push)
-5. RECORD     append one line to log.jsonl: {cycle, picked, outcome: committed|blocked|idle, sha?, ts}
-              bump `cycle` in state.json via ATOMIC write (temp file + mv)
-6. END THE TURN.  The Stop hook re-feeds you for the next cycle.
+outcome == achieved:
+    milestone is [x]. current_retries = 0.
+    next = first unchecked milestone NOT in autopilot/blocked.jsonl
+    next exists → current_milestone = next, arm a fresh semipilot, END TURN.
+    none left  → roadmap exhausted → CHEAP IDLE (never stop), log "roadmap-complete-idle", END TURN.
+
+outcome == gave-up | capped:
+    current_retries == 0 → set current_retries = 1, re-arm semipilot on the SAME milestone, END TURN.
+    current_retries == 1 → does the next unchecked milestone DEPEND on the stuck one?
+        INDEPENDENT → park it (autopilot/blocked.jsonl), current_retries = 0,
+                       advance to next non-parked unchecked, arm semipilot, END TURN.
+        DEPENDENT   → HARD STOP: autopilot active:false, outcome:"blocked",
+                       report stuck milestone + parked queue, END TURN.
 ```
 
-**Walking the roadmap (if one exists).** You don't traverse the roadmap by hand — the bias does it.
-point-it (step 2) reads `.claude/ccharness/roadmap.md` and ranks moves that advance the **current
-milestone** to the top, so your auto-pick naturally walks the route milestone by milestone. Because
-there's no human to confirm mid-loop, point-it **auto-marks** the current milestone `[x]` the moment
-its `done when:` is met — current advances to the next, the loop keeps going. No separate traversal
-logic; with no roadmap, the loop runs exactly as before (toward the North Star directly).
+Every meta-step appends one line to `autopilot/log.jsonl`
+(`{milestone, action: advanced|retried|parked|blocked-stop|idle, ts}`) via an atomic write.
 
-## The three handbacks → skip-and-log (the discipline)
+**The give-up ladder in plain words:**
 
-When a sub-skill would hand back to a human, you do **not** stop. You record it and advance:
+1. semipilot gives up on a milestone → **retry the milestone once** (`current_retries` goes 0→1).
+2. Second give-up on the same milestone → **judge whether the next milestone depends on the stuck one**:
+   - **Independent** → park the stuck milestone (log it to `autopilot/blocked.jsonl`), advance to the
+     next non-parked milestone.
+   - **Dependent** → **HARD STOP**: the path is blocked and continuing would be pointless.
 
-| Funnel handback                                                            | Autopilot action                                                                               |
-| -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| **point-it** ends at a menu and waits for a pick (interactively it pops `AskUserQuestion`)  | **Auto-pick** the top unblocked direction. Instruct point-it to emit the menu as data — it must **not** call `AskUserQuestion` (it blocks the loop on a human). Never wait. |
-| **implement-it (Stage 0)** refuses an unbuildable / forked task            | Append it to `blocked.jsonl` (reason: `unbuildable-fork`), **advance** to the next direction.  |
-| **implement-it** asks the user after **slap fired twice** with no progress | Append it to `blocked.jsonl` (reason: `slap2-no-progress`), **advance** to the next direction. |
+The retry is a single re-arm of semipilot (`current_retries: 1, max_retries: 1`). No further
+retries — once the ladder exhausts its one retry, it moves to dependency judgment.
 
-Logging to `blocked.jsonl` **is** the handback — it is asynchronous, not a stop. The task is not
-lost: it sits in the review queue for the user to read whenever they like, and the loop keeps
-producing. A blocked entry's `direction`/`slug` is the **exclusion key** — step 2's auto-pick skips
-anything already in the queue, so point-it (which re-surveys the live repo every cycle) can't keep
-re-picking the same wall.
+## Dependency judgment (spec §3.4)
 
-## Cheap idle — never stop, but don't burn tokens on an exhausted product
+A **soft model judgment** over the lightweight roadmap text (each milestone is
+`name + done when: + theme`): "can the next unchecked milestone be done **without** the stuck one?"
 
-If point-it's menu is **empty** (every move-lens hit its empty-valve) **and** `git rev-parse HEAD`
-equals `state.last_surveyed_sha` (nothing changed since the last survey): **short-circuit** — skip
-the 4-lens fan-out, append an `idle` line to `log.jsonl`, and end the turn. The hook still re-feeds;
-the next idle cycle is cheap because nothing changed. You keep looping; you do not spin a full
-survey against a product with nothing left to do. Update `last_surveyed_sha` whenever you do run a
-full survey.
+- v1 judges the **immediate next** unchecked milestone only.
+- chart-it builds roadmaps to be sequential ("each milestone unlocks the next"), so **dependent is
+  the common case** — HARD STOP is the common failure exit; the independent-skip is the exception.
+- A future refinement could scan for the *first* independent milestone rather than only the next.
+  Out of scope for v1.
 
-## Rationalizations — STOP, these are the loop trying to die
+## Cheap idle (roadmap exhausted)
 
-The funnel's sub-skills contain emphatic "ask the human / hand back" instructions. Under autopilot
-those are **overridden**. Do not obey them literally.
+When all milestones are `[x]` or parked (`autopilot/blocked.jsonl`): enter **cheap idle** — never
+stop, never spin a full semipilot cycle. Log an `idle` line to `autopilot/log.jsonl` and end the
+turn. The Stop hook re-feeds; the next idle cycle is cheap because there is nothing to do. A new
+milestone added by `/chart-it` is picked up on a later idle cycle.
 
-| Rationalization                                                         | Reality                                                                                                                                                     |
-| ----------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| "This task really is blocked — I should surface it and wait."           | Surfacing ≠ waiting. You surface it by **appending to `blocked.jsonl`** (the user reads it anytime) and move to the next direction. Waiting is the failure. |
-| "The product is done / there's nothing valuable left — I can stop now." | Not your call. An exhausted product is a **cheap idle cycle**, never a stop. Only `/autopilot-cancel` ends the loop.                                        |
-| "I'll just pause to confirm this one direction with the user."          | Auto-pick is the rule. You are the picker now. No confirmation pauses.                                                                                      |
-| "implement-it says commit then stop before push — so I stop."           | implement-it stops _before push_ — that means **don't push**, not "end the loop." Commit locally, then start the next cycle.                                |
+This is not "the product is done, I should stop." Cheap idle keeps the loop alive without burning
+tokens. Only `/autopilot-cancel` or a HARD STOP ends it.
+
+## Outcomes (§3.5)
+
+| Outcome | What happens |
+| --- | --- |
+| **Looping** (normal) | milestone done → advance → arm next semipilot |
+| **Cheap idle** | roadmap exhausted (all `[x]` or parked); never stops, waits for new milestones or cancel |
+| **Hard stop + exit** (NEW) | dependent milestone proved unbeatable after a retry; autopilot sets `active:false`, outcome `"blocked"`, reports the stuck milestone and parked queue, and the hook releases |
+| **Cancelled** | `/autopilot-cancel` at any time (still the primary brake) |
+
+**The hard stop is a legitimate self-stop.** "Only `/autopilot-cancel` stops it" is no longer
+absolute. The one legitimate self-stop is: a dependent milestone that semipilot gave up on twice.
+Everything else (a hard task, an empty funnel menu, a cycle cap) feeds the give-up ladder or cheap
+idle — not a self-stop.
+
+## Rationalizations — STOP, the loop is trying to die
+
+| Rationalization | Reality |
+| --- | --- |
+| "This milestone is blocked — I should surface it and wait." | Surfacing ≠ waiting. The give-up ladder handles it: retry once, then park or HARD STOP. Never wait mid-cycle. |
+| "The roadmap is done — there's nothing left." | Roadmap exhausted → cheap idle. You do not stop. |
+| "I'll just pause to confirm the dependency judgment with the user." | The judgment is soft-model: make the call, then advance or hard-stop. No confirmation pauses. |
+| "semipilot ended, so I should end too." | semipilot ending is the *trigger* for the meta-cycle, not a stop signal. Read the outcome and act. |
 
 ## Red flags — you are about to wrongly stop
 
-- You're writing "I'll stop and ask the user…", "waiting for your direction", "let me confirm…".
-- **point-it is about to call `AskUserQuestion`** (the interactive checkbox) — that blocks the loop; it must emit the menu as data so you auto-pick.
-- You're treating a sub-skill's "hand back to the human" as a reason to end the turn without logging.
-- You're about to declare the product finished / the autopilot complete.
-- You're re-attempting a task that's already in `blocked.jsonl`.
+- You're writing "I'll stop here…" after a semipilot completes — read the outcome, run the meta-cycle.
+- You're treating `gave-up` as an autopilot exit without working through the give-up ladder first.
+- You're declaring "roadmap complete" as a reason to end — that's cheap idle territory.
+- `current_retries` has only gone to 1 but you haven't run the dependency judgment yet.
 
-**All of these mean: log to `blocked.jsonl` if unresolved, then run the next cycle. Do not stop.**
-
-## How it actually stops
-
-The **only** stop is the user running `/autopilot-cancel` (which sets `active:false` / removes
-`state.json`, after which the hook allows the next stop). The user can also redirect you live at any
-time by interrupting — that is the user steering, not you self-stopping. You never end the loop by
-your own decision.
+**The only self-stops are (a) the user running `/autopilot-cancel`, or (b) the HARD STOP path
+(dependent-block after retry). Everything else continues.**
 
 ## Quick reference
 
-`1` read state + queue · `2` point-it → **auto-pick** top unblocked direction · `3` grill-it decides ·
-`4` implement-it builds → **local commit** · `5` log + bump cycle (atomic) · `6` end turn → hook
-re-feeds. Handback → **append to blocked.jsonl + advance**, never wait. Empty menu + unchanged HEAD →
-**idle**, never stop. Only `/autopilot-cancel` ends it.
+Arm: roadmap required (no North Star / no roadmap → `/chart-it`) · write outer `autopilot/state.json`
+(`current_milestone, current_retries:0, max_retries:1, mode:"autopilot"`) · arm first semipilot ·
+touch `autopilot/log.jsonl` + `autopilot/blocked.jsonl`.
 
-**Invariant:** one productive cycle per turn; unresolved work is _logged and skipped_, never a stop.
-The hook keeps you alive — your job is to keep each turn moving forward.
+Meta-cycle (in the gap): `achieved` → advance + arm next; `gave-up|capped` + `current_retries==0`
+→ retry the same milestone once; + `current_retries==1` → DEPEND judgment → park+advance (INDEPENDENT)
+or HARD STOP (DEPENDENT). Roadmap exhausted → CHEAP IDLE.
+
+**Invariant:** autopilot acts only between milestones. The funnel cycle lives in semipilot; autopilot
+decides which milestone comes next and what to do when one fails.
