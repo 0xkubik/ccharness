@@ -99,7 +99,7 @@ climb to the compass; an obvious ADD can drop to the fast path. **Level** (from 
 pushes the same way — a REBUILD in production earns more depth than one in a prototype.
 
 If the task is actually unambiguous with no fork → say so and hand it straight to
-`ccharness:implement-it` (the funnel's build stage). It doesn't need a decision loop, it just
+`cc-tools:implement-it` (the funnel's build stage). It doesn't need a decision loop, it just
 needs building.
 
 ---
@@ -224,7 +224,7 @@ itself** and flows the decided, fork-free approach straight into the build.
    - the **decision_axes** — each with _your_ ruling and why, recommendation first (you decide
      them; you do not hand the human a quiz to fill in),
    - the **assumptions** it rests on (each with its `kill_signal`).
-3. Hand the decided approach to **`ccharness:implement-it`** (the funnel's build stage) by
+3. Hand the decided approach to **`cc-tools:implement-it`** (the funnel's build stage) by
    default, **without waiting** — and make the veto cheap and explicit, e.g.:
    _"Building this via implement-it unless you redirect — say so to change direction, or to stop
    at the decision."_

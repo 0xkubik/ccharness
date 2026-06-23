@@ -1,6 +1,6 @@
 ---
 name: implement-it
-description: "Use when handing a concrete, well-scoped coding task to be taken all the way to done — implemented, verified, and committed — with minimal back-and-forth. Invoked by /implement-it. Not for vague or fork-laden tasks: it refuses those — a real fork goes to ccharness:grill-it (the funnel's decision loop), pure ambiguity to superpowers:brainstorming."
+description: "Use when handing a concrete, well-scoped coding task to be taken all the way to done — implemented, verified, and committed — with minimal back-and-forth. Invoked by /implement-it. Not for vague or fork-laden tasks: it refuses those — a real fork goes to cc-tools:grill-it (the funnel's decision loop), pure ambiguity to superpowers:brainstorming."
 ---
 
 # implement-it — the strict executor
@@ -55,7 +55,7 @@ or which fork is unresolved, then route by *what* is wrong — this is the funne
 upward, not a dead end:
 
 - **A serious fork** (two materially different options, no obvious winner) → hand the task to
-  **`ccharness:grill-it`**, the funnel's decision loop. Resolving forks is grill-it's lane, not
+  **`cc-tools:grill-it`**, the funnel's decision loop. Resolving forks is grill-it's lane, not
   yours; it decides and flows the chosen approach back into build.
 - **Pure ambiguity** (you cannot write the acceptance criteria — missing facts, unclear intent,
   *no* genuine fork) → invoke **`superpowers:brainstorming`** to surface what's wanted, or just
@@ -183,7 +183,7 @@ The Stage-0 fork-test **does not expire at the gate — it stays armed through S
 learn the terrain you will hit technical choices that weren't visible at the start. For each,
 apply the same test: it is a **serious fork** only when it has **(a)** materially different
 consequences, **(b)** no obvious winner, **and (c)** is costly to reverse. All three → stop and
-hand it **up to `ccharness:grill-it`**; it's the decision loop (not the user), it rules the fork,
+hand it **up to `cc-tools:grill-it`**; it's the decision loop (not the user), it rules the fork,
 and its fork-free decision flows back into the build. Not all three → it's a **routine call:
 decide it yourself and keep moving** — a strict executor keeps momentum on anything it can later
 undo. A fork grill-it has already ruled is fork-free; never send the same one up twice.
@@ -198,7 +198,7 @@ or bug) in your working notes — `problem X: attempt N`. A genuine fix attempt 
 resolve the problem is one strike.
 
 On the **3rd failed attempt at the same problem**, stop patching and **invoke the
-`ccharness:slap` skill**, handing it that problem's context (what you're trying to do, what you
+`cc-tools:slap` skill**, handing it that problem's context (what you're trying to do, what you
 already tried, why each attempt failed). Work slap's rethink protocol — but **resolve it
 yourself**: where slap would present alternatives *to the user* or ask which way to go, *you*
 weigh the fresh approaches and pick the best one. Adopt it, continue, and **reset that problem's

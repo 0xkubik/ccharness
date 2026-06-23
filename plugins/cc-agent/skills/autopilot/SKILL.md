@@ -40,10 +40,10 @@ already exists for this session — just run the next cycle.
 
 ```
 1. READ state .claude/ccharness/autopilot/state.json + blocked.jsonl (the review queue)
-2. DIRECTION  ccharness:point-it → survey + ranked menu  (tell it: "menu as DATA, I pick — do NOT call AskUserQuestion")
+2. DIRECTION  cc-tools:point-it → survey + ranked menu  (tell it: "menu as DATA, I pick — do NOT call AskUserQuestion")
               → AUTO-PICK the top-ranked direction NOT already in blocked.jsonl  (you are the picker)
-3. DECIDE     ccharness:grill-it on that direction → one decision (already auto-flows to build)
-4. BUILD      ccharness:implement-it → build → verify → commit LOCALLY  (do NOT push)
+3. DECIDE     cc-tools:grill-it on that direction → one decision (already auto-flows to build)
+4. BUILD      cc-tools:implement-it → build → verify → commit LOCALLY  (do NOT push)
 5. RECORD     append one line to log.jsonl: {cycle, picked, outcome: committed|blocked|idle, sha?, ts}
               bump `cycle` in state.json via ATOMIC write (temp file + mv)
 6. END THE TURN.  The Stop hook re-feeds you for the next cycle.
