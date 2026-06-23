@@ -1,5 +1,5 @@
 ---
-description: "Run the ccharness funnel autonomously in a continuous loop — point-it → grill-it → implement-it, one committed improvement per cycle, re-surveying as it goes. Never stops on its own; only /autopilot-cancel stops it. Needs a North Star (run /point-it once first)."
+description: "Run the ccharness funnel autonomously in a continuous loop — point-it → grill-it → implement-it, one committed improvement per cycle, re-surveying as it goes. Never stops on its own; only /autopilot-cancel stops it. Needs a North Star (run /chart-it once first); if a roadmap exists, the loop walks it milestone by milestone."
 argument-hint: "[optional focus — a theme to scope each survey]"
 ---
 
@@ -15,4 +15,6 @@ queue and skipped, never waited on.
 
 **It cannot stop on its own.** A `Stop` hook re-feeds the loop every turn; the only way it ends is
 you running **`/autopilot-cancel`** (you can also interrupt at any time to redirect). On its first
-run it **refuses to arm without a North Star** — run `/point-it` once to set one, then `/autopilot`.
+run it **refuses to arm without a North Star** — run `/chart-it` once to set one (and chart the
+roadmap), then `/autopilot`. If a roadmap exists, each cycle's auto-pick is biased toward the current
+milestone, so the loop walks the route milestone by milestone.

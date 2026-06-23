@@ -20,11 +20,13 @@ genuinely unresolvable you **log it and move on** — you never halt to wait.
 
 When `/autopilot` invokes you to **arm**, do this before the first cycle:
 
-1. **North Star gate.** Check the repo-root `CLAUDE.md` for point-it's marker
-   (`<!-- managed by point-it`). If it is **absent**, do **not** arm — there is no destination to
-   loop toward, and point-it's first-run interview does not belong inside a never-stop loop. Tell
-   the user _"No North Star yet — run `/point-it` once to set it, then `/autopilot`."_ and stop.
-   No state file is written, so the `Stop` hook lets this turn end normally.
+1. **North Star gate.** Look for a `## Product North Star` heading in the repo-root `CLAUDE.md` (the
+   heading is the stable contract — its marker comment / parenthetical owner may read `point-it` or
+   `chart-it`, both count). If it is **absent**, do **not** arm — there is no destination to loop
+   toward, and goal-setting (chart-it's interview) does not belong inside a never-stop loop. Tell
+   the user _"No North Star yet — run `/chart-it` once to set it (and chart the roadmap), then
+   `/autopilot`."_ and stop. No state file is written, so the `Stop` hook lets this turn end
+   normally.
 2. **Write state atomically** (temp file + `mv`). Create `.claude/ccharness/autopilot/` and write
    `state.json` for the **current** session — get the id from `$CLAUDE_CODE_SESSION_ID`:
    `{ active:true, session_id:<that>, cycle:0, started_at:<UTC now>, last_surveyed_sha:"",
@@ -46,6 +48,13 @@ already exists for this session — just run the next cycle.
               bump `cycle` in state.json via ATOMIC write (temp file + mv)
 6. END THE TURN.  The Stop hook re-feeds you for the next cycle.
 ```
+
+**Walking the roadmap (if one exists).** You don't traverse the roadmap by hand — the bias does it.
+point-it (step 2) reads `.claude/ccharness/roadmap.md` and ranks moves that advance the **current
+milestone** to the top, so your auto-pick naturally walks the route milestone by milestone. Because
+there's no human to confirm mid-loop, point-it **auto-marks** the current milestone `[x]` the moment
+its `done when:` is met — current advances to the next, the loop keeps going. No separate traversal
+logic; with no roadmap, the loop runs exactly as before (toward the North Star directly).
 
 ## The three handbacks → skip-and-log (the discipline)
 

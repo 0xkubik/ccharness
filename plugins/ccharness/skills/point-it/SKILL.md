@@ -1,32 +1,37 @@
 ---
 name: point-it
-description: "Use when you want product *direction* rather than one answer — to look at a product and surface where it could go next as a ranked menu of moves (new features, finishing half-built work, rebuilding rough parts, paying down tech debt). Invoked by /point-it, with or without a prompt. First run in a repo captures the product's North Star into CLAUDE.md; later runs let you check off (via a built-in choice prompt) which directions to pursue and hand that list to grill-it. It explores and ranks; it never decides *how* — that is grill-it. Not for deciding a known fork (grill-it) or building a task (implement-it)."
+description: "Use when you want product *direction* rather than one answer — to look at a product and surface where it could go next as a ranked menu of moves (new features, finishing half-built work, rebuilding rough parts, paying down tech debt). Invoked by /point-it, with or without a prompt. Requires the product's North Star (set once via /chart-it) — if it's missing, point-it routes you to /chart-it. With it present, point-it reads the North Star (and the roadmap, if one exists, biasing toward the current milestone) and lets you check off (via a built-in choice prompt) which directions to pursue and hand that list to grill-it. It explores and ranks; it never decides *how* — that is grill-it. Not for deciding a known fork (grill-it) or building a task (implement-it)."
 ---
 
 # point-it — the direction loop
 
 You are running **point-it**: look at a product and produce a **ranked menu of directions** it
 could take next. **You do the exploring; the human picks; you never decide.** point-it is the
-mouth of the funnel — it generates the agenda the other tools act on:
+mouth of the funnel — it generates the agenda the other tools act on. **chart-it grounds it first**
+(the North Star + roadmap); point-it then reads that grounding and diverges:
 
 ```
-point-it  ──►  grill-it  ──►  implement-it
-DIVERGE        DECIDE         BUILD
-a menu of      one reasoned   one task taken
-directions     decision       to done
-(nothing       on a chosen    (committed)
- chosen)       fork
+chart-it  ─►  point-it  ──►  grill-it  ──►  implement-it
+GROUND        DIVERGE        DECIDE         BUILD
+North Star    a menu of      one reasoned   one task taken
++ roadmap     directions     decision       to done
+(the goal)    (nothing       on a chosen    (committed)
+              chosen)        fork
 ```
 
 Its whole job is to fight the **fortune-cookie failure**: ungrounded "add SSO, add analytics,
 add dark mode" lists that fit any product. point-it beats this by anchoring everything to a
-**declared destination** — the product's _North Star_, captured once in CLAUDE.md — and then
+**declared destination** — the product's _North Star_, captured once via `/chart-it` — and then
 asking only one question: _what moves us toward that goal, and how far?_
 
 **Core invariants — non-negotiable:**
 
 - **Ground before you diverge.** No North Star block in CLAUDE.md → you do NOT guess the
-  business. You run the bootstrap interview and write the block first. (Phase 0.)
+  business and you do NOT bootstrap it here. You **route the human to `/chart-it`** (the grounding
+  loop owns goal-setting) and stop. (Phase 0.)
+- **Roadmap biases, never gates.** If a roadmap exists, it boosts moves that advance the current
+  milestone — but every lane still runs and off-roadmap directions still surface. A menu that hides
+  off-roadmap moves is a bug.
 - **A menu, never a decision.** point-it ranks and hands off. It never picks the winner — that
   is grill-it. Emitting one recommended direction as "the answer" is a bug.
 - **The empty-lane valve.** A move-lens with nothing real to propose says so and stops. It
@@ -63,54 +68,22 @@ lane that has no genuine candidate reports "nothing here" rather than inventing 
 
 ---
 
-## Phase 0 — Ground (detect the North Star, or capture it)
+## Phase 0 — Ground (the gate: North Star, then roadmap)
 
-Look for the North Star block in the repo's root `CLAUDE.md` — detect it by its marker
-comment (`<!-- managed by point-it`). Then branch:
+**North Star detection.** Look for a `## Product North Star` heading in the repo-root `CLAUDE.md`.
+The **heading** is the stable contract — its marker comment / parenthetical owner may read `point-it`
+or `chart-it`, both count.
 
-| State                                                                                 | Path                                                                                                                                               |
-| ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **No block** (first run)                                                              | **Bootstrap** — run the interview below, write the block, and **stop.** The destination is now fixed; the next `/point-it` run does the real work. |
-| **Block exists**                                                                      | **Read it = the goal.** A prompt (if given) scopes the run to a theme/area; no prompt = full survey. Then proceed to Phase 1.                      |
-| **Block exists but stale** (old `captured:` date, or the human says "the goal moved") | Offer `--reground` → re-run the bootstrap interview, overwrite the block, continue.                                                                |
+| State | Path |
+| --- | --- |
+| **Absent** | **Not grounded — route to `/chart-it` and stop.** point-it does **not** bootstrap the North Star anymore; goal-setting moved to chart-it (the grounding loop). Say: *"No North Star yet — this product has no captured goal, and ccharness builds from the goal outward. Run `/chart-it` to set it (it captures the North Star, then offers to chart the roadmap), then re-issue this command. Your prompt isn't discarded — re-issue it after `/chart-it`."* If a theme/prompt was given, tell the human it did not run and to re-issue `/point-it <their theme>` after — **never silently discard the prompt.** |
+| **Present** | **Read it = the goal.** A prompt (if given) scopes the run to a theme/area; no prompt = full survey. Then read the roadmap (below) and proceed to Phase 1. |
 
-**First run _with_ a prompt** (a theme was given but no block exists yet): you can't aim without
-a destination, so capture the North Star first — then tell the human their prompt did not run
-and to re-issue `/point-it <their theme>` now that the goal exists. **Never silently discard the
-prompt.**
-
-### Bootstrap sub-protocol (first run only)
-
-Borrow the _technique_ of `superpowers:brainstorming` — one question at a time, plain
-language — but the terminal is **a CLAUDE.md block, not an implementation plan.** Do NOT hand
-off to `writing-plans`. Ask for exactly these three, one at a time:
-
-1. **Vision** — a few sentences: what does the finished product look like at the end?
-2. **Core problem** — what is the main problem this product solves?
-3. **Level** — `1` no production · `2` production exists / is coming · `3` already in production.
-
-Then **write the block yourself**, appending it to the project-root `CLAUDE.md` and preserving
-everything already there:
-
-```markdown
-## Product North Star (ccharness:point-it)
-
-<!-- managed by point-it · edit freely, point-it re-reads this · captured: <YYYY-MM-DD> -->
-
-- **Vision:** <a few sentences — how the finished product looks at the end>
-- **Core problem:** <the main problem the product solves>
-- **Level:** <1 — no production · 2 — production exists/coming · 3 — already in production>
-```
-
-**Own this write.** point-it's Phase-0 detection keys on this exact marker comment, so point-it
-must produce it — a generic helper won't reliably reproduce it. The `claude-md-management` tools
-are the wrong shape for this: `/revise-claude-md` is for session-learnings one-liners, and
-`claude-md-improver` audits/scores existing files — neither inserts a verbatim block. Reach for
-`claude-md-improver` _afterward_ only if you also want the rest of `CLAUDE.md` tidied; it is not
-the path that writes the North Star.
-
-Confirm the written block back to the human in one line, then **stop** — bootstrap does not
-continue into a survey on the same run.
+**Read the roadmap (if any).** Look for `.claude/ccharness/roadmap.md`. If present, read it and derive
+the **current milestone** = the first unchecked `[ ]` box (current-tracking is checkboxes only — no
+separate pointer). This biases Phase 2 and Phase 3. If absent, point-it runs exactly as before
+(unbiased) — you may emit a one-line nudge *("no roadmap yet — `/chart-it` charts the route far
+ahead")*, then proceed.
 
 ---
 
@@ -122,13 +95,25 @@ three paragraphs, not an audit. This is the **"now"**; the North Star is the **"
 distance between them is the working field every lens explores. Hand this picture to all four
 lenses so none re-reads the whole repo from scratch.
 
+**Milestone check (only if a roadmap exists).** Compare the survey against the **current
+milestone's `done when:`**. If it now appears met:
+- *Interactive run:* offer to check the milestone off (`[ ]` → `[x]` in `roadmap.md`), advancing
+  current to the next unchecked milestone.
+- *Autopilot run:* **auto-mark it `[x]`** (no human mid-loop to confirm; current must advance for the
+  loop to keep walking the route). See autopilot's contract.
+
 ---
 
 ## Phase 2 — Fan-out (four move-lenses, parallel)
 
 Dispatch four subagents in parallel, one per move. Give each: the **North Star block**, the
-**Phase-1 survey**, and its **move mandate**. Each lens may read deeper _in its own lane_ but
-stays in that lane — ADD does not propose refactors, REFACTOR does not propose features.
+**Phase-1 survey**, its **move mandate**, and — **if a roadmap exists** — the **current (+ next)
+milestone** as *orienting context*. The milestone is a **steer, not a gate**: each lens still scans
+its whole lane freely, still honours the empty-lane valve, and may still surface off-roadmap
+candidates — it just also actively looks for material that advances the current milestone. (Ranking
+in Phase 3 can only reorder what the lenses produce, so the roadmap must reach them here, not only at
+ranking.) Each lens may read deeper _in its own lane_ but stays in that lane — ADD does not propose
+refactors, REFACTOR does not propose features.
 
 **Lens mandates:**
 
@@ -153,6 +138,7 @@ candidates:    [ {
   goal_fit:      high | med | low      # against Vision + Core problem
   effort:        S | M | L
   reversibility: easy | hard           # weighs more as Level rises
+  advances:      <milestone id (e.g. M2) | "off-roadmap">   # only when a roadmap exists
 } ]
 empty_reason:  <if candidates == [] : why this lane has nothing real here>
 ```
@@ -174,18 +160,24 @@ One pass in the main thread. Collect all candidates, then:
 | **2 — production coming** | FINISH + REFACTOR rise (must be release-ready)                          | more careful                             | reversibility starts to count            |
 | **3 — in production**     | REBUILD is expensive (live users); favour FINISH/REFACTOR + careful ADD | incremental only                         | reversibility is the dominant multiplier |
 
-3. **Rank** into a single ordered menu. Drop nothing silently — if a strong-looking candidate
-   ranks low _because of Level_, keep it and say why.
+3. **Roadmap-fit** (only if a roadmap exists). Apply a final adjustment from each candidate's
+   `advances`: advances the **current** milestone → **boost**; the **next** milestone → light boost;
+   **off-roadmap → no boost, but never dropped.** This is *bias, not a gate* — a strong off-roadmap
+   candidate that ranks high on its own merits still ranks high and still appears. Hiding off-roadmap
+   moves is a bug.
+4. **Rank** into a single ordered menu. Drop nothing silently — if a strong-looking candidate
+   ranks low _because of Level or roadmap-fit_, keep it and say why.
 
 **Menu entry contract:**
 
 ```
-rank:     <n>
-move:     ADD | FINISH | REBUILD | REFACTOR
-title:    <direction>
-what:     <1–2 sentences>
-why_now:  <gap it closes toward the North Star>
-score:    goal_fit / effort / reversibility  (and the Level adjustment if it moved the rank)
+rank:      <n>
+move:      ADD | FINISH | REBUILD | REFACTOR
+title:     <direction>
+what:      <1–2 sentences>
+why_now:   <gap it closes toward the North Star>
+milestone: <M2 | off-roadmap>          # only when a roadmap exists — tags the menu line
+score:     goal_fit / effort / reversibility  (+ Level and roadmap-fit adjustments if they moved the rank)
 ```
 
 ---
@@ -209,7 +201,7 @@ direction, top first, tagged with its move), then collect picks with the built-i
   `multiSelect: true`, `header` = the move (`Add` / `Finish` / `Rebuild` / `Refactor`).
 - **Options = that lens's top candidates.** Phase 3 already ranked them; take the top ≤4 (the tool
   caps options at 4). The tool appends its own free-text "Other", so the human can still write one
-  in.и
+  in.
 
 The options checked across all lenses form a **list** of directions, each carrying its move tag and
 Phase-3 rank. Hand the **whole list** to `ccharness:grill-it` — **not one at a time**: grill-it
@@ -224,11 +216,14 @@ point-it's.
 
 ## Quick reference
 
-`0` Ground — North Star block? no → bootstrap interview → write to CLAUDE.md → **stop**; yes →
-read = goal · `1` Survey — repo = where we are now · `2` Fan-out — four lenses (ADD / FINISH /
-REBUILD / REFACTOR), parallel, empty-lane valve · `3` Rank — dedupe + score × Level → menu ·
-`4` Boundary — interactive: `AskUserQuestion` multiSelect per lens → checked **list** → grill-it;
-under autopilot: emit menu as data, **no `AskUserQuestion`**, caller auto-picks.
+`0` Ground — `## Product North Star` heading? no → **route to `/chart-it`**, stop (point-it does not
+bootstrap it); yes → read = goal, then read `.claude/ccharness/roadmap.md` (current = first `[ ]`) ·
+`1` Survey — repo = where we are now; if roadmap, check current milestone's `done when` (interactive:
+offer to check off · autopilot: auto-mark) · `2` Fan-out — four lenses (ADD / FINISH / REBUILD /
+REFACTOR), parallel, empty-lane valve, **fed the current milestone as a steer (not a gate)** · `3`
+Rank — dedupe + score × Level + **roadmap-fit** → menu (off-roadmap never dropped) · `4` Boundary —
+interactive: `AskUserQuestion` multiSelect per lens → checked **list** → grill-it; under autopilot:
+emit menu as data, **no `AskUserQuestion`**, caller auto-picks.
 
 **Invariant:** point-it diverges and ranks; it never decides _how_. A menu that pre-decides the
 approach is a bug — that's grill-it. The human marks _what_; never block a live autopilot loop.

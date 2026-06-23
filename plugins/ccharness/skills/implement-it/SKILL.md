@@ -19,6 +19,19 @@ stage. Do not declare done while the Stage-1 checklist has open items.
 
 ---
 
+## Grounding precondition (the gate — before Stage 0)
+
+ccharness builds from the product's goal outward, so before the clarity gate, confirm the product is
+grounded: look for a `## Product North Star` heading in the repo-root `CLAUDE.md` (the heading is the
+stable contract — its marker comment / parenthetical owner may read `point-it` or `chart-it`, both
+count). **Absent → STOP and route to `/chart-it`:** _"No North Star yet — this product has no captured
+goal, and ccharness builds from the goal outward. Run `/chart-it` to set it (it captures the North
+Star, then offers to chart the roadmap), then re-issue this command. Your prompt isn't discarded —
+re-issue it after `/chart-it`."_ Arriving from grill-it or under autopilot, the North Star already
+exists — the gate just passes.
+
+---
+
 ## Stage 0 — Clarity gate (refuse if unclear)
 
 **Arrived here from grill-it?** Then the fork is already resolved — grill-it's decision *is* the
@@ -199,9 +212,10 @@ and deciding the next move yourself. Keep driving until the work is done and ver
 
 ## Quick reference
 
-`0` Gate — fork → grill-it, vague → brainstorming · `1` Scope — checklist + size · `2` Tools — route &
-announce · `3` Build — goal-loop to done · `4` Verify — evidence, debug to green · `5`
-Review+simplify — only if non-trivial · `6` Commit — local only, then offer push.
+Grounding — no `## Product North Star` → **route to `/chart-it`**, stop · `0` Gate — fork → grill-it,
+vague → brainstorming · `1` Scope — checklist + size · `2` Tools — route & announce · `3` Build —
+goal-loop to done · `4` Verify — evidence, debug to green · `5` Review+simplify — only if
+non-trivial · `6` Commit — local only, then offer push.
 
 Mid-build, a serious fork (material · no clear winner · costly to reverse) → **grill-it**; routine/reversible calls you make yourself.
 Strike 3 on one problem → **slap**, then pick the fresh approach yourself. Implementation never hands back to the human — re-decide as needed.

@@ -1,14 +1,14 @@
 # ccharness
 
-A **product harness** for Claude Code: a `diverge → decide → build` funnel that takes a product
-from "where could this go?" all the way to committed code — and refuses to skip the thinking.
+A **product harness** for Claude Code: a `ground → diverge → decide → build` funnel that takes a
+product from "what's the goal?" all the way to committed code — and refuses to skip the thinking.
 
 ```
-/point-it  ──►  /grill-it  ──►  /implement-it        (/slap = reset when stuck)
- DIVERGE         DECIDE           BUILD
- rank where      think one        take one task to
- it could go     fork through     done: built,
- next (a menu)   to ONE answer    verified, committed
+/chart-it  ──►  /point-it  ──►  /grill-it  ──►  /implement-it     (/slap = reset when stuck)
+ GROUND          DIVERGE         DECIDE          BUILD
+ set the goal    rank where      think one       take one task to
+ (North Star)    it could go     fork through    done: built,
+ + the roadmap   next (a menu)   to ONE answer   verified, committed
 ```
 
 Everything here is plain Markdown + JSON (instructions for Claude Code — no app code, no build).
@@ -25,37 +25,50 @@ Then equip it with the plugins it orchestrates (see [What it orchestrates](#what
 This shows a plan of what's missing, asks you to confirm, then installs the gaps from the
 official marketplace. Idempotent — re-run it any time (e.g. on a new machine).
 
+Then **ground your product once** — every other command depends on it:
+```
+/chart-it
+```
+This captures the product's *North Star* (the goal) into `CLAUDE.md` and then offers to chart the
+*roadmap* (the milestone route to it). Until a North Star exists, the other commands route you here.
+
 ## The commands
 
 | Command | What it does | When you reach for it |
 |---|---|---|
-| **`/point-it [theme]`** | The **direction loop.** Surveys a product and emits a **ranked menu** of where it could go next — across four moves: **add** (new features), **finish** (half-built work), **rebuild** (redo better), **refactor** (tech debt) — each scored against the product's goal. On its **first run** it captures the product's *North Star* into `CLAUDE.md`; later runs propose paths toward it. Runs with or without a prompt. Decides nothing — you pick. | "Where should this product go next?" |
+| **`/chart-it [--reground]`** | The **grounding loop** — the front door. Captures the product's *North Star* (goal-setting: vision · core problem · level) into `CLAUDE.md`, then **offers** to chart the *roadmap* — a sequenced route of lightweight milestones (`done when …` + theme) from where the product is now to that goal, saved to `.claude/ccharness/roadmap.md`. Run once up front; re-run to revise (or `--reground` the North Star). Every other command routes here when no North Star exists. | "Set the goal and plan the project far ahead." |
+| **`/point-it [theme]`** | The **direction loop.** Surveys a product and emits a **ranked menu** of where it could go next — across four moves: **add** (new features), **finish** (half-built work), **rebuild** (redo better), **refactor** (tech debt) — each scored against the product's goal, and **biased toward the roadmap's current milestone** if one exists. Requires the *North Star* — no North Star → routes you to `/chart-it`. Runs with or without a prompt. Decides nothing — you pick. | "Where should this product go next?" |
 | **`/grill-it <decision>`** | The **decision loop.** Turns a fork-laden question into ONE reasoned decision via four opposed proposers (MVP / Final / Conventional / Contrarian) → cross-examination → synthesis. Depth scales to stakes. | "Which way — and why?" |
-| **`/implement-it <task>`** | The **strict executor.** Runs one well-scoped task through a gated `0→6` pipeline (below). Refuses fork-laden or ambiguous tasks instead of guessing — a real fork goes back to `/grill-it`, pure ambiguity to brainstorming; never declares done with work open; never commits unverified code. | "Take this concrete task to done." |
+| **`/implement-it <task>`** | The **strict executor.** Runs one well-scoped task through a gated `0→6` pipeline (below). Requires the *North Star* (routes to `/chart-it` if missing). Refuses fork-laden or ambiguous tasks instead of guessing — a real fork goes back to `/grill-it`, pure ambiguity to brainstorming; never declares done with work open; never commits unverified code. | "Take this concrete task to done." |
 | **`/slap`** | The **reset.** When a fix has gone three rounds deep in a rabbit hole, forces a step back: restate the problem, list what was tried, question assumptions, research alternatives, propose a fresh angle. | "Stop digging — rethink this." |
-| **`/autopilot [focus]`** | The **loop.** Runs the whole funnel autonomously, cycle after cycle: auto-pick the top direction → grill-it decides → implement-it builds to a local commit → re-survey → repeat. Converts the funnel's human-handbacks into **skip-and-log** (unresolvable tasks go to a review queue). **Never stops on its own** — a `Stop` hook re-feeds it. Needs a North Star (run `/point-it` once first). | "Just keep improving this — I'll stop you." |
+| **`/autopilot [focus]`** | The **loop.** Runs the whole funnel autonomously, cycle after cycle: auto-pick the top direction → grill-it decides → implement-it builds to a local commit → re-survey → repeat. Converts the funnel's human-handbacks into **skip-and-log** (unresolvable tasks go to a review queue). **Never stops on its own** — a `Stop` hook re-feeds it. Needs a North Star (run `/chart-it` once first); if a roadmap exists it walks the route milestone by milestone. | "Just keep improving this — I'll stop you." |
 | **`/autopilot-cancel`** | The **brake.** The one manual stop for the loop — clears the autopilot state so the `Stop` hook lets the session end, and reports the cycle count and the blocked review queue. | "Stop the autopilot." |
 | **`/ccharness-init`** | **Setup.** Installs the plugins the harness orchestrates (see below) from the official marketplace — detects what's missing, shows a plan, confirms, installs only the gaps (user scope). Idempotent. | "Set this up on a new machine." |
 
 ## The funnel
 
-The three loops chain. Each hands its output to the next, and each owns a different kind of
-thinking:
+`/chart-it` grounds the funnel; the three loops then chain, each handing its output to the next,
+each owning a different kind of thinking:
 
-- **`/point-it`** *diverges* — it generates the agenda. Its menu has **nothing selected**;
-  picking is not its job. On a first run in a repo it has no destination, so it interviews you
-  for the product's **North Star** (vision · core problem · level `1/2/3`) and writes it to
-  `CLAUDE.md`. Every later run reads that North Star and ranks moves *toward it* — which is what
-  keeps the menu from degenerating into generic feature-list filler.
+- **`/chart-it`** *grounds* — the front door. It interviews you for the product's **North Star**
+  (vision · core problem · level `1/2/3`) and writes it to `CLAUDE.md`, then offers to chart the
+  **roadmap** — a sequenced route of lightweight milestones to that goal
+  (`.claude/ccharness/roadmap.md`). Every other command depends on the North Star; without it, they
+  route you here.
+- **`/point-it`** *diverges* — it generates the agenda. Its menu has **nothing selected**; picking
+  is not its job. It reads the North Star and ranks moves *toward it* — **biased toward the roadmap's
+  current milestone** if one exists — which keeps the menu from degenerating into generic
+  feature-list filler.
 - **`/grill-it`** *converges* — you hand it one picked direction (or any fork) and it reasons it
   down to a single decision, then flows that decision straight into `/implement-it`. You can
   redirect, but you don't have to re-approve.
 - **`/implement-it`** *builds* — it takes the decided, well-scoped task (handed down by grill-it,
   or given directly) and drives it to a verified local commit.
 
-You act at just a few boundaries: confirm the **North Star** (first run only), **pick a
-direction** (the one required choice), and **trigger the push** at the end. Everything between
-flows on its own — you can redirect at any boundary, but you're never forced to.
+You act at just a few boundaries: set the **North Star** (once, via `/chart-it`) and shape the
+**roadmap**, **pick a direction** (the one required choice each cycle), and **trigger the push** at
+the end. Everything between flows on its own — you can redirect at any boundary, but you're never
+forced to.
 
 ## Autopilot — the funnel on a loop
 
@@ -69,7 +82,10 @@ idles cheaply instead of spinning the full survey.
 
 **It cannot stop on its own.** A `Stop` hook re-feeds the loop on every turn, so the model can't
 exit by deciding it's "done" — the only brake is **`/autopilot-cancel`** (you can also interrupt to
-redirect at any time). It refuses to arm without a North Star, so run `/point-it` once first.
+redirect at any time). It refuses to arm without a North Star, so run `/chart-it` once first. If a
+roadmap exists, point-it biases each cycle's auto-pick toward the current milestone and auto-marks a
+milestone complete once its `done when:` holds — so the loop **walks the route milestone by
+milestone** with no extra bookkeeping.
 
 Loop state lives under `.claude/ccharness/autopilot/` (gitignored): `state.json` (the live loop),
 `blocked.jsonl` (the review queue — what got skipped and why), and `log.jsonl` (one line per
@@ -110,8 +126,9 @@ table mirrors these nine plugins. Add or drop a dependency here, and update the 
 `commands/ccharness-init.md` to match.
 
 ## Layout
-- `commands/point-it.md` · `commands/grill-it.md` · `commands/implement-it.md` — the entry points.
-- `skills/point-it/SKILL.md` — the direction loop (diverge → ranked menu; North Star capture).
+- `commands/chart-it.md` · `commands/point-it.md` · `commands/grill-it.md` · `commands/implement-it.md` — the entry points.
+- `skills/chart-it/SKILL.md` — the grounding loop (goal-setting → North Star capture, then the sequenced roadmap). The front door every other skill routes to when ungrounded.
+- `skills/point-it/SKILL.md` — the direction loop (diverge → ranked menu, biased toward the roadmap's current milestone).
 - `skills/grill-it/SKILL.md` — the decision loop (four proposers → synthesis).
 - `skills/implement-it/SKILL.md` — the gated `0→6` executor (the brains).
 - `skills/slap/SKILL.md` — the reset protocol, invoked by implement-it at three strikes (and by you via `/slap`).

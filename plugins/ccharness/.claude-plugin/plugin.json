@@ -1,7 +1,7 @@
 {
   "name": "ccharness",
-  "version": "0.7.0",
-  "description": "ccharness — a product harness for Claude Code, a diverge → decide → build funnel. /point-it surveys a product and ranks where it could go next (and captures the product's North Star on first run); /grill-it thinks a fork-laden decision through to ONE reasoned answer; /implement-it takes one well-scoped task from understood → built → verified → committed through a gated 0→6 pipeline; /slap forces a fresh approach when a fix is stuck in a rabbit hole; /autopilot runs the whole funnel in a continuous loop that never stops on its own — only /autopilot-cancel stops it.",
+  "version": "0.8.0",
+  "description": "ccharness — a product harness for Claude Code, a ground → diverge → decide → build funnel. /chart-it is the grounding front door: it captures the product's North Star (goal-setting) into CLAUDE.md, then charts a sequenced roadmap of lightweight milestones — every other product skill routes here when no North Star exists. /point-it surveys a product and ranks where it could go next (biased toward the roadmap's current milestone, if any); /grill-it thinks a fork-laden decision through to ONE reasoned answer; /implement-it takes one well-scoped task from understood → built → verified → committed through a gated 0→6 pipeline; /slap forces a fresh approach when a fix is stuck in a rabbit hole; /autopilot runs the whole funnel in a continuous loop that never stops on its own — only /autopilot-cancel stops it.",
   "author": {
     "name": "kubik",
     "email": "dev@noxlabs.xyz"
