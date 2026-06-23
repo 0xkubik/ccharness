@@ -1,4 +1,5 @@
 import json
+from datetime import datetime, timezone
 from . import watchdog, autopilot as ap
 
 def _humanize_age(last, now):
@@ -27,7 +28,7 @@ def build_rows(entries, now, *, summarizer, config):
         cwd = native.get("cwd") or meta.get("repo")
         summary = summarizer(sid)
         is_ap = ap.is_autopilot(cwd)
-        v = watchdog.verdict(summary, e, config, now)
+        v = watchdog.verdict(summary, {**e, "is_autopilot": is_ap}, config, now)
         rows.append({
             "id": (sid or "")[:8],
             "sessionId": sid,
@@ -40,6 +41,7 @@ def build_rows(entries, now, *, summarizer, config):
             "cwd": cwd,
             "name": meta.get("task") or native.get("name") or "",
             "autopilot": is_ap,
+            "cycles": ap.cycle_count(cwd) if is_ap else None,
         })
     return rows
 
@@ -48,9 +50,8 @@ def render_json(rows):
         return o.isoformat() if hasattr(o, "isoformat") else str(o)
     return json.dumps(rows, default=default, indent=2)
 
-def render_table(rows):
-    from datetime import datetime, timezone
-    now = datetime.now(timezone.utc)
+def render_table(rows, now=None):
+    now = now or datetime.now(timezone.utc)
     header = f"{'ID':8} {'KIND':10} {'STATUS':7} {'TOKENS':>7} {'LAST':>5}  {'VERDICT':10} NAME"
     lines = [header]
     for r in rows:

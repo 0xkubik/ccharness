@@ -20,13 +20,20 @@ def verdict(summary, entry, config, now):
     if loop:
         return {"status": "looping", "reason": loop}
     budget = config.get("token_budget") or 0
-    if budget and summary.get("total_tokens", 0) > budget:
+    if budget > 0 and summary.get("total_tokens", 0) > budget:
         return {"status": "over-budget", "reason": f"{summary['total_tokens']} tokens > {budget}"}
     la = summary.get("last_activity")
     if la is not None:
         idle_min = (now - la).total_seconds() / 60.0
-        limit = config["tool_stall_min"] if summary.get("pending_tool") else config["stall_min"]
+        if entry.get("is_autopilot"):
+            limit = config["autopilot_stall_min"]
+            kind = "no new cycle"
+        elif summary.get("pending_tool"):
+            limit = config["tool_stall_min"]
+            kind = "on a tool"
+        else:
+            limit = config["stall_min"]
+            kind = "idle"
         if idle_min > limit:
-            kind = "on a tool" if summary.get("pending_tool") else "idle"
             return {"status": "stalled", "reason": f"no activity {idle_min:.0f}m ({kind}, limit {limit}m)"}
     return {"status": "ok", "reason": ""}

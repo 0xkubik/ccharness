@@ -9,7 +9,7 @@ def _ls(args):
     summarizer = lambda sid: transcript.parse_transcript(paths.transcript_path(sid)) if sid else transcript.parse_transcript(None)
     rows = render.build_rows(entries, now, summarizer=summarizer, config=cfg)
     rows.sort(key=lambda r: (r["verdict"] == "ok", r["id"]))  # problems first
-    print(render.render_json(rows) if args.json else render.render_table(rows))
+    print(render.render_json(rows) if args.json else render.render_table(rows, now))
     return 0
 
 def _start(args):
@@ -23,12 +23,12 @@ def _logs(args):
     from . import paths, registry
     meta = registry.load_meta_records().get(args.id)
     sid = meta.get("sessionId") if meta else args.id
-    tp = paths.transcript_path(sid)
+    tp = paths.find_transcript(sid)
     if not tp:
         print(f"no transcript found for {args.id}", file=sys.stderr)
         return 1
     lines = tp.read_text().splitlines()
-    for line in lines[-args.tail:]:
+    for line in lines[-args.tail:] if args.tail > 0 else []:
         print(line)
     return 0
 

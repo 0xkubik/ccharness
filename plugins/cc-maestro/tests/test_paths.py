@@ -29,5 +29,17 @@ class TestPaths(unittest.TestCase):
         self.p.atomic_write(target, "hello")
         self.assertEqual(target.read_text(), "hello")
 
+    def test_find_transcript_by_prefix(self):
+        proj = Path(self.claude) / "projects" / "-X"
+        proj.mkdir(parents=True)
+        full_uuid = "abcdef12-0000-0000-0000-000000000000"
+        (proj / f"{full_uuid}.jsonl").write_text("{}")
+        found = self.p.find_transcript("abcdef12")
+        self.assertIsNotNone(found)
+        self.assertEqual(found.name, f"{full_uuid}.jsonl")
+
+    def test_find_transcript_missing_returns_none(self):
+        self.assertIsNone(self.p.find_transcript("nope"))
+
 if __name__ == "__main__":
     unittest.main()
