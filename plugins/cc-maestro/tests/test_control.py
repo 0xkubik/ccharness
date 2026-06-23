@@ -52,5 +52,28 @@ class TestControl(unittest.TestCase):
         def boom(p, s): raise ProcessLookupError()
         self.assertFalse(self.control.send_signal(5, signal.SIGTERM, sender=boom))
 
+    def test_stop_autopilot_removes_state(self):
+        repo = tempfile.mkdtemp()
+        ap_dir = Path(repo) / ".claude" / "ccharness" / "autopilot"; ap_dir.mkdir(parents=True)
+        state = ap_dir / "state.json"; state.write_text(json.dumps({"active": True}))
+        info = {"is_autopilot": True, "cwd": repo, "pid": 123}
+        sent = []
+        result, _ = self.control.stop_agent(info, sender=lambda p, s: sent.append((p, s)))
+        self.assertEqual(result, "autopilot-cancelled")
+        self.assertFalse(state.exists())     # state removed
+        self.assertEqual(sent, [])           # process NOT signalled
+
+    def test_stop_normal_signals_group(self):
+        import signal as sig
+        sent = []
+        info = {"is_autopilot": False, "cwd": "/x", "pid": 555}
+        result, _ = self.control.stop_agent(info, sender=lambda p, s: sent.append((p, s)))
+        self.assertEqual(result, "stopped")
+        self.assertEqual(sent, [(555, sig.SIGTERM)])
+
+    def test_stop_no_pid(self):
+        result, _ = self.control.stop_agent({"is_autopilot": False, "pid": None}, sender=lambda p, s: None)
+        self.assertEqual(result, "no-pid")
+
 if __name__ == "__main__":
     unittest.main()

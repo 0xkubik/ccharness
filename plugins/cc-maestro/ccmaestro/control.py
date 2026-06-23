@@ -1,4 +1,5 @@
-import os
+import os, signal
+from pathlib import Path
 from . import registry, autopilot as ap
 
 def resolve(ident, *, native_runner=None):
@@ -27,3 +28,20 @@ def send_signal(pid, sig, sender=os.killpg):
         return True
     except (ProcessLookupError, PermissionError, OSError, ValueError):
         return False
+
+def stop_agent(info, *, sender=os.killpg):
+    if info.get("is_autopilot"):
+        f = Path(info["cwd"]) / ".claude" / "ccharness" / "autopilot" / "state.json"
+        try:
+            f.unlink()
+        except FileNotFoundError:
+            return ("autopilot-cancelled", "state already gone")
+        except OSError as e:
+            return ("not-found", str(e))
+        return ("autopilot-cancelled", str(f))
+    pid = info.get("pid")
+    if not pid:
+        return ("no-pid", "no recorded pid")
+    if send_signal(pid, signal.SIGTERM, sender=sender):
+        return ("stopped", str(pid))
+    return ("not-found", "signal failed (process gone?)")

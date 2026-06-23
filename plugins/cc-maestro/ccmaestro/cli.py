@@ -1,6 +1,6 @@
 import argparse, sys
 from datetime import datetime, timezone
-from . import config, registry, transcript, paths, render
+from . import config, registry, transcript, paths, render, control
 
 def _ls(args):
     cfg = config.load_config()
@@ -32,6 +32,14 @@ def _logs(args):
         print(line)
     return 0
 
+def _stop(args):
+    info = control.resolve(args.id)
+    if not info:
+        print(f"no agent matching {args.id}", file=sys.stderr); return 1
+    result, detail = control.stop_agent(info)
+    print(f"{args.id}: {result}" + (f" ({detail})" if detail else ""))
+    return 0 if result in ("stopped", "autopilot-cancelled") else 1
+
 def build_parser():
     p = argparse.ArgumentParser(prog="ccmaestro", description="Watch and control Claude Code agents.")
     sub = p.add_subparsers(dest="cmd")
@@ -48,6 +56,9 @@ def build_parser():
     lg.add_argument("id")
     lg.add_argument("--tail", type=int, default=40)
     lg.set_defaults(func=_logs)
+    sp = sub.add_parser("stop", help="stop an agent (autopilot -> graceful cancel)")
+    sp.add_argument("id")
+    sp.set_defaults(func=_stop)
     return p
 
 def main(argv=None):
