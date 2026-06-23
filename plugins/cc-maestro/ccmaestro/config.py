@@ -11,6 +11,7 @@ DEFAULTS = {
     "token_budget": 0,         # gross tokens over this -> over-budget (0 = disabled)
     "autopilot_stall_min": 30, # autopilot: no new cycle in this many minutes -> stalled
     "report_endpoint": "",     # optional webhook URL (used in Phase 3)
+    "max_concurrent": 0,       # max agents start will launch concurrently (0 = unlimited)
 }
 
 def load_config():

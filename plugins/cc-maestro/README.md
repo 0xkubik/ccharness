@@ -15,6 +15,21 @@ plugins/cc-maestro/bin/ccmaestro logs <id> --tail 50
 Symlink `bin/ccmaestro` onto your PATH to type `ccmaestro` directly. Inside a Claude
 Code session, `/maestro` runs the dashboard.
 
+## Control (Phase 3)
+
+```bash
+ccmaestro stop <id>              # SIGTERM the agent's group; an autopilot is cancelled gracefully
+ccmaestro steer <id> "do X now"  # stop, then resume the session with a new instruction
+ccmaestro pause <id> / resume <id>
+ccmaestro check --notify         # detect stalled/looping/died/crashed; POST changes to report_endpoint
+```
+
+Set `report_endpoint` in `~/.ccmaestro/config.json` to a webhook URL so an external
+agent (hermes) is notified — either by `check --notify` (poll) or by the bundled
+Stop/Notification hook (push). `max_concurrent` (default 0 = unlimited) caps how many
+agents `start` will launch. A finished one-shot now shows `done` (clean) or `crashed`
+(non-zero exit) instead of `died`.
+
 ## How it works
 
 - The agent list comes from the native `claude agents --json --all`.

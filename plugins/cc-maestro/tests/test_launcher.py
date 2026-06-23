@@ -51,5 +51,22 @@ class TestLauncher(unittest.TestCase):
         self.assertIn("acceptEdits", argv)
         self.assertNotIn("--session-id", argv)  # resume reuses the existing session
 
+class TestFleetCap(unittest.TestCase):
+    def test_active_count_counts_native(self):
+        from ccmaestro import launcher
+        run = lambda: '[{"sessionId":"a"},{"sessionId":"b"}]'
+        self.assertEqual(launcher.active_count(runner=run), 2)
+
+    def test_start_raises_when_fleet_full(self):
+        import os, tempfile, importlib
+        os.environ["CCMAESTRO_HOME"] = tempfile.mkdtemp()
+        (Path:=__import__("pathlib").Path)(os.environ["CCMAESTRO_HOME"]).mkdir(exist_ok=True)
+        import ccmaestro.config as c; importlib.reload(c)
+        (Path(os.environ["CCMAESTRO_HOME"]) / "config.json").write_text('{"max_concurrent": 1}')
+        from ccmaestro import launcher; importlib.reload(launcher)
+        run = lambda: '[{"sessionId":"a"},{"sessionId":"b"}]'  # 2 active >= cap 1
+        with self.assertRaises(launcher.FleetFull):
+            launcher.start("x", native_runner=run)
+
 if __name__ == "__main__":
     unittest.main()

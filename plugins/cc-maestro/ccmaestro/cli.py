@@ -14,10 +14,12 @@ def _ls(args):
 
 def _start(args):
     from . import launcher
-    agent_id = launcher.start(args.task, repo=args.repo, model=args.model,
-                              budget=args.budget, name=args.name, yolo=args.yolo)
-    print(agent_id)
-    return 0
+    try:
+        agent_id = launcher.start(args.task, repo=args.repo, model=args.model,
+                                  budget=args.budget, name=args.name, yolo=args.yolo)
+    except launcher.FleetFull as e:
+        print(str(e), file=sys.stderr); return 1
+    print(agent_id); return 0
 
 def _logs(args):
     from . import paths, registry

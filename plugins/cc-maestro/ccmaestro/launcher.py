@@ -1,6 +1,12 @@
 import json, os, shlex, subprocess, uuid
 from datetime import datetime, timezone
-from . import paths, config
+from . import paths, config, registry
+
+class FleetFull(Exception):
+    pass
+
+def active_count(runner=None):
+    return len(registry.native_agents(runner=runner))
 
 # Curated safe Bash subset for unattended-but-restricted runs (acceptEdits handles file edits).
 DEFAULT_ALLOWED_TOOLS = "Read,Edit,Write,Glob,Grep,Bash(git status),Bash(git diff:*),Bash(git log:*),Bash(ls:*),Bash(cat:*)"
@@ -45,7 +51,11 @@ def spawn_resume(argv, cwd):
                             stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT, start_new_session=True)
     return proc.pid
 
-def start(task, *, repo=None, model=None, budget=None, name=None, yolo=False):
+def start(task, *, repo=None, model=None, budget=None, name=None, yolo=False, native_runner=None):
+    cfg = config.load_config()
+    cap = cfg.get("max_concurrent") or 0
+    if cap > 0 and active_count(runner=native_runner) >= cap:
+        raise FleetFull(f"fleet at capacity ({cap}); stop an agent before launching another")
     paths.ensure_state_dir()
     session_id = str(uuid.uuid4())
     agent_id = session_id[:8]
