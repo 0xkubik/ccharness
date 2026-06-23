@@ -2,47 +2,51 @@
 
 **Date:** 2026-06-23
 **Status:** approved (brainstorming) → ready for implementation plan
-**Plugin:** ccharness (v0.7.0 → adds an 8th command)
+**Plugin:** ccharness (v0.7.0 → adds an 8th command + moves North Star ownership)
 
 ## Problem
 
-The harness has a **destination** and a **next step**, but no explicit **route** between them.
+Two gaps, one skill closes both.
 
-- **North Star** (a managed block in `CLAUDE.md`) — the "end": vision · core problem · level. One
-  captured point.
-- **point-it's menu** — the "next step", *recomputed from scratch every run* out of the gap between
-  "where we are now" (Survey) and the North Star.
+1. **No route between destination and next step.** The harness has a **North Star** (a managed block
+   in `CLAUDE.md` — the "end": vision · core problem · level) and **point-it's menu** (the "next
+   step", recomputed from the gap every run). Nothing persists the **sequence of milestones** in
+   between, so point-it re-guesses the trajectory each run.
+2. **Grounding is owned by the wrong skill.** Today *point-it* bootstraps the North Star as a side
+   effect of its first run. The user wants grounding to be a deliberate, up-front act: sit down
+   **once**, do the **goal-setting** (целеполагание) and then chart the **route far ahead** — and
+   make that the single front door the whole harness depends on.
 
-There is nothing in between. point-it re-guesses the trajectory from the gap on every run, and no
-persisted **sequence of milestones** exists. The user wants to sit down **once** and actively think
-the project through **far ahead** with the assistant — produce a durable route — and then have
-point-it **take that route into account** when it ranks moves.
+`/chart-it` is the **grounding loop**: it owns goal-setting → the **North Star**, then continues into
+the **roadmap** (the route). Every other product skill depends on the North Star existing and, if it
+is missing, **routes the user to `/chart-it`** instead of guessing or bootstrapping.
 
 ```
-         chart-it   ← writes/revises roadmap.md (the route: now → … → ★)
-            │
-            ▼  roadmap.md
- point-it ──► grill-it ──► implement-it
+ chart-it   (GROUND — set the goal, then chart the route)
+   │  writes North Star → CLAUDE.md   +   roadmap → .claude/ccharness/roadmap.md
+   ▼
+ point-it ──► grill-it ──► implement-it        (+ slap = tactical reset, exempt)
  DIVERGE       DECIDE        BUILD
-    ▲ reads roadmap, biases ranking toward the CURRENT milestone
+   ▲ every product skill: no North Star → routes back to chart-it
+   ▲ point-it additionally reads roadmap and biases ranking toward the CURRENT milestone
 
- North Star (CLAUDE.md) = WHERE TO · roadmap = BY WHICH ROUTE · point-it = WHICH NEXT STEP
+ North Star = WHERE TO (the goal) · roadmap = BY WHICH ROUTE · point-it = WHICH NEXT STEP
 ```
-
-`/chart-it` is **not a fourth funnel step**. It is a **second grounding artifact alongside the North
-Star** — a thing point-it *reads*, not a stage in `diverge → decide → build`.
 
 ## Decisions (locked in brainstorming)
 
 | # | Decision | Choice |
 |---|---|---|
 | 1 | How point-it consumes the roadmap | **Bias ranking** — a new scoring dimension; never a gate. Off-roadmap moves still surface, just rank lower. |
-| 2 | Milestone weight | **Lightweight** — name + `done when …` outcome + one-line theme. No frozen task list; point-it derives concrete moves fresh each run. |
+| 2 | Milestone weight | **Lightweight** — name + `done when …` outcome + one-line theme. No frozen task list. |
 | 3 | Sequence shape | **Sequential** (M1→M2→M3), so "current milestone" is unambiguous. Not parallel tracks. |
-| 4 | Storage | `.claude/ccharness/roadmap.md` — honours the existing convention that everything the plugin produces lives under `.claude/ccharness/` (alongside `autopilot/`, `decisions/`). |
-| 5 | Git tracking | **Committed.** Narrow `.gitignore` so the roadmap is versioned/shared; runtime state stays ignored. |
+| 4 | Storage | `.claude/ccharness/roadmap.md` — everything the plugin produces lives under `.claude/ccharness/` (alongside `autopilot/`, `decisions/`). |
+| 5 | Git tracking | **Committed.** Narrow `.gitignore` so the roadmap is versioned; runtime state stays ignored. |
 | 6 | Current-milestone tracking | `[x]`/`[ ]` checkboxes only; **current = first unchecked**. One source of truth — no separate pointer. |
-| 7 | Command name | `/chart-it` (chart a course by the star — in tone with the North Star metaphor). |
+| 7 | Command name | `/chart-it` (chart the course by the star). |
+| 8 | **Grounding owner** | **chart-it owns the North Star** (goal-setting). The bootstrap sub-protocol is **removed from point-it**. The North Star block (format + marker) is a **shared contract**: chart-it writes it; all other skills only *detect* it. |
+| 9 | **The hard gate** | **No North Star → route to chart-it**, applied to **all five product skills** (point-it, grill-it, implement-it, autopilot — chart-it itself creates it). The gate checks for the **North Star only**; a missing *roadmap* never gates anything. |
+| 10 | **Gate exemptions** | **slap** (tactical reset invoked mid-task — goal-independent) and **ccharness-init** (installs the plugins, runs before any grounding exists) are exempt. Gating them would be incoherent. |
 
 ## The artifact — `.claude/ccharness/roadmap.md`
 
@@ -60,105 +64,155 @@ Lightweight, sequential milestones. One source of truth for "current" — the fi
 - **`done when:`** is an *observable* outcome (a state the repo/product reaches), not a task list —
   this is what lets point-it judge whether the current milestone is complete.
 - **`theme:`** orients the Phase-2 lenses without freezing specific moves.
-- **No `[▶]` / `current:` pointer.** Current is *derived* (first `[ ]`). A second marker would desync
-  from the checkboxes.
+- **No `[▶]` / `current:` pointer.** Current is *derived* (first `[ ]`).
 
-## The new skill — `chart-it`
+## The North Star block (shared contract)
 
-Borrows the *technique* of `point-it`'s bootstrap interview / `superpowers:brainstorming` — one
-question at a time, plain language — but the terminal is **`roadmap.md`, not an implementation plan.**
-Do NOT hand off to `writing-plans`.
+Unchanged in **format**; only its **owner moves** (point-it → chart-it). Everything keys on the
+marker comment, so the block chart-it writes must be byte-compatible with what point-it used to
+write:
 
-- **Ph0 — Ground.** Requires a North Star block in `CLAUDE.md`. **Missing → stop and route to
-  `/point-it`** (you cannot plan a route without a destination; chart-it plans the route *to* the
-  star, it does **not** bootstrap the star — that is point-it's job). Present → read it; it is the
-  endpoint.
-- **Ph1 — Survey "now".** A short, factual picture of the *current* product from the repo (as
-  point-it Ph1). The route spans now → ★, so chart-it needs both ends.
+```markdown
+## Product North Star (ccharness)
+<!-- managed by chart-it · edit freely · captured: <YYYY-MM-DD> -->
+- **Vision:** <a few sentences — how the finished product looks at the end>
+- **Core problem:** <the main problem the product solves>
+- **Level:** <1 — no production · 2 — production exists/coming · 3 — already in production>
+```
+
+Detection (used by every gated skill): look for the `Product North Star` heading + the
+`managed by ... North Star`-style marker in the repo-root `CLAUDE.md`. (Keep detection tolerant of
+the old `managed by point-it` marker so existing repos aren't orphaned — see Migration.)
+
+## The new skill — `chart-it` (the grounding loop)
+
+Borrows the *technique* of `superpowers:brainstorming` / the old point-it bootstrap — one question at
+a time, plain language — but the terminal is **`CLAUDE.md` + `roadmap.md`, not an implementation
+plan.** Do NOT hand off to `writing-plans`.
+
+- **Ph0 — Goal-setting (целеполагание → North Star).** If no North Star block exists, run the
+  goal-setting dialogue (a fuller, collaborative version of the old 3-question bootstrap; the extra
+  richness lives in the conversation and feeds the roadmap, but the durable artifact is still the
+  stable 3-field block). **chart-it writes the block itself** (owns the marker write). If a block
+  already exists, read it; offer `--reground` to revise it.
+- **Ph1 — Survey "now".** A short, factual picture of the current product from the repo (as point-it
+  Ph1). The route spans now → ★, so chart-it needs both ends.
 - **Ph2 — Collaborative decomposition (the heart).** chart-it proposes a *draft* sequence of
   lightweight milestones from now → ★, then works through it with the human **one decision at a
   time**: is the sequence right? the granularity? merge / split / reorder? what is the true first
-  milestone? Iterates until the human is satisfied. This is where the project gets "thought through
-  far ahead."
-- **Ph3 — Write.** Writes `.claude/ccharness/roadmap.md` (owning the marker comment, like point-it
-  owns the North Star block), confirms back in one line, and stops.
+  milestone? Iterates until the human is satisfied.
+- **Ph3 — Write.** Writes `.claude/ccharness/roadmap.md`, confirms back in one line, stops.
 
-**Re-run = revise (living artifact).** chart-it is normally run once, but a roadmap drifts. A re-run:
-re-surveys → shows the current roadmap + progress (which `done when`s now hold) → proposes
-adjustments (check off completed, add/split/reorder, drop the obsolete) → rewrites. This is the
-analog of point-it's `--reground` for the North Star. Re-running is the supported way to keep the
-route honest as reality moves.
+**Boundary between the two artifacts.** The North Star (Ph0) is the **mandatory** core that satisfies
+the gate for every other skill. The roadmap (Ph1–Ph3) is the **optional-but-encouraged** continuation
+— a user bounced here from `/implement-it` for a one-off can capture the North Star and stop, then
+re-run their task. So after Ph0, chart-it **offers** to continue into the roadmap rather than forcing
+it.
 
-## Changes to point-it
+**Re-run = revise (living artifact).** Normally run once; a roadmap drifts. A re-run re-surveys →
+shows the roadmap + progress (which `done when`s now hold) → proposes adjustments (check off
+completed, add/split/reorder, drop the obsolete) → rewrites. Analog of point-it's `--reground` for
+the North Star.
 
-Fully backward compatible: **no `roadmap.md` → point-it behaves exactly as today.** When absent it
-may emit a one-line nudge ("no roadmap yet — `/chart-it` thinks the route through far ahead"), then
-proceed unchanged.
+## The hard gate — how each skill enforces it
 
-- **Ph0 — Ground.** Additionally read `.claude/ccharness/roadmap.md` if present. Derive the current
-  milestone (first unchecked).
-- **Ph1 — Survey.** Check whether the **current milestone's `done when:`** already holds.
-  - *Interactive:* offer to check it off (advancing current to the next milestone).
-  - *Autopilot:* **auto-mark** it complete (point-it judged the outcome met) — no human to confirm
-    mid-loop, and current must advance for the loop to walk the route. (See Autopilot below.)
-- **Ph2 — Fan-out (now roadmap-aware).** Each of the four move-lenses additionally receives the
-  **current (+ next) milestone** as *orienting context* — **not a gate.** The lenses still scan all
-  four moves freely and still honour the empty-lane valve and may surface off-roadmap candidates;
-  they now also actively look for material that advances the current milestone. *Rationale:* ranking
-  can only reorder what the lenses produce. If the lenses are blind to the roadmap, the Ph3
-  roadmap-fit boost acts on thin material and fails to steer. This is the scope-resizing fix — the
-  roadmap must reach Ph2, not just Ph3.
-- **Ph3 — Rank.** Add a scoring dimension **roadmap-fit**:
-  - advances the **current** milestone → boost,
-  - advances the **next** milestone → light boost,
-  - off-roadmap → no boost, **but not hidden** (honest divergence preserved).
-  - Menu entries tag the relevant milestone (e.g. `M2`); off-roadmap candidates are marked as such.
-- **Invariant intact.** The menu still selects nothing — the roadmap only **reorders**. A menu that
-  hides off-roadmap moves, or pre-picks a winner, is a bug.
+Every gated skill performs the same first check: **North Star block present in `CLAUDE.md`?** If not,
+**stop and route to `/chart-it`** — never bootstrap, never guess, never silently discard the user's
+prompt (tell them to re-issue after `/chart-it`).
+
+- **point-it** — Ph0 no longer bootstraps. Missing → route to chart-it. Present → read North Star +
+  read `roadmap.md` (if any), then proceed. (Roadmap-aware Ph1/Ph2/Ph3 below.)
+- **grill-it** — add a grounding precondition before the proposer fan-out: missing North Star →
+  route to chart-it.
+- **implement-it** — add a grounding precondition *before* Stage 0 (clarity gate): missing North Star
+  → route to chart-it. (This is a deliberate, opinionated cost: a one-off task in a fresh repo first
+  requires capturing the North Star. The redirect is graceful and the prompt is preserved.)
+- **autopilot** — already refuses without a North Star; change the message from "run /point-it first"
+  to "run /chart-it first." (Autopilot also wants a roadmap to walk, but only the North Star gates
+  arming.)
+- **chart-it** — not gated (it creates the North Star).
+
+**Exempt:** **slap** (tactical reset mid-task) and **ccharness-init** (installs plugins pre-grounding).
+
+## Changes to point-it (roadmap-aware)
+
+Backward compatible w.r.t. the roadmap: **North Star present but no `roadmap.md` → point-it behaves
+as today** (just unbiased ranking), optionally emitting a one-line nudge ("no roadmap — `/chart-it`
+charts the route far ahead").
+
+- **Ph0** — detect North Star (missing → route to chart-it, per the gate); additionally read
+  `roadmap.md` if present; derive the current milestone (first unchecked).
+- **Ph1** — check whether the **current milestone's `done when:`** already holds.
+  - *Interactive:* offer to check it off (advancing current).
+  - *Autopilot:* **auto-mark** complete (no human mid-loop; current must advance for the loop to walk
+    the route).
+- **Ph2 (now roadmap-aware)** — each of the four move-lenses additionally receives the **current
+  (+ next) milestone** as *orienting context* — **not a gate.** Lenses still scan all four moves
+  freely, honour the empty-lane valve, and may surface off-roadmap candidates; they now also actively
+  look for material that advances the current milestone. *Rationale:* ranking can only reorder what
+  the lenses produce — the roadmap must reach Ph2, not just Ph3, or the boost acts on thin material.
+- **Ph3 — Rank** — add a **roadmap-fit** dimension: advances **current** milestone → boost; advances
+  **next** → light boost; off-roadmap → no boost **but not hidden**. Menu entries tag the relevant
+  milestone (e.g. `M2`); off-roadmap candidates are marked as such.
+- **Invariant intact** — the menu still selects nothing; the roadmap only reorders.
 
 ## Autopilot
 
-Near-free, no separate traversal logic. Autopilot auto-picks the top of the menu; because the
-roadmap biases the top toward the current milestone, autopilot **naturally walks the route milestone
-by milestone**. When a milestone's `done when:` is met, point-it (in autopilot mode) **auto-marks it
-`[x]`**, current advances to the next `[ ]`, and the loop proceeds. The one autopilot-specific rule:
-the check-off is **automatic, not a handback** — autopilot never waits for a human, so an interactive
-"shall I check this off?" would stall it and current would never advance.
+Near-free, no separate traversal logic. Autopilot auto-picks the top of the menu; because the roadmap
+biases the top toward the current milestone, autopilot **naturally walks the route milestone by
+milestone**. When a milestone's `done when:` is met, point-it (in autopilot mode) **auto-marks it
+`[x]`**, current advances, the loop proceeds. The check-off is **automatic, not a handback** —
+autopilot never waits for a human.
 
 ## Storage & git
 
-- Roadmap → `.claude/ccharness/roadmap.md` (plugin-artifact convention).
+- Roadmap → `.claude/ccharness/roadmap.md`.
 - **`.gitignore`:** *replace* the current `.claude/ccharness/` line with:
   ```
   .claude/ccharness/*
   !.claude/ccharness/roadmap.md
   ```
-  (The bare-directory form cannot be negated; the `/*` form ignores contents while allowing the
-  roadmap to be re-included. Replace — do not leave both lines.) Result: `roadmap.md` is tracked;
-  `autopilot/` and `decisions/` stay ignored.
+  (The bare-directory form cannot be negated; `/*` ignores contents while allowing re-inclusion.
+  Replace — do not leave both lines.) `roadmap.md` is tracked; `autopilot/` and `decisions/` stay
+  ignored.
+
+## Migration / compatibility
+
+- Existing repos have a North Star block marked `managed by point-it`. **Detection must accept both**
+  the old (`point-it`) and new (`chart-it`) markers so those repos still pass the gate. chart-it's
+  `--reground` (or its next write) updates the marker to `chart-it`; no forced migration.
+- No `roadmap.md` anywhere yet → every skill works exactly as before except the North Star bootstrap
+  now lives in chart-it.
 
 ## Documentation touchpoints (for the plan)
 
-- **README:** funnel diagram, the commands table (add a `/chart-it` row), and the Layout section all
-  need chart-it. Position it as a grounding companion to North Star, *before* the `point-it →
-  grill-it → implement-it` flow conceptually.
-- **`ccharness-init` dependency table: do NOT touch.** chart-it is **internal** to ccharness, not an
-  external orchestrated plugin — it is not an install dependency.
-- **`plugin.json`:** bump `version` 0.7.0 → 0.8.0 and extend the description with the 8th command.
-- **point-it SKILL.md:** the Ph0/Ph1/Ph2/Ph3 edits above + Quick reference.
+- **README:** funnel diagram (chart-it as the grounding front door), commands table (add `/chart-it`
+  row; note the North Star-ownership move and the hard gate), Layout section, and the "few
+  boundaries" prose (North Star is now captured by chart-it, not point-it's first run).
+- **`ccharness-init` dependency table: do NOT touch** — chart-it is internal, not an external
+  orchestrated plugin.
+- **`plugin.json`:** bump `version` 0.7.0 → 0.8.0; extend the description with the 8th command and the
+  grounding-gate behaviour.
+- **point-it SKILL.md:** remove the bootstrap sub-protocol; add the gate route + the roadmap-aware
+  Ph0/Ph1/Ph2/Ph3 edits + Quick reference.
+- **grill-it / implement-it / autopilot SKILL.md (and command files):** add the grounding
+  precondition / update the redirect target to chart-it.
 
 ## YAGNI — explicitly out of scope
 
-- **No drift-valve lens** in point-it (option-1 "bias", not option-3 "focus + drift valve").
-- **Milestones carry no frozen task list** (lightweight outcome + theme only).
-- **chart-it does not bootstrap the North Star** (that stays point-it's job).
+- **No drift-valve lens** in point-it (option-1 "bias", not "focus + drift valve").
+- **Milestones carry no frozen task list.**
+- **No new North Star fields** — целеполагание enriches the *conversation* and the roadmap, but the
+  durable block stays the stable 3-field contract everything detects.
 - **No heavy autopilot traversal logic** — ranking bias does the walking.
+- **No forced migration** of old `managed by point-it` markers — detection is tolerant.
 
 ## Self-review notes
 
 - No placeholders / TBDs.
-- Consistency: current-milestone tracking is checkboxes-only everywhere (the earlier `[▶]` pointer is
-  removed); point-it scope is Ph0 + Ph1 + Ph2 + Ph3 (Ph2 added per the steering-rationale above);
-  check-off behaviour is split interactive vs autopilot consistently.
-- Scope: single implementation plan (one new skill + one new command + targeted point-it edits + docs
-  + gitignore). Focused enough; no decomposition needed.
+- Consistency: current-milestone tracking is checkboxes-only; point-it scope is Ph0+Ph1+Ph2+Ph3;
+  check-off is interactive-vs-autopilot split consistently; North Star ownership is chart-it
+  everywhere, with tolerant detection for the legacy marker.
+- Scope: one new skill + one new command + targeted edits to four existing skills + docs + gitignore.
+  Larger than the first draft (the grounding move touches every product skill) but still a single
+  coherent implementation plan; no decomposition needed.
