@@ -37,13 +37,26 @@ class TestSemipilotHook(unittest.TestCase):
 
     def test_inactive_allows_stop(self):
         repo = repo_with({"active": False, "session_id": SESSION})
-        _, out = run_hook(repo, {"session_id": SESSION})
+        rc, out = run_hook(repo, {"session_id": SESSION})
+        self.assertEqual(rc, 0)
         self.assertEqual(out.strip(), "")
 
     def test_different_session_allows_stop(self):
         repo = repo_with({"active": True, "session_id": SESSION})
-        _, out = run_hook(repo, {"session_id": OTHER})
+        rc, out = run_hook(repo, {"session_id": OTHER})
+        self.assertEqual(rc, 0)
         self.assertEqual(out.strip(), "")
+
+    def test_jq_unavailable_still_blocks(self):
+        # With jq off PATH the hook must STILL block (fail closed) via the printf fallback.
+        repo = repo_with({"active": True, "session_id": SESSION})
+        r = subprocess.run(["/bin/bash", str(HOOK)],
+                           input=json.dumps({"session_id": SESSION}),
+                           cwd=repo, capture_output=True, text=True,
+                           env={"PATH": "/nonexistent"})
+        self.assertEqual(r.returncode, 0)
+        self.assertIn('"decision"', r.stdout)
+        self.assertIn("block", r.stdout)
 
 
 if __name__ == "__main__":

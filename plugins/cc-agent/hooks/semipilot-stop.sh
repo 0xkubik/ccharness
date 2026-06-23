@@ -19,6 +19,8 @@ HOOK_INPUT="$(cat 2>/dev/null || true)"
 [ -f "$STATE_FILE" ] || exit 0
 
 HOOK_SESSION=""; STATE_SESSION=""; STATE_ACTIVE=""; CYCLE="?"; TARGET="?"
+# If stdin or jq is absent, HOOK_SESSION/STATE_* stay empty → the active==false
+# and different-session guards below are skipped → we fall through and RE-FEED (fail closed).
 if command -v jq >/dev/null 2>&1; then
   HOOK_SESSION="$(printf '%s' "$HOOK_INPUT" | jq -r '.session_id // ""' 2>/dev/null || true)"
   STATE_SESSION="$(jq -r '.session_id // ""'   "$STATE_FILE" 2>/dev/null || true)"
