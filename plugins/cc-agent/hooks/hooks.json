@@ -1,5 +1,5 @@
 {
-  "description": "autopilot — Stop hook that re-feeds the autopilot loop so it cannot self-stop (only /autopilot-cancel stops it).",
+  "description": "cc-agent Stop hooks: autopilot meta-loop + semipilot bounded loop. Exactly one re-feeds per turn (semipilot while a milestone is in flight; autopilot in the gap).",
   "hooks": {
     "Stop": [
       {
@@ -7,6 +7,14 @@
           {
             "type": "command",
             "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/autopilot-stop.sh\""
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/semipilot-stop.sh\""
           }
         ]
       }
