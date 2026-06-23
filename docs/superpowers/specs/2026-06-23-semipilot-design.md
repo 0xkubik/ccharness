@@ -1,38 +1,52 @@
-# Design: semipilot — the bounded, goal-seeking loop
+# Design: semipilot (the bounded unit) + autopilot rebuilt as a wrapper over it
 
 **Date:** 2026-06-23
-**Status:** Draft for review
-**Plugin:** `cc-agent` (layer 2 — self-driving agents, alongside autopilot)
+**Status:** Draft for review (revised — autopilot is now a thin wrapper over semipilot)
+**Plugin:** `cc-agent` (layer 2 — self-driving agents)
 
 ## Bottom line
 
-A new self-driving mode, **`/semipilot`**, that takes **one roadmap milestone** as its
-goal and drives the cc-tools funnel (point-it → grill-it → implement-it) **until that
-milestone is done — then stops on its own** and reports.
+Two self-driving modes, where **semipilot is the base unit and autopilot is a thin
+meta-loop on top of it**:
 
-It is the mirror image of `autopilot`:
+- **`/semipilot`** — drives the cc-tools funnel (point-it → grill-it → implement-it) toward
+  **one roadmap milestone**, and **stops itself** when that milestone's `done when:` is met
+  (or gives up after N no-progress cycles / a hard cap). The funnel cycle and the
+  done-detection live here, once.
+- **`/autopilot`** — no longer contains its own funnel cycle. It becomes a **wrapper**:
+  it runs a semipilot on the current milestone, and **as soon as that semipilot finishes,
+  it arms a fresh semipilot on the next milestone** — walking the roadmap milestone by
+  milestone. The never-stop behavior becomes "keep spawning semipilots."
 
-| | **autopilot** (exists) | **semipilot** (new) |
-| --- | --- | --- |
-| Horizon | the whole roadmap, toward the North Star | **one milestone** |
-| Stopping | never on its own (only `/autopilot-cancel`) | **stops itself** when the goal is met, or gives up |
-| Discipline | "never declare done" | "**check done first**, stop cleanly when met" |
-| Exhaustion | cheap idle cycle forever | a **give-up** exit (bounded) |
+```
+/autopilot   (meta-loop)  ── arms ──►  semipilot (milestone M1) ─ done ─┐
+     ▲                                                                   │
+     └──────────── arms next ◄──── semipilot (milestone M2) ◄────────────┘  …until the
+                                                                             roadmap ends
+```
 
-The defining new piece is the one thing autopilot was engineered to prevent:
-**detecting "goal achieved" and ending the loop cleanly.** Everything else reuses
-autopilot's plumbing (the funnel, the state-file pattern, the Stop-hook pattern, the
-skip-and-log blocked queue).
+This removes the duplication the first draft would have had: the funnel loop existed in
+autopilot AND would be re-implemented in semipilot. Now it lives only in semipilot;
+autopilot just decides **which milestone to run next, and what to do when one fails.**
 
-This was settled with the user up front (the genuine forks):
+## Decisions settled with the user
 
 1. **Goal source = a roadmap milestone** (reuses each milestone's observable `done when:`).
-2. **Give-up exit = N cycles with no progress → stop**, plus a hard cycle cap as a
-   token-burn backstop.
-3. **Architecture = a separate skill + command** (`/semipilot`, not a flag on autopilot),
-   because the prose discipline is the opposite of autopilot's.
-4. No double-confirm of "done" (a single soft model judgment is enough; the cap backstops it).
-5. A dedicated `/semipilot-cancel` (not a generalized brake).
+2. **semipilot give-up exit = N no-progress cycles → stop**, plus a hard cycle cap (token-burn backstop).
+3. **semipilot is a separate skill + command** (the prose discipline is the inverse of a never-stop loop).
+4. **No double-confirm of "done"** — one soft model judgment + the cap.
+5. **A dedicated `/semipilot-cancel`.**
+6. **autopilot is rebuilt as a wrapper over semipilot** (not a parallel mode).
+7. **When a milestone's semipilot gives up, autopilot:**
+   **retries the milestone once**; if it gives up again, it **judges whether the remaining
+   milestones depend on the stuck one** — **independent → park it and advance**;
+   **dependent → stop the whole autopilot and exit.**
+8. **autopilot now requires a roadmap** (no roadmap → route to `/chart-it`). The old
+   "no roadmap → drive directly toward the North Star" path is removed.
+
+Consequence of (7): **the new autopilot can stop on its own** (the dependent-block case).
+So "only `/autopilot-cancel` stops it" is no longer absolute — there is now a legitimate
+self-stop when the route is hard-blocked. The prose must say so.
 
 ---
 
@@ -40,260 +54,302 @@ This was settled with the user up front (the genuine forks):
 
 **Reused (verified in the repo, 2026-06-23):**
 
-- **The funnel** — `cc-tools:point-it`, `cc-tools:grill-it`, `cc-tools:implement-it`,
-  `cc-tools:slap`, called by qualified name (same as autopilot does).
+- **The funnel** — `cc-tools:point-it / grill-it / implement-it / slap`, by qualified name.
 - **The milestone `done when:` judgment** — point-it Phase 1 already compares the live
-  survey against the current milestone's `done when:` and, under a loop, auto-marks it
-  `[x]`. This is a **soft model judgment** over an *observable* outcome (chart-it requires
-  `done when:` to be observable), not a hard test. semipilot reuses exactly this judgment —
-  but promotes it to the **first action of every cycle** and the primary exit.
-- **The Stop-hook pattern** — `autopilot-stop.sh` re-feeds while `state.active == true`,
-  and its Exit #2 (`state.active == false`) already releases the stop. So semipilot needs
-  **no new hook mechanism**: the model flips `active:false` on either exit and the
-  hook lets the turn end.
-- **The skip-and-log discipline** — funnel handbacks become a line in a `blocked.jsonl`
-  review queue, never a wait.
-- **The atomic state-write pattern** — temp file + `mv`, session-scoped via
-  `$CLAUDE_CODE_SESSION_ID`.
+  survey to the current milestone's `done when:` and auto-marks it `[x]` under a loop. A
+  **soft model judgment** over an *observable* outcome (chart-it requires it observable),
+  not a hard test. semipilot promotes it to the first action of every cycle and its primary exit.
+- **The Stop-hook re-feed pattern** — a hook re-feeds while `state.active == true` and its
+  Exit #2 (`active == false`) releases the stop. Both modes flip `active:false` to end.
+- **The skip-and-log discipline** — handbacks become a line in a `blocked.jsonl` queue, never a wait.
+- **The atomic state-write pattern** — temp file + `mv`, session-scoped via `$CLAUDE_CODE_SESSION_ID`.
 
 **New:**
 
-1. **Done-first cycle order** — judge the goal met *before* doing funnel work each cycle.
-2. **A give-up exit** — a single "no-progress streak" counter; autopilot deliberately has
-   no such exit.
-3. **Milestone-scoped direction picking** — point-it's menu is filtered to directions that
-   advance *this* milestone (off-milestone moves don't count), so the loop is bounded to
-   the goal, not the whole product.
-4. **A clean terminal report** — achieved / gave-up / capped, with the blocked queue.
+1. **semipilot's done-first cycle + give-up exit** (a bounded loop — autopilot never had one).
+2. **autopilot as a meta-loop** — it arms/re-arms semipilots instead of running the funnel itself.
+3. **The two-hook partition** — semipilot's hook drives while a milestone is in flight;
+   autopilot's hook only acts in the gap between milestones (re-arm / advance / park / stop).
+4. **The give-up ladder** — retry-once → dependency judgment → skip-or-stop (decision 7).
+5. **A milestone-dependency judgment** — a soft model read of the roadmap ("does the next
+   milestone need the stuck one?").
 
 ---
 
-## 2. Command surface
+## 2. semipilot — the base bounded unit
+
+### 2.1 Command
 
 ```
 /semipilot                 drive the CURRENT milestone (first unchecked [ ]) to done, then stop
-/semipilot M3              drive a specific milestone; if it is not the current one, warn
-                           (the roadmap is sequential) and proceed only on the current unless
-                           the user re-confirms
+/semipilot M3              drive a specific milestone; warn if it is not the current one
 /semipilot M3 --give-up-after 3 --max-cycles 20    override the two thresholds
-
-/semipilot-cancel          the manual brake (mirrors /autopilot-cancel)
+/semipilot-cancel          the manual brake
 ```
 
-- The goal is **always a milestone**, so its `done when:` is the success condition.
-- No argument → the current milestone. This is the natural default (the roadmap is
-  sequential; you complete the current one before the next).
+### 2.2 Arming
 
----
-
-## 3. Arming (only when invoked by `/semipilot`)
-
-1. **Roadmap gate (stricter than autopilot's North Star gate).** semipilot targets a
-   milestone, so it needs a **roadmap**, which needs a **North Star**. Look for
-   `.claude/ccharness/roadmap.md`.
-   - No North Star → route to `/chart-it` (set the star, then chart the route), stop.
-   - North Star but no roadmap → route to `/chart-it` to chart the route, stop.
-   - Roadmap present → resolve the **target milestone**: the `--`/positional id if given,
-     else the current (first unchecked `[ ]`). Copy its `done when:` text into state.
-2. **Write state atomically** (temp + `mv`) under `.claude/ccharness/semipilot/state.json`
-   for the current session (id from `$CLAUDE_CODE_SESSION_ID`):
+1. **Roadmap gate.** Needs `.claude/ccharness/roadmap.md`. No North Star → route to
+   `/chart-it`. North Star but no roadmap → route to `/chart-it` to chart the route. Roadmap
+   present → resolve the target milestone (the id given, else the current = first unchecked),
+   copy its `done when:` into state.
+2. **Nested-awareness.** If `.claude/ccharness/autopilot/state.json` is active for this
+   session, semipilot is running **under autopilot** — it stays terse on exit (its log line
+   is the handback; autopilot narrates). Standalone → it gives the full terminal report.
+3. **Write `semipilot/state.json` atomically** (temp + `mv`) for this session:
    ```json
    {
-     "active": true,
-     "session_id": "<this>",
-     "mode": "semipilot",
-     "target_milestone": "M3",
-     "done_when": "<observable condition copied from roadmap.md>",
-     "cycle": 0,
-     "no_progress_streak": 0,
-     "max_no_progress": 3,
-     "max_cycles": 20,
-     "started_at": "<UTC now>",
-     "last_surveyed_sha": "",
-     "outcome": null
+     "active": true, "session_id": "<this>", "mode": "semipilot",
+     "target_milestone": "M3", "done_when": "<copied from roadmap.md>",
+     "cycle": 0, "no_progress_streak": 0, "max_no_progress": 3, "max_cycles": 20,
+     "started_at": "<UTC now>", "last_surveyed_sha": "", "outcome": null
    }
    ```
-   Touch `blocked.jsonl` and `log.jsonl` if missing.
-3. **Announce the target.** State which milestone it is driving and its `done when:`, so the
-   destination is visible, that only `/semipilot-cancel` stops it early, and then run cycle 1.
+   Touch `semipilot/blocked.jsonl` and `semipilot/log.jsonl` if missing.
+4. **Announce the target** (milestone + `done when:`) and run cycle 1.
 
-When the Stop hook **re-feeds** instead (normal in-loop path), skip arming and run the next cycle.
-
----
-
-## 4. One cycle (run exactly one per turn)
-
-The order is the inversion of autopilot: **the done-check leads.**
+### 2.3 One cycle (done-check leads)
 
 ```
 1. READ   semipilot/state.json + semipilot/blocked.jsonl
-2. DONE?  Survey "now" (point-it Phase 1) and judge it against state.done_when.
-          MET → set active:false, outcome:"achieved", mark the milestone [x] in roadmap.md,
-                 append a final log line, ANNOUNCE the win, END THE TURN. (hook releases)
+2. DONE?  Survey "now" (point-it Phase 1), judge against state.done_when.
+          MET → active:false, outcome:"achieved", mark the milestone [x] in roadmap.md,
+                 final log line, (terse if nested / full report if standalone), END TURN.
 3. GIVE-UP?  no_progress_streak >= max_no_progress  OR  cycle >= max_cycles
-          → set active:false, outcome:"gave-up" | "capped", append a final log line,
-            REPORT what is in blocked.jsonl, END THE TURN. (hook releases)
+          → active:false, outcome:"gave-up" | "capped", final log line, report blocked queue,
+            END TURN.
 4. POINT  cc-tools:point-it — menu as DATA ("I pick — do NOT call AskUserQuestion").
           Keep ONLY directions whose `advances` == target milestone AND not in blocked.jsonl.
-          → auto-pick the top such direction.
-          NONE qualify → this is a no-progress cycle: no_progress_streak++, go to step 8.
+          → auto-pick the top such direction.   NONE qualify → no-progress cycle: streak++, go to 8.
 5. DECIDE cc-tools:grill-it on that direction → one decision (auto-flows to build)
-6. BUILD  cc-tools:implement-it → build → verify → commit LOCALLY (do NOT push)
-          - handback (unbuildable/forked, or slap fired twice) → append to blocked.jsonl,
-            count this as a no-progress cycle.
-7. PROGRESS?  committed work that moves target's `done when:` closer → no_progress_streak = 0
-              otherwise (blocked / idle / committed-but-no-movement)  → no_progress_streak++
-8. LOG    append one line to log.jsonl:
-          {cycle, target, picked, outcome: committed|blocked|idle, moved_goal: true|false,
-           streak, sha?, ts}
-          bump `cycle` in state.json via ATOMIC write (temp + mv)
-9. END THE TURN. The Stop hook re-feeds for the next cycle.
+6. BUILD  cc-tools:implement-it → build → verify → commit LOCALLY (no push)
+          handback (unbuildable/forked, or slap-twice) → append to blocked.jsonl, no-progress cycle.
+7. PROGRESS?  committed work that moves done_when closer → streak = 0
+              otherwise (blocked / idle / committed-but-no-movement) → streak++
+8. LOG    log.jsonl line {cycle, target, picked, outcome, moved_goal, streak, sha?, ts};
+          bump cycle (atomic).
+9. END TURN → the semipilot hook re-feeds for the next cycle.
 ```
 
 **Why point-it is milestone-scoped here (step 4).** Under autopilot the roadmap only
-*biases* the menu; off-roadmap moves still get taken. semipilot is bounded to ONE goal, so
-it **filters** to milestone-advancing directions. A cycle that finds none is itself a
-no-progress signal — this is how "all paths to the goal are blocked" feeds the same
+*biases*; semipilot **filters** to milestone-advancing directions. A cycle that finds none is
+itself a no-progress signal — that is how "all paths to the goal are blocked" feeds the same
 give-up counter as "N cycles produced nothing."
 
----
+### 2.4 semipilot's two exits
 
-## 5. The two exits (the heart)
+- **achieved** — done judged met (single soft judgment + cap backstop). Marks `[x]`, sets
+  `active:false`, reports.
+- **gave-up / capped** — `no_progress_streak >= max_no_progress` (default 3) or
+  `cycle >= max_cycles` (default 20). Sets `active:false`, reports the blocked queue.
 
-**Success — goal achieved.** The model judges `done_when` met at the top of a cycle. It is a
-single soft judgment (no double-confirm, per the decision) over an observable outcome,
-backstopped by the cap. On success it marks the milestone `[x]` (so a later `/autopilot` or
-`/semipilot` sees the route advanced), sets `active:false`, and reports.
-
-**Give-up — one counter, two causes.** `no_progress_streak` increments on any cycle that
-fails to move the goal:
-- point-it surfaces no unblocked milestone-advancing direction, **or**
-- the picked direction lands in `blocked.jsonl` (unbuildable/forked, or slap-twice), **or**
-- a commit happened but the model judges it did not move `done_when` closer.
-
-It resets to 0 on a cycle that genuinely advances the goal. `streak >= max_no_progress`
-(default 3) → stop with `outcome:"gave-up"`. Independently, `cycle >= max_cycles`
-(default 20) → stop with `outcome:"capped"` — the hard token-burn backstop the user asked
-for. Both thresholds are overridable on the command line.
-
-This is the load-bearing difference from autopilot, whose exhaustion path is "cheap idle
-cycle, forever." A bounded loop **must** have this exit or it is just autopilot with extra
-steps.
+`outcome` is the handoff signal autopilot reads.
 
 ---
 
-## 6. Plumbing (separate from autopilot)
+## 3. autopilot — rebuilt as the meta-loop
 
-A sibling state dir keeps the two modes from colliding (a session runs at most one loop,
-but separate files make each mode's history and queue independent):
+### 3.1 Command
 
 ```
-.claude/ccharness/semipilot/
-  state.json     loop control (section 3)
-  blocked.jsonl  skipped directions for review (its own, not shared with autopilot)
-  log.jsonl      one line per cycle
+/autopilot [focus]   arm the meta-loop: walk the roadmap milestone by milestone via semipilot
+/autopilot-cancel    the manual brake (still the primary stop)
 ```
 
-**Hook — `semipilot-stop.sh`.** A focused near-clone of `autopilot-stop.sh`:
-same `set -u`, same fail-closed posture, same three allow-the-stop exits (no state file /
-`active == false` / a different session owns it), but it reads
-`.claude/ccharness/semipilot/state.json` and re-feeds the **semipilot** prompt
-(*"check done first → check give-up → run exactly one milestone-scoped cycle → flip
-active:false on either exit"*). Two small, obviously-correct hooks beat one branching hook.
+### 3.2 Arming
 
-**Registration.** Add a second entry to the existing `Stop` array in
-`plugins/cc-agent/hooks/hooks.json` pointing at `semipilot-stop.sh`. Stop hooks **stack**
-(verified in the cc-maestro design notes): each reads stdin and emits its own decision; at
-most one mode is active per session, so only one ever blocks — the other sees inactive
-state and exits 0.
+1. **Roadmap gate (now required).** No North Star → `/chart-it`. North Star but no roadmap →
+   `/chart-it` to chart the route. (The old no-roadmap, direct-to-North-Star path is removed.)
+2. **Write `autopilot/state.json`** (the OUTER state) for this session:
+   ```json
+   {
+     "active": true, "session_id": "<this>", "mode": "autopilot",
+     "current_milestone": "M1", "current_retries": 0, "max_retries": 1,
+     "started_at": "<UTC now>", "outcome": null
+   }
+   ```
+3. **Arm the first semipilot** on the current milestone (write `semipilot/state.json` as in
+   2.2, nested). Touch `autopilot/log.jsonl` (milestone-level history) and
+   `autopilot/blocked.jsonl` (the **parked-milestones** queue).
+4. Announce: walking the roadmap from the current milestone; stops on `/autopilot-cancel`
+   **or** a hard dependency block; then the first semipilot cycle runs.
 
-**Cancel — `/semipilot-cancel`.** Mirrors `/autopilot-cancel` exactly, against the
-semipilot state: if `semipilot/state.json` is absent → "No semipilot is running."; else read
-the `cycle` count, `rm` the state file (so the next Stop ends the turn and a fresh
-`/semipilot` can re-arm cleanly), leave `blocked.jsonl` / `log.jsonl` as the durable record,
-and report cycles run + the blocked queue (each entry's `direction` + `reason`).
+### 3.3 The meta-cycle (runs only in the gap between milestones)
+
+When a semipilot has gone inactive and autopilot is still active, the autopilot hook
+re-feeds this meta-step (read `semipilot/state.json.outcome`):
+
+```
+outcome == achieved:
+    milestone is now [x]. current_retries = 0.
+    next = first unchecked milestone NOT in autopilot/blocked.jsonl (parked set)
+    next exists → set current_milestone=next, arm a fresh semipilot on it, END TURN.
+    none left  → roadmap exhausted → CHEAP IDLE (never stop; a new /chart-it milestone is
+                  picked up on a later idle cycle). Log "roadmap-complete-idle". END TURN.
+
+outcome == gave-up | capped:
+    current_retries == 0 → THE RETRY: current_retries = 1, re-arm a fresh semipilot on the
+                            SAME milestone, END TURN.
+    current_retries == 1 → DEPENDENCY JUDGMENT (read the roadmap):
+        does the next unchecked milestone DEPEND on the stuck one?
+          INDEPENDENT → park the stuck milestone (append to autopilot/blocked.jsonl),
+                         current_retries = 0, advance current to the next non-parked
+                         unchecked milestone, arm a fresh semipilot, END TURN.
+          DEPENDENT   → HARD STOP: set autopilot active:false, outcome:"blocked",
+                         report the stuck milestone + the parked queue, END TURN. (hook releases)
+```
+
+Every meta-step appends one line to `autopilot/log.jsonl`
+(`{milestone, action: advanced|retried|parked|blocked-stop|idle, ts}`) via an atomic write.
+
+### 3.4 The dependency judgment
+
+A **soft model judgment** over the lightweight roadmap text (each milestone is
+`name + done when: + theme`): "can the next unchecked milestone be done **without** the
+stuck one?" v1 judges the **immediate next** milestone (independent → advance to it,
+dependent → stop). chart-it already builds roadmaps to be sequential ("does each milestone
+unlock the next?"), so **dependent is the common case and stop is the common failure exit**;
+the independent-skip is the exception the user asked to support. (A future refinement could
+scan for the *first* independent milestone rather than only the next — out of scope for v1.)
+
+### 3.5 autopilot's outcomes
+
+- **Looping** (normal) — milestone done → next milestone.
+- **Cheap idle** — roadmap exhausted (all milestones `[x]` or parked); never stops, waits
+  for new milestones or `/autopilot-cancel`.
+- **Hard stop + exit** (NEW) — a dependent milestone proved unbeatable after a retry. A
+  legitimate self-stop. Reports and ends.
+- **Cancelled** — `/autopilot-cancel` at any time (still the primary brake).
 
 ---
 
-## 7. Files to add / change
+## 4. The two-hook partition (the mechanism)
+
+Two Stop hooks, both fire on every Stop, partitioned by which state is active so **exactly
+one ever blocks**:
+
+| Situation | `semipilot-stop.sh` | `autopilot-stop.sh` | Result |
+| --- | --- | --- | --- |
+| semipilot active | **block** (re-feed semipilot cycle) | yield (semipilot active) | semipilot drives |
+| semipilot inactive, autopilot active | yield (inactive) | **block** (re-feed meta-step) | autopilot re-arms |
+| both inactive | yield | yield | session ends |
+
+- `semipilot-stop.sh`: blocks while `semipilot/state.json` is active for this session; else exit 0.
+- `autopilot-stop.sh`: blocks while `autopilot/state.json` is active for this session **AND
+  `semipilot/state.json` is NOT active**; else exit 0. (The added "semipilot not active"
+  guard is what makes it yield mid-milestone and act only in the gap.)
+
+Both keep the existing fail-closed posture and the three allow-the-stop exits (no state file
+/ `active == false` / a different session owns it). Stop hooks **stack** (verified in the
+cc-maestro notes); since at most one blocks, there is no double-feed.
+
+---
+
+## 5. State & files (layered)
+
+```
+.claude/ccharness/
+  semipilot/
+    state.json     inner loop control (one milestone)
+    blocked.jsonl  skipped DIRECTIONS within a milestone (cycle-level)
+    log.jsonl      one line per cycle
+  autopilot/
+    state.json     outer meta-loop control (current milestone + retry counter)
+    blocked.jsonl  PARKED MILESTONES (milestone-level) — repurposed
+    log.jsonl      one line per meta-step (advanced / retried / parked / blocked-stop / idle)
+```
+
+Two-level logging falls out naturally: semipilot logs cycle detail; autopilot logs
+milestone-level events. Parked-ness lives in `autopilot/blocked.jsonl` (not in `roadmap.md`),
+so the roadmap file format is unchanged; the report surfaces parked milestones to the human.
+
+---
+
+## 6. Files to add / change
 
 **New:**
-- `plugins/cc-agent/commands/semipilot.md` — the arm command (`$ARGUMENTS` = optional
-  milestone id + threshold flags).
-- `plugins/cc-agent/commands/semipilot-cancel.md` — the brake.
-- `plugins/cc-agent/skills/semipilot/SKILL.md` — the bounded-loop discipline (done-first,
-  milestone-scoped pick, two exits, skip-and-log).
-- `plugins/cc-agent/hooks/semipilot-stop.sh` — the re-feed hook.
+- `plugins/cc-agent/commands/semipilot.md`, `semipilot-cancel.md`
+- `plugins/cc-agent/skills/semipilot/SKILL.md`
+- `plugins/cc-agent/hooks/semipilot-stop.sh`
+
+**Rewritten (not merely touched):**
+- `plugins/cc-agent/skills/autopilot/SKILL.md` — from "embed the funnel cycle" to "meta-loop
+  over semipilot" (the give-up ladder, dependency judgment, roadmap-required, the new hard stop).
+- `plugins/cc-agent/hooks/autopilot-stop.sh` — add the "yield while semipilot active" guard
+  and the meta-step re-feed prompt.
+- `plugins/cc-agent/commands/autopilot.md` — roadmap-required; "stops on cancel OR hard block."
 
 **Changed:**
-- `plugins/cc-agent/hooks/hooks.json` — add the second `Stop` hook entry.
-- `plugins/cc-agent/.claude-plugin/plugin.json` — mention semipilot in the description.
-- `plugins/cc-agent/README.md` — document the second mode and its state dir.
+- `plugins/cc-agent/hooks/hooks.json` — add the second `Stop` entry for `semipilot-stop.sh`.
+- `plugins/cc-agent/.claude-plugin/plugin.json`, `README.md` — document both modes.
 
-**Not touched:** the autopilot skill/command/hook (semipilot is additive), the cc-tools
-funnel skills, the installer (a new command/skill/hook inside an existing plugin is
+**Not touched:** the cc-tools funnel skills; the installer (commands/skills/hooks are
 auto-discovered; only `hooks.json` needs the manual entry).
 
 ---
 
-## 8. cc-maestro awareness (forward-compat note, not built here)
+## 7. cc-maestro awareness (forward-compat note, not built here)
 
-cc-maestro (still a stub per the harness design) tags an agent as `autopilot` by detecting
-its armed state file. When maestro is built, it should treat a `semipilot` state file as a
-**bounded** agent whose "done" is a real terminal state (`outcome != null`), unlike
-autopilot's never-done. This is a note for the maestro design, **out of scope** for this
-build. No work here depends on maestro existing.
-
----
-
-## 9. Explicitly NOT building (YAGNI)
-
-- No change to autopilot — it stays the never-stop, whole-roadmap driver.
-- No new Stop *mechanism* — the existing `active:false` release path suffices.
-- No free-text goals (the user chose milestone-sourced goals).
-- No double-confirm of "done" — one soft judgment + the cap is enough.
-- No generalized brake — a dedicated `/semipilot-cancel`.
-- No per-model cost accounting — the cycle cap is the spend backstop.
+When cc-maestro (a stub today) is built: a `semipilot` state file = a **bounded** agent
+(terminal `outcome`); an `autopilot` state file = the meta-loop, whose "done" is a milestone
+log line and which can now also reach a terminal `blocked` outcome. Out of scope here; nothing
+in this build depends on maestro.
 
 ---
 
-## 10. Risks & verify-first
+## 8. Explicitly NOT building (YAGNI)
 
-- **Soft done-judgment false-positive (early stop).** Mitigated by: `done when:` is required
-  observable; the check runs each cycle against a fresh survey; cost of a false "done" is
-  just an early stop the user can re-run. Accepted (no double-confirm by decision).
-- **Soft done-judgment false-negative (never declares done).** Backstopped by `max_cycles`.
-- **"Moved the goal closer?" is also a soft judgment** feeding the streak. Backstopped by the
-  cap; tune `max_no_progress` against real runs.
-- **Two Stop hooks both firing.** Safe as long as at most one mode is armed per session;
-  the inactive hook exits 0. Verify after wiring: arm semipilot, confirm the autopilot hook
-  stays dormant and vice-versa.
-- **Cross-plugin skill calls.** semipilot calls `cc-tools:*` exactly as autopilot does —
-  same resolution path, already working.
+- No free-text goals (milestone-sourced only).
+- No double-confirm of "done."
+- No new Stop *mechanism* (the `active:false` release path suffices for both modes).
+- No explicit dependency metadata in `roadmap.md` (a soft judgment over existing text).
+- No "find the first independent milestone" scan (v1 judges the next milestone only).
+- No per-model cost accounting (cycle caps are the spend backstop).
+- No no-roadmap autopilot fallback (removed by decision 8).
 
 ---
 
-## 11. Build sequence
+## 9. Risks & verify-first
 
-- **Phase 1 — skill + state.** Write `semipilot/SKILL.md` (done-first cycle, two exits,
-  milestone-scoped pick) and the `/semipilot` arm command with the roadmap gate and state write.
-- **Phase 2 — hook + cancel.** Clone `autopilot-stop.sh` → `semipilot-stop.sh`, register it
-  in `hooks.json`, write `/semipilot-cancel`.
-- **Phase 3 — wire-up docs.** Update `plugin.json` + `README.md`.
-- **Phase 4 — verify end-to-end.** On a repo with a roadmap: arm `/semipilot` on a small
-  milestone, watch it run cycles, force the success exit (milestone met → stops, marks `[x]`),
-  force the give-up exit (point at an unreachable milestone → stops after `max_no_progress`),
-  and confirm `/semipilot-cancel` ends a live loop and reports the queue.
+- **Soft done-judgment** (early stop / never-done) — backstopped by observable `done when:`,
+  a fresh survey each cycle, and `max_cycles`.
+- **Soft dependency judgment** — could skip a truly-dependent milestone; the next semipilot
+  then likely gives up too and the ladder re-applies, and the human sees the parked queue.
+  Accepted for v1; tune against real runs.
+- **Two-hook partition** — verify the guard: while semipilot is active the autopilot hook
+  must stay dormant (no double-feed); in the gap exactly the autopilot hook re-arms. Test by
+  arming `/autopilot` and watching one full milestone → advance transition.
+- **The new hard stop** — verify a dependent-blocked roadmap actually ends the session (sets
+  `autopilot active:false`) and is not re-fed.
+- **Cross-plugin skill calls** — semipilot calls `cc-tools:*` exactly as autopilot did.
 
 ---
 
-## 12. Testing approach
+## 10. Build sequence
 
-- **The two exits (the new logic).** The give-up counter and the done-check are prose
-  discipline executed by the model, so the test is behavioral: a fixture roadmap with (a) an
-  already-met milestone → first cycle stops `achieved`; (b) a milestone whose only directions
-  are pre-seeded in `blocked.jsonl` → stops `gave-up` after `max_no_progress`; (c) a tiny
-  reachable milestone → runs a few cycles then stops `achieved` and marks `[x]`.
-- **Hook coexistence.** Arm each mode in turn; assert the other mode's hook does not block.
-- **Cancel.** Arm `/semipilot`, run a cycle, `/semipilot-cancel`, assert the next Stop ends
-  the turn and the report lists cycles + blocked entries.
+- **Phase 1 — semipilot, standalone.** SKILL (done-first cycle, two exits, nested-awareness),
+  `/semipilot` + `/semipilot-cancel`, `semipilot-stop.sh`, register it in `hooks.json`. Verify
+  it drives one milestone and stops both ways (achieved / gave-up).
+- **Phase 2 — autopilot rebuilt as the wrapper.** Rewrite the autopilot SKILL to the meta-loop
+  + give-up ladder; add the "yield while semipilot active" guard to `autopilot-stop.sh`; update
+  the command. Verify the two-hook partition and the milestone→milestone walk.
+- **Phase 3 — the give-up ladder end-to-end.** Verify retry-once, the dependency judgment
+  (independent→advance, dependent→hard-stop), and parked-milestone reporting.
+- **Phase 4 — docs.** `plugin.json` + `README.md`.
+
+---
+
+## 11. Testing approach
+
+- **semipilot exits.** Fixture roadmap: (a) an already-met milestone → first cycle stops
+  `achieved`; (b) a milestone whose only directions are pre-seeded in `blocked.jsonl` → stops
+  `gave-up` after `max_no_progress`; (c) a tiny reachable milestone → a few cycles then
+  `achieved` + `[x]`.
+- **autopilot walk.** Two reachable milestones → semipilot completes M1, autopilot arms M2,
+  completes it, then roadmap-complete idle.
+- **Give-up ladder.** A milestone that always gives up: assert one retry, then — with an
+  independent next milestone, advance + park; with a dependent next milestone, hard-stop +
+  exit. Assert the parked queue and the stop report.
+- **Hook coexistence.** Arm each mode; assert the partition (semipilot active → autopilot hook
+  yields; gap → autopilot hook re-arms; both inactive → session ends).
+- **Cancel.** `/semipilot-cancel` and `/autopilot-cancel` each end their loop and report.
