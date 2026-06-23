@@ -39,5 +39,9 @@ class TestReport(unittest.TestCase):
     def test_post_no_url_false(self):
         self.assertFalse(self.report.post("", {"id": "a"}, poster=lambda u, b: None))
 
+    def test_post_swallows_poster_exception(self):
+        def boom(u, b): raise RuntimeError("hermes down")
+        self.assertFalse(self.report.post("http://x", {"id": "a"}, poster=boom))
+
 if __name__ == "__main__":
     unittest.main()

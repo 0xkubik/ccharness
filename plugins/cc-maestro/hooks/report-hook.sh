@@ -11,6 +11,6 @@ URL="$(jq -r '.report_endpoint // ""' "$CFG" 2>/dev/null || true)"
 SID="$(printf '%s' "$INPUT" | jq -r '.session_id // ""' 2>/dev/null || true)"
 EVENT="$(printf '%s' "$INPUT" | jq -r '.hook_event_name // ""' 2>/dev/null || true)"
 CWD="$(printf '%s' "$INPUT" | jq -r '.cwd // ""' 2>/dev/null || true)"
-curl -fsS -m 5 -X POST -H 'Content-Type: application/json' \
-  -d "{\"event\":\"$EVENT\",\"session_id\":\"$SID\",\"cwd\":\"$CWD\"}" "$URL" >/dev/null 2>&1 || true
+BODY="$(jq -nc --arg e "$EVENT" --arg s "$SID" --arg c "$CWD" '{event:$e,session_id:$s,cwd:$c}' 2>/dev/null || printf '{}')"
+curl -fsS -m 5 -X POST -H 'Content-Type: application/json' -d "$BODY" "$URL" >/dev/null 2>&1 || true
 exit 0

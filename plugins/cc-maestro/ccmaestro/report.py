@@ -1,6 +1,6 @@
 import json
 import urllib.request
-from . import config, paths
+from . import config
 
 
 def snapshot(rows):
@@ -20,8 +20,8 @@ def diff(prev, cur):
 def record(event):
     f = config.STATE_DIR / "events.jsonl"
     f.parent.mkdir(parents=True, exist_ok=True)
-    existing = f.read_text() if f.exists() else ""
-    paths.atomic_write(f, existing + json.dumps(event) + "\n")
+    with open(f, "a") as fh:
+        fh.write(json.dumps(event) + "\n")
 
 
 def _urllib_poster(url, body):
