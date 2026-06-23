@@ -26,7 +26,8 @@ def repo_with(autopilot=None, semipilot=None):
 
 class TestAutopilotHook(unittest.TestCase):
     def test_no_state_allows_stop(self):
-        _, out = run_hook(repo_with(), {"session_id": SESSION})
+        rc, out = run_hook(repo_with(), {"session_id": SESSION})
+        self.assertEqual(rc, 0)
         self.assertEqual(out.strip(), "")
 
     def test_semipilot_active_yields(self):
@@ -34,7 +35,8 @@ class TestAutopilotHook(unittest.TestCase):
         repo = repo_with(
             autopilot={"active": True, "session_id": SESSION, "current_milestone": "M1"},
             semipilot={"active": True, "session_id": SESSION})
-        _, out = run_hook(repo, {"session_id": SESSION})
+        rc, out = run_hook(repo, {"session_id": SESSION})
+        self.assertEqual(rc, 0)
         self.assertEqual(out.strip(), "")
 
     def test_gap_blocks_metastep(self):
@@ -43,23 +45,41 @@ class TestAutopilotHook(unittest.TestCase):
             autopilot={"active": True, "session_id": SESSION, "current_milestone": "M1"},
             semipilot={"active": False, "session_id": SESSION})
         rc, out = run_hook(repo, {"session_id": SESSION})
+        self.assertEqual(rc, 0)
         self.assertIn("block", out)
         self.assertIn("meta-step", out)
+        d = json.loads(out)
+        self.assertEqual(d["decision"], "block")
 
     def test_gap_no_semipilot_file_blocks(self):
         repo = repo_with(autopilot={"active": True, "session_id": SESSION, "current_milestone": "M1"})
-        _, out = run_hook(repo, {"session_id": SESSION})
+        rc, out = run_hook(repo, {"session_id": SESSION})
+        self.assertEqual(rc, 0)
         self.assertIn("block", out)
 
     def test_autopilot_inactive_allows(self):
         repo = repo_with(autopilot={"active": False, "session_id": SESSION})
-        _, out = run_hook(repo, {"session_id": SESSION})
+        rc, out = run_hook(repo, {"session_id": SESSION})
+        self.assertEqual(rc, 0)
         self.assertEqual(out.strip(), "")
 
     def test_different_session_allows(self):
         repo = repo_with(autopilot={"active": True, "session_id": SESSION, "current_milestone": "M1"})
-        _, out = run_hook(repo, {"session_id": OTHER})
+        rc, out = run_hook(repo, {"session_id": OTHER})
+        self.assertEqual(rc, 0)
         self.assertEqual(out.strip(), "")
+
+    def test_jq_unavailable_still_blocks(self):
+        # autopilot active, no semipilot in flight, jq off PATH -> must STILL block via fallback.
+        repo = repo_with(autopilot={"active": True, "session_id": SESSION,
+                                    "current_milestone": "M1"})
+        r = subprocess.run(["/bin/bash", str(HOOK)],
+                           input=json.dumps({"session_id": SESSION}),
+                           cwd=repo, capture_output=True, text=True,
+                           env={"PATH": "/nonexistent"})
+        self.assertEqual(r.returncode, 0)
+        self.assertIn('"decision"', r.stdout)
+        self.assertIn("block", r.stdout)
 
 
 if __name__ == "__main__":

@@ -38,6 +38,9 @@ if [ -n "$STATE_SESSION" ] && [ -n "$HOOK_SESSION" ] && [ "$STATE_SESSION" != "$
 fi
 
 # Exit #4 — a semipilot is in flight → yield; its hook drives this turn.
+# NOTE: keys on the semipilot active flag alone (assumes ONE autonomous loop per
+# session/checkout). A semipilot active for a DIFFERENT session in this repo would
+# also make us yield — acceptable under the one-loop-per-session assumption.
 [ "$SEMI_ACTIVE" = "true" ] && exit 0
 
 # --- autopilot active AND no semipilot in flight → RE-FEED the META-STEP. Fail closed. ---
