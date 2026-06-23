@@ -43,6 +43,6 @@ agents `start` will launch. A finished one-shot now shows `done` (clean) or `cra
 
 ## Status
 
-Observe + launch (Phase 2) are built. Control (stop / steer / pause) and reporting
-to an external agent are the next plan. See
-`docs/superpowers/specs/2026-06-23-cc-maestro-design.md`.
+Observe + launch (Phase 2) and control + reporting (Phase 3) are implemented. The only
+remaining optional item is a `--remote-control` live mid-turn steer spike (not yet
+scheduled). See `docs/superpowers/specs/2026-06-23-cc-maestro-design.md`.

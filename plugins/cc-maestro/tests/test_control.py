@@ -5,6 +5,12 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 class TestControl(unittest.TestCase):
     def setUp(self):
         self.tmp = tempfile.mkdtemp()
+        _prev = {k: os.environ.get(k) for k in ("CCMAESTRO_HOME", "CLAUDE_CONFIG_DIR")}
+        def _restore():
+            for k, v in _prev.items():
+                if v is None: os.environ.pop(k, None)
+                else: os.environ[k] = v
+        self.addCleanup(_restore)
         os.environ["CCMAESTRO_HOME"] = self.tmp
         self.claude = tempfile.mkdtemp()
         os.environ["CLAUDE_CONFIG_DIR"] = self.claude

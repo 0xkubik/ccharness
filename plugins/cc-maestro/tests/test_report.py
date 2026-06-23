@@ -4,7 +4,14 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 class TestReport(unittest.TestCase):
     def setUp(self):
-        self.tmp = tempfile.mkdtemp(); os.environ["CCMAESTRO_HOME"] = self.tmp
+        self.tmp = tempfile.mkdtemp()
+        _prev = {k: os.environ.get(k) for k in ("CCMAESTRO_HOME",)}
+        def _restore():
+            for k, v in _prev.items():
+                if v is None: os.environ.pop(k, None)
+                else: os.environ[k] = v
+        self.addCleanup(_restore)
+        os.environ["CCMAESTRO_HOME"] = self.tmp
         import importlib, ccmaestro.config, ccmaestro.paths, ccmaestro.report
         for m in (ccmaestro.config, ccmaestro.paths, ccmaestro.report): importlib.reload(m)
         self.report = ccmaestro.report

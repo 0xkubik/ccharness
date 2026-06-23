@@ -42,6 +42,9 @@ def stop_agent(info, *, sender=os.killpg):
     pid = info.get("pid")
     if not pid:
         return ("no-pid", "no recorded pid")
+    # NOTE: a SIGTERM'd agent reads back as "died" in ls — the sh wrapper is killed
+    # before it can write result.json, so there's no exit-code marker. That's expected
+    # for an operator-stopped agent (the process is genuinely gone), not a bug.
     if send_signal(pid, signal.SIGTERM, sender=sender):
         return ("stopped", str(pid))
     return ("not-found", "signal failed (process gone?)")

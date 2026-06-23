@@ -59,6 +59,12 @@ class TestFleetCap(unittest.TestCase):
 
     def test_start_raises_when_fleet_full(self):
         import os, tempfile, importlib
+        _prev = {k: os.environ.get(k) for k in ("CCMAESTRO_HOME",)}
+        def _restore():
+            for k, v in _prev.items():
+                if v is None: os.environ.pop(k, None)
+                else: os.environ[k] = v
+        self.addCleanup(_restore)
         os.environ["CCMAESTRO_HOME"] = tempfile.mkdtemp()
         (Path:=__import__("pathlib").Path)(os.environ["CCMAESTRO_HOME"]).mkdir(exist_ok=True)
         import ccmaestro.config as c; importlib.reload(c)
