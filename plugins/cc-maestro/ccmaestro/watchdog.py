@@ -15,6 +15,11 @@ def looping(tool_calls, loop_n, window):
 
 def verdict(summary, entry, config, now):
     if entry.get("launched_by_ccmaestro") and entry.get("native") is None:
+        ec = entry.get("completed_exit")
+        if ec == 0:
+            return {"status": "done", "reason": "completed (exit 0)"}
+        if ec is not None:
+            return {"status": "crashed", "reason": f"exit {ec}"}
         return {"status": "died", "reason": "gone from the agents registry"}
     loop = looping(summary.get("tool_calls", []), config["loop_n"], config["loop_window"])
     if loop:

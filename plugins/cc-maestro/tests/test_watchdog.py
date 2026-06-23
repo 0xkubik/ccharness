@@ -67,5 +67,17 @@ class TestWatchdog(unittest.TestCase):
         v = watchdog.verdict(s, e, CFG, NOW)
         self.assertEqual(v["status"], "stalled")
 
+    def test_completed_exit_zero_is_done(self):
+        e = {"native": None, "launched_by_ccmaestro": True, "completed_exit": 0}
+        self.assertEqual(watchdog.verdict(summary(), e, CFG, NOW)["status"], "done")
+
+    def test_completed_exit_nonzero_is_crashed(self):
+        e = {"native": None, "launched_by_ccmaestro": True, "completed_exit": 2}
+        self.assertEqual(watchdog.verdict(summary(), e, CFG, NOW)["status"], "crashed")
+
+    def test_gone_without_result_is_died(self):
+        e = {"native": None, "launched_by_ccmaestro": True, "completed_exit": None}
+        self.assertEqual(watchdog.verdict(summary(), e, CFG, NOW)["status"], "died")
+
 if __name__ == "__main__":
     unittest.main()

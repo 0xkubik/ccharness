@@ -1,6 +1,17 @@
 import json
 from datetime import datetime, timezone
-from . import watchdog, autopilot as ap
+from . import watchdog, autopilot as ap, paths
+
+def _completed_exit(meta):
+    if not meta or not meta.get("agent_id"):
+        return None
+    f = paths.agent_dir(meta["agent_id"]) / "result.json"
+    if not f.exists():
+        return None
+    try:
+        return json.loads(f.read_text()).get("exit")
+    except (json.JSONDecodeError, OSError):
+        return None
 
 def _humanize_age(last, now):
     if last is None:
@@ -28,7 +39,7 @@ def build_rows(entries, now, *, summarizer, config):
         cwd = native.get("cwd") or meta.get("repo")
         summary = summarizer(sid)
         is_ap = ap.is_autopilot(cwd)
-        v = watchdog.verdict(summary, {**e, "is_autopilot": is_ap}, config, now)
+        v = watchdog.verdict(summary, {**e, "is_autopilot": is_ap, "completed_exit": _completed_exit(meta)}, config, now)
         rows.append({
             "id": (sid or "")[:8],
             "sessionId": sid,

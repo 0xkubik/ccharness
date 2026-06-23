@@ -32,5 +32,24 @@ class TestLauncher(unittest.TestCase):
         self.assertNotIn("--model", argv)
         self.assertNotIn("--max-budget-usd", argv)
 
+    def test_build_spawn_command_wraps_and_records_exit(self):
+        from ccmaestro import launcher
+        argv = launcher.build_launch_argv("sid-1", "do x")
+        cmd = launcher.build_spawn_command(argv, "/tmp/agents/aid/result.json")
+        self.assertEqual(cmd[0], "sh")
+        self.assertEqual(cmd[1], "-c")
+        self.assertIn("claude", cmd[2])
+        self.assertIn("do x", cmd[2])           # task is shell-quoted into the command
+        self.assertIn("result.json", cmd[2])    # exit code captured to result file
+        self.assertIn("$?", cmd[2])
+
+    def test_build_resume_argv(self):
+        from ccmaestro import launcher
+        argv = launcher.build_resume_argv("sid-9", "now do y")
+        self.assertIn("--resume", argv); self.assertIn("sid-9", argv)
+        self.assertIn("-p", argv); self.assertIn("now do y", argv)
+        self.assertIn("acceptEdits", argv)
+        self.assertNotIn("--session-id", argv)  # resume reuses the existing session
+
 if __name__ == "__main__":
     unittest.main()
