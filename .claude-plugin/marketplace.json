@@ -1,20 +1,32 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
-  "name": "ccharness",
-  "description": "ccharness — a product harness for Claude Code, a diverge → decide → build funnel: /point-it (rank where a product could go next), /grill-it (think one fork to ONE answer), /implement-it (drive one task to done), /slap (reset when a fix is stuck), /autopilot (run the whole funnel in a never-stop loop).",
+  "name": "cc-harness",
+  "description": "cc-harness — a layered harness for Claude Code: cc-tools (single-purpose product skills) -> cc-agent (autopilot, one self-driving agent) -> cc-maestro (the ccmaestro console that watches and controls many agents at once).",
   "owner": {
     "name": "kubik",
     "email": "dev@noxlabs.xyz"
   },
   "plugins": [
     {
-      "name": "ccharness",
-      "description": "A product harness — a diverge → decide → build funnel. /point-it surveys a product and ranks where it could go next (capturing the product's North Star on first run); /grill-it thinks a fork-laden decision through to ONE reasoned answer; /implement-it drives one well-scoped task from understood → built → verified → committed through a gated 0→6 pipeline; /slap resets a stuck fix; /autopilot runs the entire funnel in a continuous loop that stops only on /autopilot-cancel. Zero-config.",
-      "author": {
-        "name": "kubik"
-      },
+      "name": "cc-tools",
+      "description": "The tools layer: /chart-it, /point-it, /grill-it, /implement-it, /slap — single-purpose product skills forming a ground -> diverge -> decide -> build funnel. Zero-config.",
+      "author": { "name": "kubik" },
       "category": "workflow",
-      "source": "./plugins/ccharness"
+      "source": "./plugins/cc-tools"
+    },
+    {
+      "name": "cc-agent",
+      "description": "The self-driving agent layer: /autopilot runs the cc-tools funnel in a never-stop loop that only /autopilot-cancel halts. Depends on cc-tools.",
+      "author": { "name": "kubik" },
+      "category": "workflow",
+      "source": "./plugins/cc-agent"
+    },
+    {
+      "name": "cc-maestro",
+      "description": "The conductor layer: the ccmaestro console observes and controls many coding agents and autopilots at once (tokens, stalls, loops, stop/steer).",
+      "author": { "name": "kubik" },
+      "category": "workflow",
+      "source": "./plugins/cc-maestro"
     }
   ]
 }
