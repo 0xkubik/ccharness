@@ -1,5 +1,5 @@
 ---
-description: "Set up or revise a product's long-horizon direction — the grounding loop. Captures the product's North Star (goal-setting) into CLAUDE.md, then charts a sequenced roadmap of lightweight milestones from where the product is now to that goal. Run once up front; re-run to revise. Every other ccharness skill routes here when no North Star exists; point-it then biases its menu toward the current milestone."
+description: "Set up or revise a product's long-horizon direction — the grounding loop. Captures the product's North Star (goal-setting) into CLAUDE.md, then charts a sequenced roadmap of lightweight milestones from where the product is now to that goal. Run once up front; re-run to revise. Every other cc-tools skill routes here when no North Star exists; point-it then biases its menu toward the current milestone."
 argument-hint: "[--reground to revise the North Star, or omit]"
 ---
 

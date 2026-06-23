@@ -3,9 +3,9 @@ description: "Install the Claude Code plugins this harness orchestrates. Detects
 argument-hint: "(no arguments)"
 ---
 
-# ccharness-init — equip the harness with the plugins it orchestrates
+# cc-init — equip the harness with the plugins it orchestrates
 
-ccharness is glue: `/point-it`, `/grill-it`, and `/implement-it` route to skills from
+cc-tools is glue: `/point-it`, `/grill-it`, and `/implement-it` route to skills from
 **other** plugins. Those plugins are not bundled — this command installs them.
 
 ## The dependency set
@@ -26,7 +26,7 @@ All of these live in the official marketplace `claude-plugins-official`
 | `gitlab` | GitLab MR path at push time (implement-it stage 6) |
 
 > **Source of truth:** this table mirrors the "What it orchestrates" section of
-> `plugins/ccharness/README.md`. If you add or drop a dependency, update **both**.
+> `plugins/cc-tools/README.md`. If you add or drop a dependency, update **both**.
 
 Missing plugins are not fatal — the harness simply skips those routes. This command
 just makes the full set available.

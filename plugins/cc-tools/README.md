@@ -1,4 +1,8 @@
-# ccharness
+# cc-tools
+
+> **Layer:** cc-tools is the **tools layer** of the cc-* harness — the funnel skills and commands.
+> **cc-agent** (the self-driving autopilot loop) sits above it; **cc-maestro** (the fleet
+> orchestrator) sits at the top.
 
 A **product harness** for Claude Code: a `ground → diverge → decide → build` funnel that takes a
 product from "what's the goal?" all the way to committed code — and refuses to skip the thinking.
@@ -16,11 +20,11 @@ Everything here is plain Markdown + JSON (instructions for Claude Code — no ap
 ## Install
 ```
 /plugin marketplace add /Users/kubik/nox/misc/claude-code-harness
-/plugin install ccharness@ccharness
+/plugin install cc-tools@cc-harness
 ```
 Then equip it with the plugins it orchestrates (see [What it orchestrates](#what-it-orchestrates)):
 ```
-/ccharness-init
+/cc-init
 ```
 This shows a plan of what's missing, asks you to confirm, then installs the gaps from the
 official marketplace. Idempotent — re-run it any time (e.g. on a new machine).
@@ -41,9 +45,7 @@ This captures the product's *North Star* (the goal) into `CLAUDE.md` and then of
 | **`/grill-it <decision>`** | The **decision loop.** Turns a fork-laden question into ONE reasoned decision via four opposed proposers (MVP / Final / Conventional / Contrarian) → cross-examination → synthesis. Depth scales to stakes. | "Which way — and why?" |
 | **`/implement-it <task>`** | The **strict executor.** Runs one well-scoped task through a gated `0→6` pipeline (below). Requires the *North Star* (routes to `/chart-it` if missing). Refuses fork-laden or ambiguous tasks instead of guessing — a real fork goes back to `/grill-it`, pure ambiguity to brainstorming; never declares done with work open; never commits unverified code. | "Take this concrete task to done." |
 | **`/slap`** | The **reset.** When a fix has gone three rounds deep in a rabbit hole, forces a step back: restate the problem, list what was tried, question assumptions, research alternatives, propose a fresh angle. | "Stop digging — rethink this." |
-| **`/autopilot [focus]`** | The **loop.** Runs the whole funnel autonomously, cycle after cycle: auto-pick the top direction → grill-it decides → implement-it builds to a local commit → re-survey → repeat. Converts the funnel's human-handbacks into **skip-and-log** (unresolvable tasks go to a review queue). **Never stops on its own** — a `Stop` hook re-feeds it. Needs a North Star (run `/chart-it` once first); if a roadmap exists it walks the route milestone by milestone. | "Just keep improving this — I'll stop you." |
-| **`/autopilot-cancel`** | The **brake.** The one manual stop for the loop — clears the autopilot state so the `Stop` hook lets the session end, and reports the cycle count and the blocked review queue. | "Stop the autopilot." |
-| **`/ccharness-init`** | **Setup.** Installs the plugins the harness orchestrates (see below) from the official marketplace — detects what's missing, shows a plan, confirms, installs only the gaps (user scope). Idempotent. | "Set this up on a new machine." |
+| **`/cc-init`** | **Setup.** Installs the plugins the harness orchestrates (see below) from the official marketplace — detects what's missing, shows a plan, confirms, installs only the gaps (user scope). Idempotent. | "Set this up on a new machine." |
 
 ## The funnel
 
@@ -70,27 +72,6 @@ You act at just a few boundaries: set the **North Star** (once, via `/chart-it`)
 the end. Everything between flows on its own — you can redirect at any boundary, but you're never
 forced to.
 
-## Autopilot — the funnel on a loop
-
-`/autopilot` fuses the whole funnel into **one continuous loop** and runs it autonomously: each
-cycle auto-picks the top-ranked direction toward the North Star, decides *how* with grill-it,
-builds it to a **local commit** with implement-it, then re-surveys the changed repo and goes
-again. The funnel's human-handbacks are **converted to skip-and-log** — a task it can't resolve (an
-unbuildable fork, or one `slap` couldn't crack in two resets) is appended to a **blocked review
-queue** and skipped, never waited on. When the menu is exhausted and nothing has changed, the cycle
-idles cheaply instead of spinning the full survey.
-
-**It cannot stop on its own.** A `Stop` hook re-feeds the loop on every turn, so the model can't
-exit by deciding it's "done" — the only brake is **`/autopilot-cancel`** (you can also interrupt to
-redirect at any time). It refuses to arm without a North Star, so run `/chart-it` once first. If a
-roadmap exists, point-it biases each cycle's auto-pick toward the current milestone and auto-marks a
-milestone complete once its `done when:` holds — so the loop **walks the route milestone by
-milestone** with no extra bookkeeping.
-
-Loop state lives under `.claude/ccharness/autopilot/` (gitignored): `state.json` (the live loop),
-`blocked.jsonl` (the review queue — what got skipped and why), and `log.jsonl` (one line per
-cycle). `/autopilot-cancel` reports the cycle count and what's waiting in the queue.
-
 ## The `/implement-it` pipeline
 
 | # | Stage | What happens |
@@ -116,14 +97,14 @@ Routine, reversible calls it just makes, and keeps moving.
 
 ## What it orchestrates
 
-ccharness is glue — it routes to skills/plugins you already have installed: `superpowers`
+cc-tools is glue — it routes to skills/plugins you already have installed: `superpowers`
 (brainstorming, plans, TDD, subagents, debugging), `claude-md-management`, `frontend-design`,
 `playwright`, `code-simplifier`, `ralph-loop`, `code-review`, `commit-commands`, and `gitlab`.
 Missing plugins simply mean those routes aren't taken.
 
-This list is the **source of truth** for what `/ccharness-init` installs — its dependency
+This list is the **source of truth** for what `/cc-init` installs — its dependency
 table mirrors these nine plugins. Add or drop a dependency here, and update the table in
-`commands/ccharness-init.md` to match.
+`commands/cc-init.md` to match.
 
 ## Layout
 - `commands/chart-it.md` · `commands/point-it.md` · `commands/grill-it.md` · `commands/implement-it.md` — the entry points.
@@ -132,7 +113,4 @@ table mirrors these nine plugins. Add or drop a dependency here, and update the 
 - `skills/grill-it/SKILL.md` — the decision loop (four proposers → synthesis).
 - `skills/implement-it/SKILL.md` — the gated `0→6` executor (the brains).
 - `skills/slap/SKILL.md` — the reset protocol, invoked by implement-it at three strikes (and by you via `/slap`).
-- `commands/autopilot.md` · `commands/autopilot-cancel.md` — arm / stop the never-stop loop.
-- `skills/autopilot/SKILL.md` — the loop's soft brain (one cycle per turn; auto-pick; skip-and-log; cheap idle).
-- `hooks/hooks.json` · `hooks/autopilot-stop.sh` — the `Stop` hook (the hard muscle) that re-feeds the loop so it can't self-stop.
-- `commands/ccharness-init.md` — setup: installs the orchestrated plugins (self-contained, no skill).
+- `commands/cc-init.md` — setup: installs the orchestrated plugins (self-contained, no skill).
