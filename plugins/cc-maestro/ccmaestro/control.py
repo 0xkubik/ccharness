@@ -31,7 +31,15 @@ def send_signal(pid, sig, sender=os.killpg):
 
 def stop_agent(info, *, sender=os.killpg):
     if info.get("is_autopilot"):
-        f = Path(info["cwd"]) / ".claude" / "ccharness" / "autopilot" / "state.json"
+        base = Path(info["cwd"]) / ".claude" / "ccharness"
+        f = base / "autopilot" / "state.json"
+        # autopilot arms a nested semipilot per milestone; that inner loop's own Stop
+        # hook keeps re-feeding while its state is active, so cancelling autopilot must
+        # also clear any in-flight semipilot or the session never actually ends.
+        try:
+            (base / "semipilot" / "state.json").unlink()
+        except OSError:
+            pass
         try:
             f.unlink()
         except FileNotFoundError:

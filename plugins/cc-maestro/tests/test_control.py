@@ -62,11 +62,14 @@ class TestControl(unittest.TestCase):
         repo = tempfile.mkdtemp()
         ap_dir = Path(repo) / ".claude" / "ccharness" / "autopilot"; ap_dir.mkdir(parents=True)
         state = ap_dir / "state.json"; state.write_text(json.dumps({"active": True}))
+        semi_dir = Path(repo) / ".claude" / "ccharness" / "semipilot"; semi_dir.mkdir(parents=True)
+        semi = semi_dir / "state.json"; semi.write_text(json.dumps({"active": True}))
         info = {"is_autopilot": True, "cwd": repo, "pid": 123}
         sent = []
         result, _ = self.control.stop_agent(info, sender=lambda p, s: sent.append((p, s)))
         self.assertEqual(result, "autopilot-cancelled")
-        self.assertFalse(state.exists())     # state removed
+        self.assertFalse(state.exists())     # autopilot state removed
+        self.assertFalse(semi.exists())      # in-flight nested semipilot also removed
         self.assertEqual(sent, [])           # process NOT signalled
 
     def test_stop_normal_signals_group(self):
