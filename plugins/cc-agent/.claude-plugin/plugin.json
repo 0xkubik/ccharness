@@ -1,7 +1,7 @@
 {
   "name": "cc-agent",
   "version": "0.1.0",
-  "description": "cc-agent — the self-driving agent layer: /autopilot runs the cc-tools funnel (point-it -> grill-it -> implement-it) in a never-stop loop that only /autopilot-cancel halts, enforced by a Stop hook. Depends on cc-tools.",
+  "description": "cc-agent — the self-driving agent layer: /semipilot drives the cc-tools funnel toward ONE roadmap milestone and stops; /autopilot wraps it as a meta-loop walking the whole roadmap (retry-once, then dependency-judge: park+advance or hard-stop). Two Stop hooks partition by active state. Depends on cc-tools.",
   "author": {
     "name": "kubik",
     "email": "dev@noxlabs.xyz"
