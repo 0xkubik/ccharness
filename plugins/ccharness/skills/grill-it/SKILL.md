@@ -1,6 +1,6 @@
 ---
 name: grill-it
-description: Use when a task carries a real fork — a business or technical decision with materially different options and no obvious winner — or when an idea must be thought through before building. Turns the question into ONE reasoned decision via four opposed proposers (a compass) → cross-examination → synthesis. A faster, more rigorous replacement for open-ended brainstorming. The human rules only at the boundaries.
+description: Use when a task carries a real fork — a business or technical decision with materially different options and no obvious winner — or when an idea must be thought through before building, or when point-it hands over a checked list of directions to decide. Turns the question (or each list item) into ONE reasoned decision via four opposed proposers (a compass) → cross-examination → synthesis, scaling depth to stakes and to each item's move. A faster, more rigorous replacement for open-ended brainstorming. The human rules only at the boundaries.
 ---
 
 # grill-it — the decision loop
@@ -8,6 +8,12 @@ description: Use when a task carries a real fork — a business or technical dec
 You are running **grill-it**: turn an open question or a fork-laden task into ONE
 well-reasoned decision — crisp enough to wave through or redirect at a glance — then flow it
 into the build. **You do the thinking; the human owns direction and rules at the boundaries.**
+
+**One fork or a list.** Standalone (`/grill-it <decision>`) you get one fork. From **point-it**
+you get a **list** of checked directions, each tagged with its move (ADD / FINISH / REBUILD /
+REFACTOR). See the whole list at once — so you can order and relate the items — then decide each,
+**scaling depth to the move** (Phase 0). One decision per item; the list is only the wrapper.
+Phases 0–3 describe deciding ONE item; **Phase 4** says how the list flows out to the build.
 
 The engine is _structured disagreement_. Four proposers each argue a fixed corner of the
 decision space and **pull hard in their own direction** — they never compromise. They are then
@@ -53,6 +59,11 @@ other axis you have lost the orthogonality that makes the four genuinely distinc
 
 ## Phase 0 — Triage (frame + pick depth)
 
+**If you were handed a list** (from point-it), split it by move first: **ADD / REBUILD** are the
+*heavy* items — each gets its own full triage below. **FINISH / REFACTOR** are the *light* items —
+group them and give the group one quick pass, not four-proposer grilling. Decide the heavy items
+individually; clear the light group together. Then, per item:
+
 Before spawning anyone, do two things:
 
 1. **Frame the decision in one sentence**, and write the **synthesis criteria** — what "best"
@@ -65,6 +76,18 @@ Before spawning anyone, do two things:
 | **Reversible & low-stakes** (most tasks)      | **Fast path**  | Skip the compass. Produce ONE direct proposal, take it to the human. The full grill is the expensive case, never the default. |
 | **Material stakes, reversible**               | **Compass**    | Phase 1 + Synthesis. No cross-examination.                                                                                    |
 | **Irreversible / expensive / hard to unwind** | **Full grill** | Phase 1 + Phase 2 + Synthesis.                                                                                                |
+
+**Seed the door from the move.** A point-it tag is a depth prior — let the move set the *default*
+door, then let the stakes-test above refine it:
+
+| Move                      | Default door             | Why                                                                                          |
+| ------------------------- | ------------------------ | -------------------------------------------------------------------------------------------- |
+| **ADD** / **REBUILD**     | **Compass → Full grill** | reshapes or extends the product — materially different options, real forks; grill it properly |
+| **FINISH** / **REFACTOR** | **Fast path → light**    | closes a debt with a usually-obvious best way — analyse it, don't grill it                    |
+
+The prior is not a cage: a FINISH hiding a real fork (two genuinely different ways to finish) can
+climb to the compass; an obvious ADD can drop to the fast path. **Level** (from the North Star)
+pushes the same way — a REBUILD in production earns more depth than one in a prototype.
 
 If the task is actually unambiguous with no fork → say so and hand it straight to
 `ccharness:implement-it` (the funnel's build stage). It doesn't need a decision loop, it just
@@ -177,9 +200,11 @@ decides the direction, implement-it plans and builds it. Don't do its work here.
 
 ## Phase 4 — Hand off to build (flow through, veto-able)
 
-The human's one directional choice already happened upstream — the pick that opened this
+The human's directional choice already happened upstream — the pick(s) that opened this
 decision. So grill-it does **not** stop for a fresh approval. It **resolves every open axis
-itself** and flows the decided, fork-free approach straight into the build. In one turn:
+itself** and flows the decided, fork-free approach straight into the build.
+
+**For one item** (a standalone fork, or one entry of a list), in one pass:
 
 1. **Persist the decision record** to `.claude/ccharness/decisions/<slug>.md` — the synthesis
    contract verbatim (`decision`, `robust_core`, `assumptions` + their `kill_signal`s,
@@ -195,6 +220,15 @@ itself** and flows the decided, fork-free approach straight into the build. In o
    _"Building this via implement-it unless you redirect — say so to change direction, or to stop
    at the decision."_
 
+**For a list** (from point-it): first **order and relate** the items — rank order by default,
+but pull dependencies earlier and fold any that overlap. Then walk the list, running the
+per-item pass above for each: **one decision record, one implement-it hand-off, one veto line —
+per item.** Heavy items (ADD/REBUILD) are decided individually; the light FINISH/REFACTOR group
+is reasoned in one pass but still **fans out to a per-item build** so each lands as its own
+commit. The cadence is **autonomous, veto-only** by default — the human curated the list by
+checking boxes, so you don't re-ask between items; you build them in rank order and they
+interrupt to redirect or stop any one. (5 checked boxes ⇒ up to 5 decisions ⇒ 5 local commits.)
+
 The human rules by **interrupting**, not by being asked. On a redirect → fold their ruling into
 Phase 0 and re-run only what changed. (Invoked standalone via `/grill-it` for just a decision?
 The same veto is your stop — say so and grill-it ends at the decision instead of building.)
@@ -203,9 +237,11 @@ The same veto is your stop — say so and grill-it ends at the decision instead 
 
 ## Quick reference
 
-`0` Triage — frame + criteria + pick depth (fast path is the default) · `1` Compass — 4
-partisan poles, parallel, low-conviction valve · `2` Grill — opposites cross-examine, harvest
+`0` Triage — (list? split heavy ADD/REBUILD from light FINISH/REFACTOR) frame + criteria + pick
+depth **seeded by move** (ADD/REBUILD grill properly · FINISH/REFACTOR light), fast path the floor ·
+`1` Compass — 4 partisan poles, parallel, low-conviction valve · `2` Grill — opposites cross-examine, harvest
 the ledger (full grill only) · `3` Synthesis — the one objective pass: robust core + live axes +
-scored decision · `4` Hand off — persist the record, resolve the axes, flow into implement-it (human can veto).
+scored decision · `4` Hand off — per item: persist record, resolve axes, flow into implement-it (veto per item); a
+**list** → order/relate, then one decision + one commit per item, autonomous veto-only.
 
 **Invariant:** proposers pull, synthesis judges. A balanced proposer is a bug.

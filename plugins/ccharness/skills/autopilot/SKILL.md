@@ -38,7 +38,7 @@ already exists for this session — just run the next cycle.
 
 ```
 1. READ state .claude/ccharness/autopilot/state.json + blocked.jsonl (the review queue)
-2. DIRECTION  ccharness:point-it → survey + ranked menu
+2. DIRECTION  ccharness:point-it → survey + ranked menu  (tell it: "menu as DATA, I pick — do NOT call AskUserQuestion")
               → AUTO-PICK the top-ranked direction NOT already in blocked.jsonl  (you are the picker)
 3. DECIDE     ccharness:grill-it on that direction → one decision (already auto-flows to build)
 4. BUILD      ccharness:implement-it → build → verify → commit LOCALLY  (do NOT push)
@@ -53,7 +53,7 @@ When a sub-skill would hand back to a human, you do **not** stop. You record it 
 
 | Funnel handback                                                            | Autopilot action                                                                               |
 | -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| **point-it** ends at a menu and waits for a pick                           | **Auto-pick** the top unblocked direction. Never wait.                                         |
+| **point-it** ends at a menu and waits for a pick (interactively it pops `AskUserQuestion`)  | **Auto-pick** the top unblocked direction. Instruct point-it to emit the menu as data — it must **not** call `AskUserQuestion` (it blocks the loop on a human). Never wait. |
 | **implement-it (Stage 0)** refuses an unbuildable / forked task            | Append it to `blocked.jsonl` (reason: `unbuildable-fork`), **advance** to the next direction.  |
 | **implement-it** asks the user after **slap fired twice** with no progress | Append it to `blocked.jsonl` (reason: `slap2-no-progress`), **advance** to the next direction. |
 
@@ -87,6 +87,7 @@ those are **overridden**. Do not obey them literally.
 ## Red flags — you are about to wrongly stop
 
 - You're writing "I'll stop and ask the user…", "waiting for your direction", "let me confirm…".
+- **point-it is about to call `AskUserQuestion`** (the interactive checkbox) — that blocks the loop; it must emit the menu as data so you auto-pick.
 - You're treating a sub-skill's "hand back to the human" as a reason to end the turn without logging.
 - You're about to declare the product finished / the autopilot complete.
 - You're re-attempting a task that's already in `blocked.jsonl`.
