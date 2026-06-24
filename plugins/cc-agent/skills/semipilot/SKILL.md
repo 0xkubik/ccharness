@@ -57,13 +57,14 @@ When `/semipilot` first invokes you, do this before cycle 1:
      "last_surveyed_sha": "",
      "awaiting": null,
      "headroom_floor_pct": 15,
+     "weekly_stop_pct": 98,
      "outcome": null
    }
    ```
    `awaiting` stays `null` in normal operation; you set it to a small object only when the
    loop suspends on a long-running async build (see **Awaiting** below). `headroom_floor_pct`
-   is the remaining-budget % below which you stop launching expensive/async work (see
-   **Headroom** below).
+   is the remaining-budget % below which you stop launching expensive/async work; `weekly_stop_pct`
+   is the weekly **used** % at or above which the loop stops entirely (see **Headroom** below).
    Set `ultracode: true` if `--ultracode` was passed (or propagated from autopilot). Touch
    `semipilot/blocked.jsonl` and `semipilot/log.jsonl` if missing.
 5. **Announce** the target milestone and its `done when:` (note `[ultracode]` if set), then run cycle 1.
@@ -77,9 +78,11 @@ skip arming, run the next cycle directly.
 0. RESUMING? If state.awaiting is set and the awaited task just completed (its notification
           re-entered you), CLEAR awaiting (atomic) and continue — the build's result is now in.
 1. READ   semipilot/state.json + semipilot/blocked.jsonl + semipilot/../usage.json (headroom).
-          HEADROOM = min(100 - five_hour.used_%, 100 - seven_day.used_%) from a FRESH usage.json
-          (<~10 min old). Below state.headroom_floor_pct → "low headroom" gate is ON this cycle
-          (see Headroom): no expensive/async launches. Stale/absent → unknown: stay conservative.
+          From a FRESH usage.json (<~10 min old): weekly used_% ≥ weekly_stop_pct → STOP
+          (active:false, outcome:"stopped-budget", report seven_day.resets_at, END TURN). Else 5h
+          remaining < headroom_floor_pct → SUSPEND (awaiting "5h reset"). Else either window below
+          floor → "low headroom" gate ON (no expensive/async launches). Stale/absent → unknown:
+          stay conservative. (See Headroom.)
 2. DONE?  Survey "now" (what-to-do Phase 1), judge against state.done_when.
           MET → active:false, outcome:"achieved", mark milestone [x] in roadmap.md, final log line,
                  (terse if nested / full report if standalone), END TURN.
@@ -150,20 +153,32 @@ usage bridge into `.claude/ccharness/usage.json` (`five_hour` / `seven_day`: `us
 `resets_at`). At cycle start (step 1) read it and compute **headroom** = the smaller of the two
 remaining percentages (`100 - used_percentage`).
 
-Act on it:
-- **Healthy** (headroom ≥ floor, default 15%): operate normally.
-- **Low headroom** (below `headroom_floor_pct`): the gate is ON — do **not** launch an
-  expensive or long-async build this cycle. Prefer a cheap step that still advances the
-  milestone; if the only available work is expensive, **suspend** (set `awaiting` with a note
-  like `"low headroom — waiting for reset"`) or report and stop — don't spend the last of the
-  budget and strand the owner. The `resets_at` timestamps tell you when it refills.
-- **Unknown** (usage.json absent or stale — e.g. headless `claude -p`, where no statusLine
-  renders, or pre-first-response): you have no real number. Stay conservative — heed any system
-  "approaching limit" warning, and don't kick off unbounded expensive async on a blind budget.
+Act on it — **the two windows behave differently**, because the 5-hour window refills in
+minutes-to-hours but the weekly window resets *days* out. Check in this order each cycle:
 
-Always note the headroom (or "unknown") in the cycle log line, so the trace shows what you knew.
-This is a **gate on launching cost**, never a loop exit: low headroom suspends or defers, it
-does not set `gave-up`.
+- **Weekly near exhaustion → STOP** (terminal). If `seven_day.used_percentage ≥ weekly_stop_pct`
+  (default 98): the weekly budget is essentially gone and won't refill for days — parking a bounded
+  loop that long is pointless. Set `active:false`, `outcome:"stopped-budget"`, log, report (include
+  `seven_day.resets_at` so the owner knows when to re-run `/semipilot`), END TURN. A real exit,
+  distinct from gave-up: the work isn't blocked, the budget is.
+- **5-hour window low → SUSPEND** (non-terminal). Else if the 5-hour remaining
+  (`100 - five_hour.used_percentage`) is below `headroom_floor_pct`: it refills soon (and Claude
+  Code may freeze the session at the wall anyway), so just wait. Set `awaiting`
+  (`"5h limit low — waiting for reset at <five_hour.resets_at>"`), log "suspended", END TURN. The
+  loop auto-resumes when the window refills. Do not set an outcome.
+- **Weekly low but below the stop line → soft gate.** Else if the weekly remaining is below
+  `headroom_floor_pct` (used between floor and `weekly_stop_pct`): do **not** launch an
+  expensive/long-async build (a weekly reset is too far to wait out). Take a cheap step that
+  advances the milestone; if the only available work is expensive, **stop** (report) — don't
+  suspend, the wait is days.
+- **Healthy** (both windows have ≥ `headroom_floor_pct` remaining): operate normally.
+- **Unknown** (usage.json absent or stale — headless `claude -p`, where no statusLine renders, or
+  pre-first-response): no real number. Stay conservative — heed any system "approaching limit"
+  warning, and don't kick off unbounded expensive async on a blind budget.
+
+Always note the headroom (or "unknown") in the cycle log line. Two distinct budget effects: the
+**5-hour** path **suspends** (auto-resumes), the **weekly-exhaustion** path **stops** (terminal,
+`outcome:"stopped-budget"`). Everything in between is a soft gate on launching cost.
 
 ## Milestone-scoped, not roadmap-biased
 
@@ -183,7 +198,7 @@ Append to `blocked.jsonl` whenever do hands back (unbuildable, forked, or slap f
 twice with no progress). The blocked queue is never a stop; it is the asynchronous handoff to the
 human.
 
-## The two exits
+## The terminal exits
 
 - **achieved** — `done_when` judged MET on a live survey (soft model judgment over an observable
   outcome). Sets `active:false`, `outcome:"achieved"`, marks the milestone `[x]` in `roadmap.md`,
@@ -194,8 +209,12 @@ human.
   writes the final log line, and reports the full `blocked.jsonl` queue so the human sees every
   skipped direction. The `outcome` field is the handoff signal autopilot reads when semipilot
   finishes under it.
+- **stopped-budget** — the weekly limit is at/over `weekly_stop_pct` (default 98% used). Sets
+  `active:false`, `outcome:"stopped-budget"`, reports `seven_day.resets_at`. Not a failure (no path
+  is blocked) and not worth parking for — the owner re-runs `/semipilot` after the weekly resets.
+  The 5-hour limit does NOT exit this way: it **suspends** (see Headroom), because it refills soon.
 
-Setting `active:false` in state is what releases the Stop hook on the two **terminal** exits.
+Setting `active:false` in state is what releases the Stop hook on the **terminal** exits.
 
 There is also a **non-terminal** release: **suspended** (`awaiting` set, or a `blocked-external`
 condition). The loop is NOT done and has NOT given up — it is parked on async work or a transient
@@ -226,10 +245,10 @@ notification resumes the loop. See **Awaiting**.
 
 ## How it actually stops
 
-Two terminal ways and only two: **achieved** (done-check met) and **gave-up / capped** (thresholds
-exceeded). Both set `active:false` and END TURN immediately. The Stop hook then lets the session
-end. There is no other self-stop. The user can also force a stop at any time via `/semipilot-cancel`
-(removes `state.json`, same release path).
+Terminal ways: **achieved** (done-check met), **gave-up / capped** (thresholds exceeded), and
+**stopped-budget** (weekly limit at/over `weekly_stop_pct`). All set `active:false` and END TURN
+immediately. The Stop hook then lets the session end. The user can also force a stop at any time via
+`/semipilot-cancel` (removes `state.json`, same release path).
 
 Distinct from stopping: **suspending** (`awaiting`) releases the turn WITHOUT ending the loop —
 `active` stays `true`, and the awaited task's completion notification resumes it. That is the path
@@ -247,7 +266,8 @@ unchanged; ultracode only affects *how* the build is carried out.
 
 ## Quick reference
 
-`1` read state + blocked + usage.json (**headroom** = min remaining %; below floor → no expensive/async
+`1` read state + blocked + usage.json (**budget**: weekly used ≥`weekly_stop_pct` → STOP
+`stopped-budget`; 5h remaining <floor → SUSPEND `awaiting`; else below floor → no expensive/async
 launch) · `2` **DONE?** survey → if MET stop achieved · `3` **GIVE-UP?** streak/cap
 → if hit stop gave-up/capped · `4` what-to-do DATA, filter to `advances`==milestone, auto-pick top ·
 `5` how-to-do → buildable approach (the *how*) · `6` do → local commit (no push) · `7` progress? streak=0 or
