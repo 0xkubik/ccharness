@@ -56,11 +56,14 @@ When `/semipilot` first invokes you, do this before cycle 1:
      "started_at": "<UTC now>",
      "last_surveyed_sha": "",
      "awaiting": null,
+     "headroom_floor_pct": 15,
      "outcome": null
    }
    ```
    `awaiting` stays `null` in normal operation; you set it to a small object only when the
-   loop suspends on a long-running async build (see **Awaiting** below).
+   loop suspends on a long-running async build (see **Awaiting** below). `headroom_floor_pct`
+   is the remaining-budget % below which you stop launching expensive/async work (see
+   **Headroom** below).
    Set `ultracode: true` if `--ultracode` was passed (or propagated from autopilot). Touch
    `semipilot/blocked.jsonl` and `semipilot/log.jsonl` if missing.
 5. **Announce** the target milestone and its `done when:` (note `[ultracode]` if set), then run cycle 1.
@@ -73,7 +76,10 @@ skip arming, run the next cycle directly.
 ```
 0. RESUMING? If state.awaiting is set and the awaited task just completed (its notification
           re-entered you), CLEAR awaiting (atomic) and continue — the build's result is now in.
-1. READ   semipilot/state.json + semipilot/blocked.jsonl
+1. READ   semipilot/state.json + semipilot/blocked.jsonl + semipilot/../usage.json (headroom).
+          HEADROOM = min(100 - five_hour.used_%, 100 - seven_day.used_%) from a FRESH usage.json
+          (<~10 min old). Below state.headroom_floor_pct → "low headroom" gate is ON this cycle
+          (see Headroom): no expensive/async launches. Stale/absent → unknown: stay conservative.
 2. DONE?  Survey "now" (what-to-do Phase 1), judge against state.done_when.
           MET → active:false, outcome:"achieved", mark milestone [x] in roadmap.md, final log line,
                  (terse if nested / full report if standalone), END TURN.
@@ -84,6 +90,8 @@ skip arming, run the next cycle directly.
           → auto-pick the top.   NONE qualify → no-progress cycle: streak++, go to 8.
 5. DECIDE cc-tools:how-to-do on that direction → one buildable approach (decides the *how*)
 6. BUILD  cc-tools:do → verify → LOCAL commit (no push)
+          LOW HEADROOM (step 1 gate ON)? do NOT launch an expensive/long-async build — prefer a
+            cheap step, or suspend (awaiting) until reset, or report and stop. See Headroom.
           ASYNC build (launched a long background task — scan/fuzz/external run — that can't
             finish in-turn, and no parallel in-turn work is worth running) → set awaiting:{what,
             since} (atomic), log a "suspended" line, END TURN. NOT a cycle, NOT a streak tick.
@@ -132,6 +140,30 @@ Rules:
   `awaiting` or log `blocked-external`), do NOT streak++. Reserve `no_progress_streak` for a
   genuine handback or an empty qualifying-direction set. This is what keeps `gave-up` honest:
   it fires only when the WORK is blocked, never when the API is merely busy.
+
+## Headroom — spend the budget, don't exhaust it
+
+semipilot runs on the owner's **subscription** (5-hour + weekly limits), and a long build (a
+scan, a fuzz run) burns the same quota the owner needs. A running session can't read its
+remaining budget directly — the only source is the statusLine payload, surfaced by the cc-tools
+usage bridge into `.claude/ccharness/usage.json` (`five_hour` / `seven_day`: `used_percentage` +
+`resets_at`). At cycle start (step 1) read it and compute **headroom** = the smaller of the two
+remaining percentages (`100 - used_percentage`).
+
+Act on it:
+- **Healthy** (headroom ≥ floor, default 15%): operate normally.
+- **Low headroom** (below `headroom_floor_pct`): the gate is ON — do **not** launch an
+  expensive or long-async build this cycle. Prefer a cheap step that still advances the
+  milestone; if the only available work is expensive, **suspend** (set `awaiting` with a note
+  like `"low headroom — waiting for reset"`) or report and stop — don't spend the last of the
+  budget and strand the owner. The `resets_at` timestamps tell you when it refills.
+- **Unknown** (usage.json absent or stale — e.g. headless `claude -p`, where no statusLine
+  renders, or pre-first-response): you have no real number. Stay conservative — heed any system
+  "approaching limit" warning, and don't kick off unbounded expensive async on a blind budget.
+
+Always note the headroom (or "unknown") in the cycle log line, so the trace shows what you knew.
+This is a **gate on launching cost**, never a loop exit: low headroom suspends or defers, it
+does not set `gave-up`.
 
 ## Milestone-scoped, not roadmap-biased
 
@@ -215,7 +247,8 @@ unchanged; ultracode only affects *how* the build is carried out.
 
 ## Quick reference
 
-`1` read state + blocked · `2` **DONE?** survey → if MET stop achieved · `3` **GIVE-UP?** streak/cap
+`1` read state + blocked + usage.json (**headroom** = min remaining %; below floor → no expensive/async
+launch) · `2` **DONE?** survey → if MET stop achieved · `3` **GIVE-UP?** streak/cap
 → if hit stop gave-up/capped · `4` what-to-do DATA, filter to `advances`==milestone, auto-pick top ·
 `5` how-to-do → buildable approach (the *how*) · `6` do → local commit (no push) · `7` progress? streak=0 or
 streak++ · `8` log + bump cycle (atomic) · `9` end turn → hook re-feeds. Handback → **append
