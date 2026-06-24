@@ -35,6 +35,13 @@ if [ -z "$STATE_ACTIVE" ] && command -v grep >/dev/null 2>&1; then
   grep -Eq '"active"[[:space:]]*:[[:space:]]*false' "$STATE_FILE" && STATE_ACTIVE=false
 fi
 
+# ultracode flag — grep-detected (jq-independent). Forces max parallelism in the build step.
+# (spend is autopilot-only — it lives in cc-agent for --spend-session and in cc-maestro for weekly.)
+ULTRA=""
+if command -v grep >/dev/null 2>&1; then
+  grep -Eq '"ultracode"[[:space:]]*:[[:space:]]*true' "$STATE_FILE" && ULTRA=1
+fi
+
 # Exit #2 — milestone achieved / gave up / cancelled.
 [ "$STATE_ACTIVE" = "false" ] && exit 0
 
@@ -54,13 +61,20 @@ You stop ONLY by flipping active:false on achieved/gave-up/capped, or the user r
 PROMPT
 )"
 
+if [ -n "$ULTRA" ]; then
+  REFEED="$REFEED
+ULTRACODE (mandatory this run): push parallelism to the max in step 4's build — author a Workflow and/or dispatch parallel subagents rather than working inline, isolate parallel file-mutating work in git worktrees, and verify findings adversarially. These tools are always permitted; --ultracode makes them required, not optional."
+fi
+
 if command -v jq >/dev/null 2>&1; then
   jq -n \
     --arg r "$REFEED" \
-    --arg m "🎯 semipilot ${TARGET} cycle ${CYCLE} -> continuing (done-check first; /semipilot-cancel to stop)" \
+    --arg m "🎯 semipilot ${TARGET} cycle ${CYCLE}$([ -n "$ULTRA" ] && printf ' [ultracode]') -> continuing (done-check first; /semipilot-cancel to stop)" \
     '{decision:"block", reason:$r, systemMessage:$m}'
 else
-  printf '%s' '{"decision":"block","reason":"semipilot is active — run one bounded cycle: read .claude/ccharness/semipilot/state.json, DONE-check first, then give-up check, then one milestone-scoped funnel cycle; flip active:false on achieved/gave-up/capped. /semipilot-cancel to stop."}'
+  FALLBACK_REASON='semipilot is active — run one bounded cycle: read .claude/ccharness/semipilot/state.json, DONE-check first, then give-up check, then one milestone-scoped funnel cycle; flip active:false on achieved/gave-up/capped. /semipilot-cancel to stop.'
+  [ -n "$ULTRA" ] && FALLBACK_REASON="$FALLBACK_REASON ULTRACODE: fan out via Workflow + parallel subagents + git worktrees (mandatory)."
+  printf '%s' "{\"decision\":\"block\",\"reason\":\"$FALLBACK_REASON\"}"
 fi
 
 exit 0

@@ -30,6 +30,29 @@ Stop/Notification hook (push). `max_concurrent` (default 0 = unlimited) caps how
 agents `start` will launch. A finished one-shot now shows `done` (clean) or `crashed`
 (non-zero exit) instead of `died`.
 
+## Spend the weekly limit
+
+```bash
+ccmaestro spend-weekly "optional focus" --repo ~/app --yolo   # run ~a week, relaunching across resets
+ccmaestro spend-weekly --horizon-days 3                       # shorter horizon
+```
+
+`--spend-session` (a cc-agent flag) makes one autopilot run flat-out until the **5-hour**
+subscription window cuts the session. `spend-weekly` is the cc-maestro half: it relaunches
+`/autopilot --spend-session` each time that session dies, spanning the 5-hour resets until a
+**7-day** wall-clock horizon — so the whole *weekly* limit gets spent.
+
+It can't read the remaining budget or the reset time (those reach a status-line script only, never
+headless `claude -p`), so it never tries to *detect* the limit. It classifies each death from two
+signals it **can** see: if `autopilot/state.json` is gone/inactive the user ran `/autopilot-cancel`
+→ **STOP** (the brake); a session that ran a while then died is a presumed limit → wait, relaunch;
+one that dies fast is a crash → exponential backoff, give up after a few. Knobs (`spend_*`) live in
+`~/.ccmaestro/config.json`.
+
+Unattended autopilot commits locally, so it needs `--yolo` (or a broadened allowlist) to run the
+git commands. **Durability caveat:** the supervisor is a foreground process — background it
+(`nohup … &`) yourself; a week-long run won't survive a reboot or machine sleep on its own yet.
+
 ## How it works
 
 - The agent list comes from the native `claude agents --json --all`.

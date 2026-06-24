@@ -1,6 +1,6 @@
 ---
 name: semipilot
-description: Use when driving the cc-tools funnel toward ONE roadmap milestone and stopping when its `done when:` is met (or giving up after N no-progress cycles / a cycle cap). The bounded unit; autopilot wraps it. Invoked by /semipilot. Needs a roadmap — routes to /chart-it if absent. Not the never-stop autopilot; not a single task (implement-it).
+description: Use when driving the cc-tools funnel toward ONE roadmap milestone and stopping when its `done when:` is met (or giving up after N no-progress cycles / a cycle cap). The bounded unit; autopilot wraps it. Invoked by /semipilot. Needs a roadmap — routes to /chart-it if absent. Not the never-stop autopilot; not a single task (implement-it). Optional `--ultracode` flag forces maximum parallelism in the build (mandatory Workflow + subagents + worktrees); there is no spend flag here (spend is autopilot-only).
 ---
 
 # semipilot — the bounded done-first loop
@@ -33,7 +33,13 @@ When `/semipilot` first invokes you, do this before cycle 1:
    `active == true` and its `session_id` matches `$CLAUDE_CODE_SESSION_ID`, semipilot is running
    **under autopilot**. In that mode, exit reports are terse (one log line + outcome). Standalone
    → give the full terminal report.
-3. **Write `semipilot/state.json` atomically** (temp file + `mv`). Create
+3. **Parse run-mode flags from `$ARGUMENTS`.** Besides the milestone id and the existing
+   `--give-up-after N` / `--max-cycles N`, accept **`--ultracode`** → `ultracode: true`: forces
+   maximum parallelism in the build step (Workflow + parallel subagents + git worktrees, mandatory).
+   Absent → `false`. (There is **no spend flag on semipilot** — spend is an autopilot-level never-stop
+   policy. When autopilot arms a nested semipilot it propagates only `ultracode`.) See **Ultracode
+   mode** below.
+4. **Write `semipilot/state.json` atomically** (temp file + `mv`). Create
    `.claude/ccharness/semipilot/` if missing:
    ```json
    {
@@ -46,13 +52,15 @@ When `/semipilot` first invokes you, do this before cycle 1:
      "no_progress_streak": 0,
      "max_no_progress": 3,
      "max_cycles": 20,
+     "ultracode": false,
      "started_at": "<UTC now>",
      "last_surveyed_sha": "",
      "outcome": null
    }
    ```
-   Touch `semipilot/blocked.jsonl` and `semipilot/log.jsonl` if missing.
-4. **Announce** the target milestone and its `done when:`, then run cycle 1.
+   Set `ultracode: true` if `--ultracode` was passed (or propagated from autopilot). Touch
+   `semipilot/blocked.jsonl` and `semipilot/log.jsonl` if missing.
+5. **Announce** the target milestone and its `done when:` (note `[ultracode]` if set), then run cycle 1.
 
 When the Stop hook **re-feeds** you (the normal in-loop path): `state.json` already exists —
 skip arming, run the next cycle directly.
@@ -69,7 +77,7 @@ skip arming, run the next cycle directly.
 4. POINT  cc-tools:point-it — menu as DATA ("I pick — do NOT call AskUserQuestion").
           Keep ONLY directions whose `advances` == target milestone AND not in blocked.jsonl.
           → auto-pick the top.   NONE qualify → no-progress cycle: streak++, go to 8.
-5. DECIDE cc-tools:grill-it on that direction → one decision
+5. DECIDE cc-tools:grill-it on that direction → one buildable approach (decides the *how*)
 6. BUILD  cc-tools:implement-it → verify → LOCAL commit (no push)
           handback (unbuildable/forked, or slap-twice) → append to blocked.jsonl, no-progress cycle.
 7. PROGRESS?  committed work that moves done_when closer → streak = 0
@@ -137,11 +145,21 @@ exceeded). Both set `active:false` and END TURN immediately. The Stop hook then 
 end. There is no other self-stop. The user can also force a stop at any time via `/semipilot-cancel`
 (sets `active:false` externally, same release path).
 
+## Ultracode mode (`--ultracode`)
+
+A **plus**, not a switch. Parallelism, subagents, Workflow, and worktrees are *always* allowed and
+you should use them whenever they help; `--ultracode` raises that to **mandatory, maximised**. When
+`ultracode` is set in state (the Stop hook injects this each cycle), step 6's **build** must fan out:
+author a Workflow and/or dispatch parallel subagents instead of building inline, isolate parallel
+file-mutating work in **git worktrees**, and verify findings adversarially. Apply this at the
+build level — don't fight `implement-it`'s gated pipeline. The done-check, give-up, and cap exits are
+unchanged; ultracode only affects *how* the build is carried out.
+
 ## Quick reference
 
 `1` read state + blocked · `2` **DONE?** survey → if MET stop achieved · `3` **GIVE-UP?** streak/cap
 → if hit stop gave-up/capped · `4` point-it DATA, filter to `advances`==milestone, auto-pick top ·
-`5` grill-it → decision · `6` implement-it → local commit (no push) · `7` progress? streak=0 or
+`5` grill-it → buildable approach (the *how*) · `6` implement-it → local commit (no push) · `7` progress? streak=0 or
 streak++ · `8` log + bump cycle (atomic) · `9` end turn → hook re-feeds. Handback → **append
 blocked.jsonl + no-progress cycle**, never wait. No done-check → wrong. `AskUserQuestion` → forbidden.
 

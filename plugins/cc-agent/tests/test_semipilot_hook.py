@@ -84,5 +84,29 @@ class TestSemipilotHook(unittest.TestCase):
         self.assertIn("block", r.stdout)
 
 
+class TestSemipilotFlags(unittest.TestCase):
+    """semipilot carries --ultracode only (spend is autopilot-only, lives in cc-maestro for weekly)."""
+
+    def test_baseline_has_no_ultracode(self):
+        repo = repo_with({"active": True, "session_id": SESSION, "cycle": 1, "target_milestone": "M2"})
+        rc, out = run_hook(repo, {"session_id": SESSION})
+        self.assertIn("block", out)
+        self.assertNotIn("ULTRACODE", out)
+
+    def test_ultracode_injects_block(self):
+        repo = repo_with({"active": True, "session_id": SESSION, "cycle": 1,
+                          "target_milestone": "M2", "ultracode": True})
+        rc, out = run_hook(repo, {"session_id": SESSION})
+        self.assertIn("ULTRACODE", out)
+        self.assertIn("Workflow", out)
+
+    def test_ultracode_survives_without_jq(self):
+        repo = repo_with({"active": True, "session_id": SESSION, "cycle": 1,
+                          "target_milestone": "M2", "ultracode": True})
+        r = subprocess.run(["/bin/bash", str(HOOK)], input=json.dumps({"session_id": SESSION}),
+                           cwd=repo, capture_output=True, text=True, env=nojq_env())
+        self.assertIn("ULTRACODE", r.stdout)
+
+
 if __name__ == "__main__":
     unittest.main()

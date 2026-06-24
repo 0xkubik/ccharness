@@ -44,6 +44,13 @@ class TestSemipilotSkill(unittest.TestCase):
         self.assertIn("document order", self.text)
         self.assertIn("frontier", self.text.lower())
 
+    def test_documents_ultracode_only(self):
+        # semipilot carries --ultracode (mandatory fan-out) ...
+        self.assertIn("--ultracode", self.text)
+        self.assertIn("worktree", self.text.lower())
+        # ... and explicitly has NO spend flag (spend is autopilot-only).
+        self.assertIn("no spend flag", self.text.lower())
+
 
 AUTO = (ROOT / "skills" / "autopilot" / "SKILL.md")
 
@@ -82,6 +89,19 @@ class TestAutopilotSkill(unittest.TestCase):
         self.assertIn("FRONTIER STAGE", self.text)
         self.assertIn("ADVANCE-OR-STALL", self.text)
         self.assertIn("parked", self.text.lower())
+
+    def test_documents_run_mode_flags(self):
+        # Both flags must be parsed and documented.
+        self.assertIn("--ultracode", self.text)
+        self.assertIn("--spend-session", self.text)
+        self.assertIn("worktree", self.text.lower())
+        # Spend mode's two real overrides on autopilot (NOT "kill the caps"):
+        # exhausted roadmap -> generate work (not cheap idle), and hard-block -> park + mine.
+        self.assertIn("Spend mode", self.text)
+        self.assertIn("subscription limit", self.text.lower())
+        # State fields the arm step must write.
+        self.assertIn('"ultracode"', self.text)
+        self.assertIn('"spend"', self.text)
 
 
 if __name__ == "__main__":

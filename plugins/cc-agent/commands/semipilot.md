@@ -1,11 +1,14 @@
 ---
 description: "Drive the cc-tools funnel toward ONE roadmap milestone and stop when its `done when:` is met (or give up after N no-progress cycles / a cycle cap). The bounded unit; autopilot wraps it. Needs a roadmap — run /chart-it first."
-argument-hint: "[milestone id e.g. M3 — default: current] [--give-up-after N] [--max-cycles N]"
+argument-hint: "[milestone id e.g. M3 — default: current] [--give-up-after N] [--max-cycles N] [--ultracode]"
 ---
 
 Invoke the `semipilot` skill to arm and run the BOUNDED goal-seeking loop, with this argument:
 
 > $ARGUMENTS
+
+`--ultracode` forces maximum parallelism in the build step (mandatory Workflow + parallel subagents +
+git worktrees). There is no spend flag on semipilot — spend is an autopilot-level never-stop policy.
 
 semipilot takes ONE roadmap milestone as its goal and drives the funnel (point-it → grill-it →
 implement-it) toward it, **stopping itself** the moment the milestone's `done when:` is met. It has a

@@ -12,6 +12,14 @@ DEFAULTS = {
     "autopilot_stall_min": 30, # autopilot: no new cycle in this many minutes -> stalled
     "report_endpoint": "",     # optional webhook URL (used in Phase 3)
     "max_concurrent": 0,       # max agents start will launch concurrently (0 = unlimited)
+    # --spend-weekly supervisor (see spend.py). Relaunches /autopilot --spend-session across
+    # 5-hour resets until the weekly horizon; classifies each death blind (no limit detection).
+    "spend_fast_death_s": 120,        # a session dying under this ran too briefly to be a limit hit -> crash
+    "spend_max_fast_deaths": 4,       # this many consecutive fast deaths -> give up
+    "spend_horizon_s": 604800,        # 7 days wall clock -> the weekly stop
+    "spend_limit_wait_s": 1800,       # blind probe interval after a presumed limit hit
+    "spend_crash_base_s": 60,         # crash backoff base
+    "spend_crash_max_s": 900,         # crash backoff ceiling
 }
 
 def load_config():

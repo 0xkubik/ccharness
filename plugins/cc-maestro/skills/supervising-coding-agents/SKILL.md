@@ -31,6 +31,7 @@ The CLI is `ccmaestro` (binary at `plugins/cc-maestro/bin/ccmaestro`; symlink it
 | `ccmaestro steer <id> "<message>"` | Stop it, then resume the session with a new instruction |
 | `ccmaestro pause <id>` / `resume <id>` | Freeze / unfreeze (SIGSTOP / SIGCONT) |
 | `ccmaestro check [--notify] [--json]` | Detect state changes; record to events.jsonl; POST to the webhook with `--notify` |
+| `ccmaestro spend-weekly ["focus"] [--repo P] [--horizon-days N] [--yolo]` | Relaunch `/autopilot --spend-session` across 5-hour resets until a 7-day horizon — spends the *weekly* limit. Blind death-classification (cancel→stop, sustained→relaunch, fast-crash→backoff). Foreground; background it yourself. |
 
 `<id>` is the short 8-char id shown in `ls` (a sessionId prefix also works).
 

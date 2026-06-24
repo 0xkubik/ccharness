@@ -1,6 +1,6 @@
 ---
 name: autopilot
-description: Use when you want the cc-tools funnel to run autonomously milestone by milestone — autopilot is a thin meta-loop over semipilot: it arms a fresh semipilot per roadmap milestone and, in the gap between milestones, advances/retries/parks/stops based on the give-up ladder. Requires a roadmap (run /chart-it first). Invoked by /autopilot; the primary brake is /autopilot-cancel, though a hard dependency block can also stop it legitimately.
+description: Use when you want the cc-tools funnel to run autonomously milestone by milestone — autopilot is a thin meta-loop over semipilot: it arms a fresh semipilot per roadmap milestone and, in the gap between milestones, advances/retries/parks/stops based on the give-up ladder. Requires a roadmap (run /chart-it first). Invoked by /autopilot; the primary brake is /autopilot-cancel, though a hard dependency block can also stop it legitimately. Optional flags — `--ultracode` (force maximum parallelism: mandatory Workflow + subagents + worktrees in every build) and `--spend-session` (never self-stop; generate work instead of idling and park instead of hard-stopping, so it runs until the subscription limit cuts the session). Weekly spend is a separate cc-maestro supervisor, not a flag here.
 ---
 
 # autopilot — the meta-loop over semipilot
@@ -35,7 +35,17 @@ When `/autopilot` invokes you to arm, do this before the first semipilot cycle:
 
    (The old no-roadmap, direct-to-North-Star path is removed. Roadmap is required.)
 
-2. **Write `autopilot/state.json` atomically** (temp file + `mv`) for this session.
+2. **Parse run-mode flags from `$ARGUMENTS`** (everything that is not a flag is the focus passed
+   through to each semipilot cycle):
+   - `--ultracode` → `ultracode: true`. Forces maximum parallelism in every build (Workflow +
+     parallel subagents + git worktrees, mandatory). See **Ultracode mode** below.
+   - `--spend-session` → `spend: true`. Run flat-out until the subscription limit cuts the session;
+     never self-stop for a soft reason. See **Spend mode** below. (Weekly spend is a separate
+     cc-maestro supervisor that relaunches this `--spend-session` loop across session resets — there
+     is no `--spend-weekly` flag here.)
+   - Neither present → both default `false` (the normal bounded behaviour).
+
+3. **Write `autopilot/state.json` atomically** (temp file + `mv`) for this session.
    Get the id from `$CLAUDE_CODE_SESSION_ID`:
    ```json
    {
@@ -45,18 +55,25 @@ When `/autopilot` invokes you to arm, do this before the first semipilot cycle:
      "current_milestone": "M1",
      "current_retries": 0,
      "max_retries": 1,
+     "ultracode": false,
+     "spend": false,
      "started_at": "<UTC now>",
      "outcome": null
    }
    ```
-   Touch `autopilot/log.jsonl` (milestone-level history) and `autopilot/blocked.jsonl`
-   (the **parked-milestones** queue) if missing.
+   Set `ultracode` / `spend` to `true` per the flags parsed in step 2. Touch `autopilot/log.jsonl`
+   (milestone-level history) and `autopilot/blocked.jsonl` (the **parked-milestones** queue) if missing.
 
-3. **Arm the first semipilot** on the current milestone: write `semipilot/state.json` (nested,
+4. **Arm the first semipilot** on the current milestone: write `semipilot/state.json` (nested,
    as in §2.2 of the spec — semipilot will be running under autopilot so it stays terse on exit).
+   **Propagate `ultracode`**: if the autopilot run is ultracode, set `ultracode: true` on the nested
+   semipilot state too, so each milestone's build fans out. (Do **not** propagate `spend` — spend is
+   an autopilot-level never-stop policy; the nested semipilot keeps its normal bounded exits, and
+   giving up just parks the milestone for autopilot to handle.)
 
-4. Announce: walking the roadmap from the current milestone. Stops on `/autopilot-cancel`
-   **or** a hard dependency block. Then the first semipilot cycle runs.
+5. Announce: walking the roadmap from the current milestone — note `[ultracode]` / `[spend]` if set.
+   Stops on `/autopilot-cancel` **or** a hard dependency block (in spend mode, only `/autopilot-cancel`
+   or the subscription limit). Then the first semipilot cycle runs.
 
 When the Stop hook **re-feeds** you (the normal in-gap path), skip arming: `autopilot/state.json`
 already exists. Read `semipilot/state.json.outcome` and run the meta-cycle below.
@@ -151,6 +168,50 @@ milestone added by `/chart-it` is picked up on a later idle cycle.
 This is not "the product is done, I should stop." Cheap idle keeps the loop alive without burning
 tokens. Only `/autopilot-cancel` or a HARD STOP ends it.
 
+## Ultracode mode (`--ultracode`)
+
+A **plus**, not a switch: parallelism, subagents, Workflow, and worktrees are *always* allowed and
+you should reach for them whenever they help. `--ultracode` raises that from "use when useful" to
+**"use to the maximum, mandatory"** — it does not unlock anything new, it removes the discretion.
+
+When `ultracode` is set (the Stop hook injects this each cycle), every milestone's **build step**
+must fan out instead of running inline:
+- **author a Workflow and/or dispatch parallel subagents** for the build — never do serially what can
+  be split;
+- **isolate parallel file-mutating work in git worktrees** so concurrent agents don't collide;
+- **verify findings adversarially** (independent checker agents).
+
+Insert this at the **loop/build level** — i.e. how the milestone's work is carried out — not by
+fighting `implement-it`'s gated 0→6 pipeline. The flag propagates to each nested semipilot so the
+fan-out happens inside the cycle where the building actually occurs.
+
+## Spend mode (`--spend-session`)
+
+The goal: **keep working until the subscription limit runs out.** A running loop cannot read its own
+remaining budget (the limit is server-side; nothing local exposes it), so spend mode does **not** try
+to detect the limit. It simply **never self-stops for a soft reason** and keeps generating real work;
+the subscription limit cutting the session is the natural — and only — terminator besides
+`/autopilot-cancel`.
+
+autopilot already never self-stops except a hard dependency-block, so spend mode changes exactly two
+branches of the meta-cycle (the Stop hook injects these):
+1. **Exhausted roadmap is NOT cheap idle → GENERATE work.** Re-survey with `point-it` for new
+   improvements, extend the roadmap via `chart-it`, then keep building. Idling would burn ~zero
+   tokens, which defeats the purpose.
+2. **A hard dependency-block does NOT stop → park + mine.** Park the blocker (as today) and advance
+   to any other workable milestone instead of hard-stopping. Under spend, the dependency block is no
+   longer a legitimate self-stop.
+
+**Honesty + churn guard (important).** Burning the full limit is *best-effort, bounded by how much
+real work exists* — say so; do not pretend otherwise. To avoid a week-long run degenerating into
+hundreds of junk commits:
+- route every generated direction through `grill-it`, which can **reject** weak work;
+- keep every commit **LOCAL** (reviewable / revertable), as the normal loop already does;
+- when work-generation is genuinely **dry** (nothing worth doing passes grill-it), fall back to a
+  **light idle** for that cycle — never lower the bar or manufacture churn just to fill time.
+
+The only stops in spend mode are **`/autopilot-cancel`** and the **subscription limit** itself.
+
 ## Outcomes (§3.5)
 
 | Outcome | What happens |
@@ -159,12 +220,14 @@ tokens. Only `/autopilot-cancel` or a HARD STOP ends it.
 | **Cheap idle** | roadmap exhausted (all `[x]` or parked); never stops, waits for new milestones or cancel |
 | **Hard stop + exit** (NEW) | a dependency block: either a milestone gave up twice with no same-stage sibling, **or** advancing would cross into a later stage while the frontier stage still holds a parked (unbeatable) milestone. autopilot sets `active:false`, outcome `"blocked"`, reports the blocker + parked queue, and the hook releases |
 | **Cancelled** | `/autopilot-cancel` at any time (still the primary brake) |
+| **Spend** (`--spend-session`) | cheap idle → work-generation; hard stop → park + mine; the only stops are `/autopilot-cancel` or the subscription limit cutting the session |
 
-**The hard stop is a legitimate self-stop.** "Only `/autopilot-cancel` stops it" is no longer
-absolute. The one legitimate self-stop is a **dependency block**: a milestone that gave up twice and
-now gates the rest of the route (no same-stage sibling to fall back to, and later stages need it).
-Everything else (a hard task, an empty funnel menu, a cycle cap) feeds the give-up ladder or cheap
-idle — not a self-stop.
+**The hard stop is a legitimate self-stop — except under spend mode.** Normally "Only
+`/autopilot-cancel` stops it" is no longer absolute: the one legitimate self-stop is a **dependency
+block** (a milestone that gave up twice and now gates the rest of the route). Everything else (a hard
+task, an empty funnel menu, a cycle cap) feeds the give-up ladder or cheap idle — not a self-stop.
+**Under `--spend-session` even the hard stop is off**: park the blocker and keep mining, so the only
+terminators are `/autopilot-cancel` and the subscription limit.
 
 ## Rationalizations — STOP, the loop is trying to die
 
@@ -183,7 +246,8 @@ idle — not a self-stop.
 - `current_retries` has only gone to 1 but you haven't run the dependency judgment yet.
 
 **The only self-stops are (a) the user running `/autopilot-cancel`, or (b) the HARD STOP path
-(dependent-block after retry). Everything else continues.**
+(dependent-block after retry). Everything else continues.** Under **`--spend-session`** even (b) is
+removed — park the blocker and keep mining; only `/autopilot-cancel` or the subscription limit stops.
 
 ## Quick reference
 

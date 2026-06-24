@@ -9,7 +9,10 @@ Stop the autopilot loop. This is the manual brake. Do exactly this:
 2. Read it for the **current milestone** (`current_milestone`), then **remove `state.json`** (`rm`).
    This is what lets the next `Stop` end the session — the meta-loop hook re-feeds only while that
    file is present and active. (Removing it, rather than flipping a flag, also lets a fresh
-   `/autopilot` re-arm cleanly later.)
+   `/autopilot` re-arm cleanly later.) This is the brake for a **`--spend-session`** run too: spend
+   mode removes every soft self-stop, so cancelling (or the subscription limit) is the only way it
+   ends. If a cc-maestro `spend-weekly` supervisor launched this run, also stop that supervisor
+   (`ccmaestro` stop) so it does not relaunch a fresh autopilot after you cancel.
 3. **Also remove `.claude/ccharness/semipilot/state.json` if it exists.** autopilot arms a nested
    semipilot for each milestone; if one is mid-milestone, its **own** Stop hook would keep re-feeding
    even after the outer state is gone. Removing it stops the in-flight milestone too — this is why

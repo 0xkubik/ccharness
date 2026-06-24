@@ -111,5 +111,44 @@ class TestAutopilotHook(unittest.TestCase):
         self.assertEqual(r.stdout.strip(), "")
 
 
+class TestAutopilotFlags(unittest.TestCase):
+    """--ultracode and --spend-session change the gap re-feed (the enforcement point)."""
+
+    def _gap(self, **flags):
+        # autopilot active, no semipilot in flight -> the meta-step re-feeds; flags ride along.
+        return repo_with(autopilot={"active": True, "session_id": SESSION,
+                                    "current_milestone": "M1", **flags})
+
+    def test_baseline_has_no_flag_blocks(self):
+        rc, out = run_hook(self._gap(), {"session_id": SESSION})
+        self.assertIn("block", out)
+        self.assertNotIn("ULTRACODE", out)
+        self.assertNotIn("SPEND MODE", out)
+
+    def test_ultracode_injects_block(self):
+        rc, out = run_hook(self._gap(ultracode=True), {"session_id": SESSION})
+        self.assertIn("ULTRACODE", out)
+        # mandatory fan-out vocabulary the model can act on
+        self.assertIn("Workflow", out)
+
+    def test_spend_injects_workgen_block(self):
+        rc, out = run_hook(self._gap(spend=True), {"session_id": SESSION})
+        self.assertIn("SPEND MODE", out)
+
+    def test_both_flags_inject_both_blocks(self):
+        rc, out = run_hook(self._gap(ultracode=True, spend=True), {"session_id": SESSION})
+        self.assertIn("ULTRACODE", out)
+        self.assertIn("SPEND MODE", out)
+
+    def test_flags_survive_without_jq(self):
+        # grep-based detection must work in the jq-absent/coreutils-present world too.
+        repo = self._gap(ultracode=True, spend=True)
+        r = subprocess.run(["/bin/bash", str(HOOK)], input=json.dumps({"session_id": SESSION}),
+                           cwd=repo, capture_output=True, text=True, env=nojq_env())
+        self.assertEqual(r.returncode, 0)
+        self.assertIn("ULTRACODE", r.stdout)
+        self.assertIn("SPEND MODE", r.stdout)
+
+
 if __name__ == "__main__":
     unittest.main()

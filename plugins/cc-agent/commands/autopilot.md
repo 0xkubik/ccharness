@@ -1,11 +1,21 @@
 ---
 description: "Walk the roadmap milestone by milestone via semipilot — arms a fresh /semipilot on the current milestone, and when it finishes advances to the next (with a retry-once, then a stage-test: same-stage sibling → park+advance, else hard-stop). Requires a roadmap (/chart-it first). Stops on /autopilot-cancel OR a hard dependency block."
-argument-hint: "[optional focus — passed to each semipilot cycle]"
+argument-hint: "[optional focus] [--ultracode] [--spend-session]"
 ---
 
-Invoke the `autopilot` skill to **arm the meta-loop**, with this focus:
+Invoke the `autopilot` skill to **arm the meta-loop**, with this focus (and any flags):
 
 > $ARGUMENTS
+
+**Flags** (parsed by the skill; everything else is the focus):
+- `--ultracode` — force maximum parallelism in every build: mandatory Workflow + parallel subagents +
+  git worktrees, propagated into each semipilot cycle. (Without it these are still allowed when useful
+  — the flag just makes them required.)
+- `--spend-session` — run until the subscription limit cuts the session: never self-stop for a soft
+  reason. An exhausted roadmap becomes work-generation instead of cheap idle, and a dependency block
+  parks-and-mines instead of hard-stopping. Only `/autopilot-cancel` or the limit stops it. (For
+  spanning the whole weekly limit across session resets, use the cc-maestro `spend-weekly` supervisor,
+  which relaunches a `--spend-session` autopilot after each reset — there is no `--spend-weekly` flag.)
 
 autopilot is a **meta-loop over semipilot**: it arms `/semipilot` on the current milestone, waits
 for it to finish, then advances to the next — walking the roadmap milestone by milestone. The funnel
