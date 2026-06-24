@@ -55,9 +55,12 @@ When `/semipilot` first invokes you, do this before cycle 1:
      "ultracode": false,
      "started_at": "<UTC now>",
      "last_surveyed_sha": "",
+     "awaiting": null,
      "outcome": null
    }
    ```
+   `awaiting` stays `null` in normal operation; you set it to a small object only when the
+   loop suspends on a long-running async build (see **Awaiting** below).
    Set `ultracode: true` if `--ultracode` was passed (or propagated from autopilot). Touch
    `semipilot/blocked.jsonl` and `semipilot/log.jsonl` if missing.
 5. **Announce** the target milestone and its `done when:` (note `[ultracode]` if set), then run cycle 1.
@@ -68,6 +71,8 @@ skip arming, run the next cycle directly.
 ## One cycle (done-check leads)
 
 ```
+0. RESUMING? If state.awaiting is set and the awaited task just completed (its notification
+          re-entered you), CLEAR awaiting (atomic) and continue — the build's result is now in.
 1. READ   semipilot/state.json + semipilot/blocked.jsonl
 2. DONE?  Survey "now" (what-to-do Phase 1), judge against state.done_when.
           MET → active:false, outcome:"achieved", mark milestone [x] in roadmap.md, final log line,
@@ -79,12 +84,54 @@ skip arming, run the next cycle directly.
           → auto-pick the top.   NONE qualify → no-progress cycle: streak++, go to 8.
 5. DECIDE cc-tools:how-to-do on that direction → one buildable approach (decides the *how*)
 6. BUILD  cc-tools:do → verify → LOCAL commit (no push)
+          ASYNC build (launched a long background task — scan/fuzz/external run — that can't
+            finish in-turn, and no parallel in-turn work is worth running) → set awaiting:{what,
+            since} (atomic), log a "suspended" line, END TURN. NOT a cycle, NOT a streak tick.
+            (Hook releases on awaiting; the task's completion notification resumes you at step 0.)
           handback (unbuildable/forked, or slap-twice) → append to blocked.jsonl, no-progress cycle.
+          EXTERNAL transient block (API 5xx/outage, rate-limit, network — NOT a path problem)
+            → treat as a suspension like async: set awaiting (or log "blocked-external"),
+            END TURN, do NOT streak++. Resume when it clears.
 7. PROGRESS?  committed work that moves done_when closer → streak = 0
               otherwise → streak++
 8. LOG    log.jsonl line {cycle, target, picked, outcome, moved_goal, streak, sha?, ts}; bump cycle (atomic).
-9. END TURN → the semipilot hook re-feeds.
+9. END TURN → the semipilot hook re-feeds (unless awaiting was set in 6 — then it released).
 ```
+
+## Awaiting — suspend on long async work, don't busy-wait
+
+A `do` build can launch work that does NOT finish inside the turn: a scan, a fuzz campaign, an
+external run. The cycle is "one funnel iteration per turn," but that work is asynchronous — so
+**do not spin status-check cycles waiting for it.** That busy-wait is the failure mode: the Stop
+hook re-feeds every turn, each re-feed is a full model turn on the subscription, and dozens of
+"still running" cycles burn quota and march the cycle cap for nothing — while also keeping the
+terminal blocked so `/semipilot-cancel` can't get in.
+
+Instead, **suspend**:
+
+1. When the build is async and there is no independent in-turn work worth doing in parallel,
+   write `awaiting` to state (atomic): `{"what": "<task ids / what you launched>", "since":
+   "<UTC now>"}`. Log a `"suspended"` line. **END THE TURN.**
+2. The Stop hook sees `awaiting` and **releases** (it does not re-feed). The session goes idle:
+   the terminal yields to the user (cancel works), and no quota is spent waiting.
+3. When the awaited task completes, **its own completion notification re-enters you** (this is
+   how background tasks work — they re-invoke on exit, idle or not). At step 0 of the next cycle
+   you clear `awaiting` and judge the result.
+
+Rules:
+- **Only suspend when there's no parallel work.** If you can keep building toward the milestone
+  in-turn while the async task runs, keep cycling — don't suspend a productive loop.
+- **`awaiting` is neither a cycle nor a streak tick.** It's a suspension. Do not bump `cycle`,
+  do not touch `no_progress_streak`. A launched-and-running build is progress pending, not a
+  stall — counting it toward give-up would abandon real work in flight.
+- **Use it only for work that will notify on completion** (a harness-tracked background task).
+  For external work the harness can't observe, set a fallback wake instead of relying on a
+  notification, or you will stall in `awaiting` forever.
+- **A transient EXTERNAL block is a suspension, not a give-up.** An API 5xx/outage, a rate
+  limit, a network failure — none of these mean "no path to the goal exists." Suspend (set
+  `awaiting` or log `blocked-external`), do NOT streak++. Reserve `no_progress_streak` for a
+  genuine handback or an empty qualifying-direction set. This is what keeps `gave-up` honest:
+  it fires only when the WORK is blocked, never when the API is merely busy.
 
 ## Milestone-scoped, not roadmap-biased
 
@@ -116,8 +163,13 @@ human.
   skipped direction. The `outcome` field is the handoff signal autopilot reads when semipilot
   finishes under it.
 
-Setting `active:false` in state is what releases the Stop hook. The hook checks `active` before
-blocking; once it is false, the session ends normally.
+Setting `active:false` in state is what releases the Stop hook on the two **terminal** exits.
+
+There is also a **non-terminal** release: **suspended** (`awaiting` set, or a `blocked-external`
+condition). The loop is NOT done and has NOT given up — it is parked on async work or a transient
+outage. The hook releases on `awaiting` too (so the turn yields without churn), but `active` stays
+`true` and `outcome` stays `null`: this is a pause, not an exit. The awaited task's completion
+notification resumes the loop. See **Awaiting**.
 
 ## Rationalizations — STOP, the cycle is trying to skip the done-check
 
@@ -128,6 +180,8 @@ blocking; once it is false, the session ends normally.
 | "I'll ask the user whether we're done (`AskUserQuestion`)." | **Forbidden.** `AskUserQuestion` blocks the loop on a human; the Stop hook re-feeds you on a turn boundary. The done judgment is yours. `AskUserQuestion` must **not** be called at any point inside the semipilot cycle. |
 | "No qualifying directions — I'll pick from the full roadmap instead." | Empty filtered set = no-progress cycle. streak++. Go to step 8. |
 | "The streak is high but I feel progress is near — skip the give-up check." | The give-up thresholds exist exactly for this feeling. Trust `no_progress_streak` and `max_cycles`. |
+| "My async build is still running — I'll spin a cycle each turn to check on it." | **No — suspend.** Set `awaiting` and END THE TURN; the hook releases and the task's completion notification resumes you. Busy-wait cycles burn quota, march the cap, and block `/semipilot-cancel`. |
+| "The API is 529-ing / rate-limited, so I'm stuck — streak++ toward give-up." | A transient external outage is NOT a no-progress tick. Suspend (`awaiting` / `blocked-external`), do not streak++. `gave-up` is for blocked WORK, not a busy API. |
 
 ## Red flags — you are about to make the wrong call
 
@@ -140,10 +194,14 @@ blocking; once it is false, the session ends normally.
 
 ## How it actually stops
 
-Two ways and only two: **achieved** (done-check met) and **gave-up / capped** (thresholds
+Two terminal ways and only two: **achieved** (done-check met) and **gave-up / capped** (thresholds
 exceeded). Both set `active:false` and END TURN immediately. The Stop hook then lets the session
 end. There is no other self-stop. The user can also force a stop at any time via `/semipilot-cancel`
-(sets `active:false` externally, same release path).
+(removes `state.json`, same release path).
+
+Distinct from stopping: **suspending** (`awaiting`) releases the turn WITHOUT ending the loop —
+`active` stays `true`, and the awaited task's completion notification resumes it. That is the path
+for long async builds and transient outages; it is not an exit.
 
 ## Ultracode mode (`--ultracode`)
 
@@ -161,7 +219,9 @@ unchanged; ultracode only affects *how* the build is carried out.
 → if hit stop gave-up/capped · `4` what-to-do DATA, filter to `advances`==milestone, auto-pick top ·
 `5` how-to-do → buildable approach (the *how*) · `6` do → local commit (no push) · `7` progress? streak=0 or
 streak++ · `8` log + bump cycle (atomic) · `9` end turn → hook re-feeds. Handback → **append
-blocked.jsonl + no-progress cycle**, never wait. No done-check → wrong. `AskUserQuestion` → forbidden.
+blocked.jsonl + no-progress cycle**, never wait. Async build / external outage → **set `awaiting`,
+END TURN (suspend, no cycle/streak), resume on the task's completion notification** — never busy-wait.
+No done-check → wrong. `AskUserQuestion` → forbidden.
 
 **Invariant:** done-check leads every cycle; the loop exits on its own when the milestone is met or
 the give-up thresholds fire. `active:false` is the only door out.

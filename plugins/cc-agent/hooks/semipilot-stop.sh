@@ -50,6 +50,21 @@ if [ -n "$STATE_SESSION" ] && [ -n "$HOOK_SESSION" ] && [ "$STATE_SESSION" != "$
   exit 0
 fi
 
+# Exit #4 — the loop is SUSPENDED on a long-running async build (a scan/fuzz/external run
+# the agent launched in the background). RELEASE the turn so the terminal yields to the user
+# (/semipilot-cancel works again) and no idle re-feed burns subscription quota. The awaited
+# task's OWN completion notification re-enters the agent, which clears `awaiting` and resumes.
+# `awaiting` is a non-null object the agent sets; null/absent → normal loop. Only the agent
+# sets/clears it, so a stale marker can only come from the agent and is cleared on resume.
+AWAITING=""
+if command -v jq >/dev/null 2>&1; then
+  AWAITING="$(jq -r 'if (.awaiting // null) == null then "" else "1" end' "$STATE_FILE" 2>/dev/null || true)"
+fi
+if [ -z "$AWAITING" ] && command -v grep >/dev/null 2>&1; then
+  grep -Eq '"awaiting"[[:space:]]*:[[:space:]]*\{' "$STATE_FILE" && AWAITING=1
+fi
+[ -n "$AWAITING" ] && exit 0
+
 # --- ACTIVE for this session (or present-but-unparseable) → RE-FEED. Fail closed. ---
 REFEED="$(cat <<'PROMPT'
 🎯 semipilot is ACTIVE — continue the bounded loop for THIS milestone. Run exactly ONE cycle:

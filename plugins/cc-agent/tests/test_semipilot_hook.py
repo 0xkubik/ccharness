@@ -83,6 +83,33 @@ class TestSemipilotHook(unittest.TestCase):
                            cwd=repo, capture_output=True, text=True, env=nojq_env())
         self.assertIn("block", r.stdout)
 
+    def test_awaiting_releases_stop(self):
+        # An active loop SUSPENDED on async work (awaiting set) must RELEASE, not re-feed —
+        # so the terminal yields and no idle cycle burns quota.
+        repo = repo_with({"active": True, "session_id": SESSION, "cycle": 2,
+                          "target_milestone": "M1",
+                          "awaiting": {"what": "scan task xyz", "since": "2026-06-24T13:38:00Z"}})
+        rc, out = run_hook(repo, {"session_id": SESSION})
+        self.assertEqual(rc, 0)
+        self.assertEqual(out.strip(), "")
+
+    def test_awaiting_null_still_blocks(self):
+        # awaiting:null is the normal state — must still re-feed (block).
+        repo = repo_with({"active": True, "session_id": SESSION, "cycle": 2,
+                          "target_milestone": "M1", "awaiting": None})
+        rc, out = run_hook(repo, {"session_id": SESSION})
+        self.assertIn("block", out)
+
+    def test_awaiting_releases_without_jq(self):
+        # jq absent (coreutils present): the awaiting release must still fire via the grep fallback.
+        repo = repo_with({"active": True, "session_id": SESSION, "cycle": 2,
+                          "target_milestone": "M1",
+                          "awaiting": {"what": "scan", "since": "2026-06-24T13:38:00Z"}})
+        r = subprocess.run(["/bin/bash", str(HOOK)], input=json.dumps({"session_id": SESSION}),
+                           cwd=repo, capture_output=True, text=True, env=nojq_env())
+        self.assertEqual(r.returncode, 0)
+        self.assertEqual(r.stdout.strip(), "")
+
 
 class TestSemipilotFlags(unittest.TestCase):
     """semipilot carries --ultracode only (spend is autopilot-only, lives in cc-maestro for weekly)."""
