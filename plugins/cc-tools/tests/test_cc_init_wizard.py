@@ -110,9 +110,9 @@ class TestCcInitWizard(unittest.TestCase):
     def test_uses_askuserquestion(self):
         self.assertIn("AskUserQuestion", self.text)
 
-    def test_four_stages_present(self):
+    def test_five_stages_present(self):
         low = self.text.lower()
-        for marker in ("stage 1", "stage 2", "stage 3", "stage 4"):
+        for marker in ("stage 1", "stage 2", "stage 3", "stage 4", "stage 5"):
             self.assertIn(marker, low)
 
     def test_stage1_antihang_preserved(self):
@@ -132,10 +132,17 @@ class TestCcInitWizard(unittest.TestCase):
         self.assertGreater(len(list(RULES_DIR.glob("*.md"))), 4)
         self.assertIn("4 options", self.text.lower())
 
-    def test_stage3_prose_only(self):
+    def test_stage3_usage_bridge_wraps_and_is_reversible(self):
+        # Stage 3 installs the usage bridge: must invoke the wrapper, preserve the existing
+        # status line (display unchanged), and tell the user it is reversible.
+        self.assertIn("cc-usage-statusline.sh", self.text)
+        self.assertIn("CC_USAGE_DOWNSTREAM", self.text)
+        self.assertIn("reversible", self.text.lower())
+
+    def test_stage4_prose_only(self):
         self.assertIn("Code and tests are out of scope", self.text)
 
-    def test_stage4_offers_find_goal(self):
+    def test_stage5_offers_find_goal(self):
         self.assertIn("/find-goal", self.text)
 
     def test_idempotent_documented(self):
