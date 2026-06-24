@@ -1,19 +1,35 @@
 ---
 name: grill-it
-description: Use when a task carries a real fork — a business or technical decision with materially different options and no obvious winner — or when an idea must be thought through before building, or when point-it hands over a checked list of directions to decide. Turns the question (or each list item) into ONE reasoned decision via four opposed proposers (a compass) → cross-examination → synthesis, scaling depth to stakes and to each item's move. A faster, more rigorous replacement for open-ended brainstorming. The human rules only at the boundaries.
+description: Use when a task carries a real fork — a business or technical decision with materially different options and no obvious winner — or when an idea must be thought through before building, or when point-it hands over a checked list of picked directions. Works out HOW to build each picked direction (or, standalone, resolves one fork), converging the open implementation forks into ONE buildable approach via four opposed proposers (a compass) → cross-examination → synthesis, scaling depth to stakes and to each item's move. It does not re-pick the direction — that was point-it's job; if a human's pick itself looks wrong, it flags the human rather than silently overriding. A faster, more rigorous replacement for open-ended brainstorming. The human rules only at the boundaries.
 ---
 
 # grill-it — the decision loop
 
-You are running **grill-it**: turn an open question or a fork-laden task into ONE
-well-reasoned decision — crisp enough to wave through or redirect at a glance — then flow it
-into the build. **You do the thinking; the human owns direction and rules at the boundaries.**
+You are running **grill-it**. Your job is to **work out HOW to build something** and land on one
+buildable approach — crisp enough to wave through or redirect at a glance — then flow it into the
+build. **You do the thinking; the human owns direction and rules at the boundaries.**
 
-**One fork or a list.** Standalone (`/grill-it <decision>`) you get one fork. From **point-it**
-you get a **list** of checked directions, each tagged with its move (ADD / FINISH / REBUILD /
-REFACTOR). See the whole list at once — so you can order and relate the items — then decide each,
-**scaling depth to the move** (Phase 0). One decision per item; the list is only the wrapper.
-Phases 0–3 describe deciding ONE item; **Phase 4** says how the list flows out to the build.
+**Two modes — the difference matters.**
+
+- **From point-it (the funnel):** the human already picked *what* to do (the checked direction[s]).
+  Your job is **not to re-pick it** — point-it diverges and the human chooses the *what*; you work
+  out the *how*. You get a **list** of checked directions, each tagged with its move (ADD / FINISH /
+  REBUILD / REFACTOR). See the whole list at once — so you can order and relate the items — then
+  work each, **scaling depth to the move** (Phase 0). One approach per item; the list is the wrapper.
+- **Standalone (`/grill-it <fork>`):** no upstream pick — you resolve one arbitrary fork to one
+  decision from scratch.
+
+**"ONE" means one buildable approach for the *how*, not one pick among directions.** You still
+converge — but on how to build the pick, not on which pick to make. This is load-bearing: the next
+stage, **implement-it, refuses a task that still carries a live fork** (it routes it right back
+here), so the *how*-forks must be resolved into a single buildable approach before the work flows on.
+Phases 0–3 describe working ONE item; **Phase 4** says how the list flows out to the build.
+
+**Stay in the how-lane.** When the direction came from a human's pick (point-it), the human already
+settled *whether* to do it — so if the grilling concludes the **pick itself** is wrong or
+unnecessary, you do **not** silently drop it or silently build something else: you **flag it to the
+human** and stop (Phase 4). (Standalone, or when the direction was machine-generated under autopilot
+with no human in the loop, there is no human pick to protect — there you may rule it out yourself.)
 
 The engine is _structured disagreement_. Four proposers each argue a fixed corner of the
 decision space and **pull hard in their own direction** — they never compromise. They are then
@@ -32,14 +48,9 @@ leave nothing to decide.
 - **Synthesis is load-bearing.** All decision quality lives there. It scores against explicit
   criteria and carries its assumptions forward; it never just "picks the nicest essay."
 
-**Grounding precondition (the gate).** Before anything else, confirm the product is grounded: look
-for a `## Product North Star` heading in the repo-root `CLAUDE.md` (the heading is the stable
-contract — its marker comment / parenthetical owner may read `point-it` or `chart-it`, both count).
-**Absent → stop and route to `/chart-it`:** _"No North Star yet — this product has no captured goal,
-and cc-tools builds from the goal outward. Run `/chart-it` to set it (it captures the North Star,
-then offers to chart the roadmap), then re-issue this command. Your prompt isn't discarded — re-issue
-it after `/chart-it`."_ grill-it leans on the North Star's **Level** to set its depth (Phase 0), so
-it does not run ungrounded.
+**Grounding precondition (the gate).** Before anything else, confirm a `## Product North Star` heading
+exists in repo-root `CLAUDE.md`. **Absent → stop and route to `/chart-it`** (don't run ungrounded).
+grill-it leans on the North Star's **production flag** (is it live?) to set its depth (Phase 0).
 
 ---
 
@@ -95,7 +106,7 @@ door, then let the stakes-test above refine it:
 | **FINISH** / **REFACTOR** | **Fast path → light**    | closes a debt with a usually-obvious best way — analyse it, don't grill it                    |
 
 The prior is not a cage: a FINISH hiding a real fork (two genuinely different ways to finish) can
-climb to the compass; an obvious ADD can drop to the fast path. **Level** (from the North Star)
+climb to the compass; an obvious ADD can drop to the fast path. **Whether the product is in production** (from the North Star)
 pushes the same way — a REBUILD in production earns more depth than one in a prototype.
 
 If the task is actually unambiguous with no fork → say so and hand it straight to
@@ -180,19 +191,24 @@ four ledgers. Do NOT pick the nicest proposal — **construct** the decision:
 3. **Score** the surviving alternatives against the Phase-0 criteria. Weight out any axis where
    conviction was uniformly low.
 4. **Decide** — pick the point on the compass and justify _why it beat the named alternatives_.
-5. **Guard rights:** if every pole is weak, or they all attack the same framing → **reframe**
-   and restart Phase 0. If there is no real difference → **collapse** to one proposal. Synthesis
-   is allowed to refuse to choose between four bad options.
+5. **Guard rights:** if every pole is weak, or they all attack the same *how*-framing → **reframe**
+   the *how* and restart Phase 0. If there is no real difference → **collapse** to one proposal.
+   Synthesis is allowed to refuse to choose between four bad options. **But if the grilling concludes
+   the human-picked direction *itself* is wrong or unnecessary** (not just that the *how* was
+   mis-framed), do **not** silently reframe it away or build a different thing — emit
+   `framing: flag_to_human(<why>)` so Phase 4 stops and surfaces it. Reframing is only ever for the
+   *how*; vetoing a human's *what* is the human's call, not yours. (A standalone fork or a
+   machine-generated direction has no human pick to protect — reframe / rule it out freely there.)
 
 **Synthesis output contract:**
 
 ```
-decision:            <chosen direction + plan sketch>
+decision:            <chosen approach (the *how*) + plan sketch>
 robust_core:         [ <points that converged through the grilling> ]
 beaten_alternatives: [ { alternative, why_not } ]
 assumptions:         [ { claim, confidence, kill_signal } ]   # kill_signal = a FALSIFIABLE trip-condition: "a single export > 50k rows" or "the library buffers instead of streams" — NEVER "if it gets too big"
 decision_axes:       [ { axis, options, recommendation } ]    # held disagreements — grill-it rules each; human can veto
-framing:             ok | reframe(<why>)
+framing:             ok | reframe(<the *how* was mis-framed — restart Phase 0>) | flag_to_human(<the human-picked direction itself looks wrong/unnecessary — stop, surface, do NOT build>)
 ```
 
 `assumptions[].kill_signal` is the **load-bearing field for not getting carried by the wind.**
@@ -203,7 +219,7 @@ catches the drift the moment it surfaces. This is why Phase 4 persists them to d
 
 Keep `decision`'s plan sketch **thin** — _what_ approach won and _why_. The ordered build
 checklist (and any written plan) is **implement-it's** Stage 1, not synthesis's job: grill-it
-decides the direction, implement-it plans and builds it. Don't do its work here.
+decides the *how* (the approach), implement-it plans and builds it. Don't do its work here.
 
 ---
 
@@ -212,6 +228,14 @@ decides the direction, implement-it plans and builds it. Don't do its work here.
 The human's directional choice already happened upstream — the pick(s) that opened this
 decision. So grill-it does **not** stop for a fresh approval. It **resolves every open axis
 itself** and flows the decided, fork-free approach straight into the build.
+
+**One exception — flag, don't override.** If synthesis set `framing: flag_to_human` (the grilling
+concluded the *picked direction itself* is wrong or unnecessary, not just that the *how* needed
+reframing), grill-it does **not** build and does **not** silently drop it. It **stops** and surfaces
+the finding to the human — the picked direction, why it looks wrong, and the recommended
+alternative — then lets them re-pick (back to point-it), override ("build it anyway"), or drop it.
+This applies only to a **human-picked** direction; a standalone fork or an autopilot-generated
+direction (no human in the loop) grill-it rules on itself.
 
 **For one item** (a standalone fork, or one entry of a list), in one pass:
 
@@ -250,7 +274,9 @@ The same veto is your stop — say so and grill-it ends at the decision instead 
 depth **seeded by move** (ADD/REBUILD grill properly · FINISH/REFACTOR light), fast path the floor ·
 `1` Compass — 4 partisan poles, parallel, low-conviction valve · `2` Grill — opposites cross-examine, harvest
 the ledger (full grill only) · `3` Synthesis — the one objective pass: robust core + live axes +
-scored decision · `4` Hand off — per item: persist record, resolve axes, flow into implement-it (veto per item); a
-**list** → order/relate, then one decision + one commit per item, autonomous veto-only.
+scored decision · `4` Hand off — per item: persist record, resolve axes, flow into implement-it (veto per item) —
+**unless** synthesis flagged the human-picked direction itself as wrong (`flag_to_human`) → stop &
+surface, don't build; a **list** → order/relate, then one approach + one commit per item, autonomous
+veto-only.
 
 **Invariant:** proposers pull, synthesis judges. A balanced proposer is a bug.

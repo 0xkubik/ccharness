@@ -1,195 +1,196 @@
 ---
 name: chart-it
-description: Use when setting up or revising a product's long-horizon direction — the grounding loop. Captures the product's North Star (goal-setting / целеполагание) into CLAUDE.md, then charts a layered roadmap of lightweight milestones (ordered stages, parallel milestones within each) from where the product is now to that goal. Invoked by /chart-it. Run once up front (every other product skill routes here when no North Star exists); re-run to revise as the route drifts. The roadmap then biases point-it's ranking toward the current frontier (the parallel milestones open now). Not for deciding a fork (grill-it) or building a task (implement-it).
+description: Use when setting up or revising a product's long-horizon direction — the grounding loop that sets the goal and versions the road to it.
 ---
 
-# chart-it — the grounding loop
+Guides a human to **set the product's goal** and **version the route to it** (v0 → v1 → v2 → …).
+Captures the **North Star** (the goal) into `CLAUDE.md`, then builds a `.claude/ccharness/roadmap.md`
+organized as **versions of the product** — and, inside each version, the features broken down into
+ordered work **stages**. Invoked by `/chart-it`. Run once up front (every other product skill routes
+here when no goal exists); re-run to revise. The roadmap then biases point-it toward the current
+frontier and feeds the autopilot/semipilot loops.
 
-You are running **chart-it**: the harness's **grounding front door**. You do two things, in order —
-capture the product's **North Star** (the goal — *целеполагание*), then chart the **roadmap** (the
-layered route to it). The whole funnel depends on the North Star existing; when it is missing,
-every other product skill sends the human **here**.
+# chart-it — set the goal, then version the road to it
 
-```
- chart-it   (GROUND — set the goal, then chart the route)
-   │  writes North Star → CLAUDE.md   +   roadmap → .claude/ccharness/roadmap.md
-   ▼
- point-it ──► grill-it ──► implement-it        (+ slap = tactical reset)
- DIVERGE       DECIDE        BUILD
-   ▲ every product skill: no North Star → routes back here
-   ▲ point-it additionally reads the roadmap and biases its menu toward the CURRENT FRONTIER
+You are the harness's **grounding front door**, and this is a **high-stakes conversation**, not a
+form to fill in. What you capture here decides the product's whole direction — point-it ranks moves
+against it, and autopilot/semipilot will **build, milestone by milestone, off the roadmap you write**.
+A sloppy goal or a vague version makes every later automated step aim at the wrong target.
 
- North Star = WHERE TO (the goal) · roadmap = BY WHICH ROUTE · point-it = WHICH NEXT STEP
-```
+**Tell the human this up front, plainly:** this defines what we're building and the order we build it;
+many later steps (manual and automated) depend on it; it's worth slowing down for. Then run a real
+guided interview — **lead with questions**, one decision at a time, until the picture is sharp.
 
-The roadmap is **layered**: a sequence of **stages** that run in order, with one or more
-**milestones inside each stage that are parallel** (no order between them). The single rule that
-shapes it: **need "A before B" → put them in different stages; independent → same stage.** This is
-what lets the route show real structure — what blocks what, what can go at once — instead of forcing
-everything onto one line. (A roadmap with *no* stage headings is just the degenerate case: a plain
-line, each milestone its own stage — its **frontier-tracking** is exactly the old linear roadmap;
-only autopilot's give-up ladder runs stricter without stages.)
+**How you ask:**
 
-**Core invariants — non-negotiable:**
-
-- **chart-it OWNS the North Star write.** The `## Product North Star` block (heading + marker +
-  fields) is a **shared contract** every other skill detects. You produce it; they only read it. A
-  generic helper won't reliably reproduce the exact block — own this write.
-- **North Star is mandatory; the roadmap is optional-but-encouraged.** After capturing the star,
-  **offer** the roadmap — never force it. Someone bounced here for a one-off task can take just the
-  star and leave; the star alone satisfies the gate for every other skill.
-- **Milestones are lightweight.** Each carries a **stable global id** (`M1`, `M2`, …) and is `name +
-  done when: <observable outcome> + theme: <one line>` — **no frozen task list.** point-it derives
-  the concrete moves fresh each run; you only fix the *stages, the sequence, and the outcomes*. Ids
-  stay stable across re-runs (semipilot/autopilot reference them) and are independent of which stage a
-  milestone sits in.
-- **The roadmap is layered; the FRONTIER replaces the single pointer.** Milestones group into
-  ordered `## Stage N` bands; milestones within a stage are parallel. The **frontier** = the
-  unchecked `[ ]` milestones of the **earliest stage that still has any unchecked milestone**; a
-  stage opens only once the one before it is fully `[x]`. The frontier is **derived from checkboxes —
-  one source of truth, no separate pointer** (same invariant as before, just a *set* not a single
-  box). Milestones are written **in document order** = a valid sequential walk (stage 1's, then stage
-  2's, …), so "first unchecked in document order" is still a well-defined single milestone for the
-  loops that take one at a time. **No stage headings = legacy line** = each milestone its own stage =
-  frontier is always exactly the first unchecked box (old behaviour, unchanged).
-- **Collaborate, one decision at a time** (borrow `superpowers:brainstorming`'s technique). The
-  terminal is `CLAUDE.md` + `roadmap.md` — **NOT** `writing-plans`.
+- **The global goal: ask open questions — do NOT offer pre-baked options.** The goal must come from
+  the human's own head, so use plain conversational questions, one at a time. Never hand them a menu
+  of product visions to pick from.
+- **The versions: use `AskUserQuestion`** to ask leading questions with concrete options (plus the
+  free-text fallback). This is where you actively steer — "for v0, which of these is the core?", "does
+  the product at v0 look more like X or Y?".
+- **One decision at a time** (borrow `superpowers:brainstorming`'s technique). The terminal is
+  `CLAUDE.md` + `roadmap.md` — **not** `writing-plans`.
 
 ---
 
-## Phase 0 — Goal-setting (the North Star)
+## Phase 0 — The global goal (the North Star) — ask, don't offer
 
-**North Star detection.** Look for a `## Product North Star` heading in the repo-root `CLAUDE.md`.
-The **heading** is the stable contract — its marker comment / parenthetical owner may read `point-it`
-or `chart-it`, both count.
+**Detect first.** Look for a `## Product North Star` heading in the repo-root `CLAUDE.md`.
 
-| State | Path |
-| --- | --- |
-| **Present** | Read it = the goal. Offer `--reground` to revise (re-run the interview, overwrite the block). Then continue to the roadmap offer below. |
-| **Absent** | Run the goal-setting dialogue, then **write the block yourself** (below). |
-| **`--reground` requested** | Re-run the interview, overwrite the block (preserving the rest of `CLAUDE.md`), continue. |
+| State            | Path                                                                                    |
+| ---------------- | --------------------------------------------------------------------------------------- |
+| **Present**      | Read it = the goal. Offer `--reground` to revise. Continue to the version loop.         |
+| **Absent**       | Run the goal-setting questions below, then **write the block yourself**.                |
+| **`--reground`** | Re-run the questions, overwrite the block (preserve the rest of `CLAUDE.md`), continue. |
 
-**The goal-setting dialogue.** Borrow `superpowers:brainstorming`'s technique — one question at a
-time, plain language — but **keep it able to be a fast 3-answer capture**: someone bounced here from
-`/implement-it` for a one-off shouldn't face a long dialogue before their task. Ask for exactly these
-three, one at a time:
-
-1. **Vision** — a few sentences: what the finished product looks like at the end.
-2. **Core problem** — the main problem this product solves.
-3. **Level** — `1` no production · `2` production exists / is coming · `3` already in production.
-
-You *may* go deeper collaboratively (objectives, who it's for, what success looks like) — that
-richness feeds the roadmap in Phase 2 — but the **durable artifact is the stable 3-field block**.
-Then write it, appending to the project-root `CLAUDE.md` and **preserving everything already there**:
+**The goal-setting dialogue — open questions only, no multiple-choice.** Draw out, one question at a
+time, in plain language: what does the finished product look like at the very end — who is it for, and
+what does success look like? And **is it already in production (real users), or not yet?** Don't move
+on until the answer is concrete. The **durable artifact** is this stable block — append it to the project-root `CLAUDE.md`,
+**preserving everything already there**:
 
 ```markdown
 ## Product North Star (cc-tools)
+
 <!-- managed by chart-it · edit freely, the harness re-reads this · captured: <YYYY-MM-DD> -->
+
 - **Vision:** <a few sentences — how the finished product looks at the end>
-- **Core problem:** <the main problem the product solves>
-- **Level:** <1 — no production · 2 — production exists/coming · 3 — already in production>
+- **In production?** <yes — live users, move carefully · no — full carte blanche>
 ```
 
-Confirm the written block back in one line.
-
-**Then offer the roadmap — don't force it:**
-
-> "North Star captured. Want me to chart the **roadmap** now — the milestone route from here to that
-> goal? (Or stop here and chart it later with `/chart-it`.)"
-
-Decline → **stop** (the star alone is enough to unblock the rest of the harness). Accept — or chart-it
-was run with a star *already present* — → continue to Phase 1.
+Confirm the written block back in one line. The goal is **mandatory**; it's what every other skill
+detects. Then move into the version loop.
 
 ---
 
 ## Phase 1 — Survey "now"
 
 Build a short, factual picture of the **current** product from the repo: `README`, docs, recent
-commits, `CHANGELOG`, scattered `TODO`/`FIXME`/stub markers. Two or three paragraphs, not an audit.
-This is the **"now"**; the North Star is the **"end"**; the route runs between them — you need both
-ends to chart it.
+commits, scattered `TODO`/`FIXME`/stub markers. Two or three paragraphs, not an audit. This is the
+**"now"**; the North Star is the **"end"**; the versions are the steps between them.
 
 ---
 
-## Phase 2 — Collaborative decomposition (the heart)
+## Phase 2 — Version the product (the heart — a loop)
 
-This is where the project gets thought through **far ahead**. Propose a **draft layered route** —
-milestones grouped into ordered **stages** — from *now* → ★, then work through it **with the human,
-one decision at a time**. The governing question at every step: **does this need to come before that
-(→ separate stages), or are they independent (→ same stage, parallel)?**
+Walk the product forward **one version at a time**, starting at **v0 (MVP)**. A version is a recognizable
+state of the _product_ — "what a user would see and do at this point" — not a pile of tasks. For
+**each** version, in order:
 
-- Is the **stage sequence** right — does each stage genuinely unlock the next?
-- Within a stage, are the milestones **truly independent** — can they really be done in any order, or
-  in parallel? If one secretly needs another, split them into two stages. (This is what later lets
-  autopilot treat same-stage milestones as safe to reorder/park.)
-- Is the **granularity** right — split a milestone that hides two outcomes, merge two that are really
-  one; split a stage that bundles a real dependency, merge two stages that have no order between them.
-- What is the **current stage** (the earliest with unfinished work) and its **frontier**?
-- Reorder anything mis-staged; drop anything that doesn't serve the North Star.
+**1. Elicit the version with `AskUserQuestion`.** Lead the human: "What do you want to see in **v0** —
+which features, and what does the product look and feel like at that point?" Keep asking leading
+questions (with options + free-text) until the version's shape is clear: its headline features, what's
+deliberately _out_, and how it looks to a user. Then do the same for v1, v2, …
 
-Iterate until the human is satisfied. Give each milestone a **stable id** and land it as `id — name ·
-done when: <observable outcome> · theme: <one line>`. The `done when:` must be **observable** (a state
-the repo/product reaches) — that's what later lets point-it judge whether a frontier milestone is
-complete. When the product really *is* linear, one milestone per stage is fine — don't manufacture
-parallelism that isn't there (YAGNI); layering earns its keep only where work genuinely forks.
+**2. Break the version's features into ordered stages.** Before moving on, decompose **this version's**
+features into work **stages** so the human can see the rough path of work inside the version. The
+single rule: **need "A before B" → put them in different stages; independent → same stage** (parallel,
+any order within a stage). Each feature lands as a lightweight milestone with a **stable global id**
+(`M1`, `M2`, … — continuous across all versions) and `name + done when: <observable outcome> + theme:
+<one line>`. The `done when:` must be **observable** — that's what later lets the loops judge it
+complete. Don't manufacture parallelism that isn't there; a genuinely linear version is one milestone
+per stage.
+
+**3. Write this version into the roadmap, then urge a review.** Append the version's section to
+`.claude/ccharness/roadmap.md` (format below) and **strongly suggest the human read it back before you
+continue** — "Here's v0 laid out as stages. Please check it — the loops will build straight off this.
+Look right before we move to v1?" Don't steamroll past their review.
+
+**4. At the version boundary, ask: continue, rethink, or finish?** Every time a version is written,
+use `AskUserQuestion` to offer three paths:
+
+- **Continue** → elicit the next version (back to step 1).
+- **Rethink already-decided work** → **always offer this.** The human may have spotted a contradiction
+  or changed their mind about an earlier version (or the goal itself). Let them describe what they
+  found, then **re-open and revise** the affected versions and stages — and the North Star, if the goal
+  moved — one decision at a time, rewrite `roadmap.md`, urge a fresh review, then resume. Better to
+  re-examine now than build off a roadmap the human no longer believes.
+- **Finish** → only offered once v0, v1, and v2 all exist (a minimum of three versions); goes to
+  Phase 3. Before that, only Continue / Rethink.
+
+Iterate within each version until the human is satisfied; re-stage, split, or merge as they react.
 
 ---
 
-## Phase 3 — Write the roadmap
+## Phase 3 — Independent review (a fresh pair of eyes)
 
-Write `.claude/ccharness/roadmap.md` (create the directory if needed) in the **layered format
-below**, confirm in one line, then **stop**. Stages are `## Stage N` headings; milestones are
-checkboxes under them, listed in document order (stage 1's first). The `← current` marker is only a
-reader's hint — the **authoritative** current stage is always *derived*: the earliest stage with an
-unchecked box.
+When the human chooses to finish, don't just stop — **dispatch one independent reviewer subagent
+(read-only)** to pressure-test the finished roadmap as a skeptic. Give it: the **North Star block** and
+the **full `.claude/ccharness/roadmap.md`**. Ask it to judge:
+
+- Do the versions form a **credible path** from "now" to the North Star — does v0 → v1 → v2 … actually
+  converge on the goal, with no missing version in between?
+- Is **each version a coherent product state** a user would recognize — not a random bag of features?
+- Do the **stages respect real dependencies** — anything in the same stage that secretly needs a
+  sibling (split it), or split across stages with no real order (merge them)?
+- Is every **`done when:` observable**, and does it truly mean that milestone is done?
+- Name the **contradictions, gaps, and over- or under-scoped versions** it finds.
+
+Relay its assessment to the human in plain language and **offer to act on it** — re-open the loop to
+revise the flagged versions/stages/goal, or accept as-is. The review is **advice, not a gate**: the
+human decides. Then stop.
+
+---
+
+## The roadmap format (the contract — keep it exact)
+
+Write `.claude/ccharness/roadmap.md` (create the directory if needed). **Versions** are top-level
+(`# vN`) human-facing milestones of the product; inside each, ordered `## Stage` bands hold the
+parallel milestones. Milestones are listed in **document order** (v0's stages first, then v1's, …) =
+a valid sequential walk. The **frontier** = the unchecked `[ ]` milestones of the **earliest `## Stage`
+(in document order) that still has any** — derived from the checkboxes, no separate pointer. The
+`← current` marker is only a reader's hint.
 
 ```markdown
 # Roadmap — <product>
+
 <!-- managed by chart-it · edit freely, chart-it re-reads this · captured: <YYYY-MM-DD> · North Star → CLAUDE.md -->
-<!-- LAYERED: stages run in order; milestones inside a stage are parallel (any order). -->
-<!-- Frontier = unchecked milestones of the earliest stage that still has any. No stage headings = legacy line. -->
+<!-- VERSIONS over STAGES: versions (v0,v1,…) are the product's milestones; inside each, `## Stage` bands run in order, milestones within a stage are parallel (any order). -->
+<!-- Frontier = unchecked milestones of the earliest `## Stage` in document order that still has any. No stage headings = legacy line. -->
 
-## Stage 1 — <theme>            ← current (earliest stage with unchecked work)
-- [ ] M1 — <name> · done when: <observable outcome> · theme: <one line>
+# v0 — <name> · <one line: what the product is/looks like at v0>
 
-## Stage 2 — <theme>            (parallel — any order within the stage)
-- [ ] M2 — <name> · done when: <observable outcome> · theme: <one line>
-- [ ] M3 — <name> · done when: <observable outcome> · theme: <one line>
+## Stage 1 — <theme> ← current (earliest stage with unchecked work)
+
+- [ ] M1 — <feature> · done when: <observable outcome> · theme: <one line>
+
+## Stage 2 — <theme> (parallel — any order within the stage)
+
+- [ ] M2 — <feature> · done when: <observable outcome> · theme: <one line>
+- [ ] M3 — <feature> · done when: <observable outcome> · theme: <one line>
+
+# v1 — <name> · <one line>
 
 ## Stage 3 — <theme>
-- [ ] M4 — <name> · done when: <observable outcome> · theme: <one line>
+
+- [ ] M4 — <feature> · done when: <observable outcome> · theme: <one line>
 ```
 
-(A genuinely linear product collapses to one milestone per stage — or simply omit the stage headings
-for the legacy plain list; both track the frontier identically to the old sequential roadmap.)
+Ids stay **stable across re-runs** (semipilot/autopilot reference them) and are independent of which
+stage or version a milestone sits in. **No `## Stage` headings at all = legacy line** = each milestone
+is its own stage = the frontier is always the first unchecked box (old linear behaviour, unchanged).
 
 ---
 
 ## Re-run = revise (the roadmap is a living artifact)
 
-chart-it is normally run **once**, but a roadmap drifts. A re-run:
-
-1. **Re-survey** the current product (Phase 1 again).
-2. **Show the roadmap + progress** — which milestones' `done when:` now hold, and where the
-   **frontier** sits (it advances to the next stage only once the current stage is fully `[x]`).
-3. **Propose adjustments** — check off completed milestones, add / split / reorder milestones **and
-   stages**, move a milestone between stages, drop the obsolete — one decision at a time. Keep ids
-   stable; only the loops' downstream state references them.
-4. **Rewrite** `roadmap.md`.
-
-This is the analog of `--reground` for the North Star: re-running is the supported way to keep the
-route honest as reality moves.
+A re-run: **re-survey** "now" (Phase 1) → **show the roadmap + progress** (which milestones' `done
+when:` now hold, where the frontier sits) → **propose adjustments** one decision at a time (check off
+completed, add/split/reorder milestones, stages, or whole versions, drop the obsolete) → **rewrite**
+`roadmap.md`, urging a review per touched version. Keep ids stable. `--reground` is the same idea for
+the North Star.
 
 ---
 
 ## Quick reference
 
-`0` Goal-setting — detect `## Product North Star`; absent → 3-question dialogue → **write the block
-yourself** → offer the roadmap (don't force) · `1` Survey — repo = where we are now · `2` Decompose —
-draft **layered** route now→★ (stages in order, parallel milestones within: *order → split stages,
-independent → same stage*), refine one decision at a time (lightweight: id + name + `done when` +
-theme) · `3` Write — `.claude/ccharness/roadmap.md` in the `## Stage N` format, frontier = earliest
-open stage, stop · re-run = revise the living roadmap (advance the frontier as stages complete).
+`0` Goal — detect `## Product North Star`; absent → **open questions, no options** → write the block
+yourself · `1` Survey — repo = "now" · `2` Version loop — for v0, v1, v2, … (min three before offering
+to finish): `AskUserQuestion`-led "what's in this version?" → break its features into ordered `## Stage`
+bands (_order → split stages; independent → same stage_) with stable `Mn` ids + observable `done when:`
+→ **write the version to `roadmap.md` and urge a review** → next version or finish · re-run = revise
+the living roadmap.
 
-**Invariant:** chart-it owns the North Star write and charts the route; it never decides a fork
-(grill-it) or builds a task (implement-it). The roadmap only *biases* point-it — it never gates it.
+**Invariant:** chart-it owns the North Star write and versions the route; it never decides a fork
+(grill-it) or builds a task (implement-it). The roadmap only _biases_ point-it — it never gates it.
