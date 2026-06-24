@@ -10,9 +10,9 @@ product from "what's the goal?" all the way to committed code — and refuses to
 ```
 /chart-it  ──►  /point-it  ──►  /grill-it  ──►  /implement-it     (/slap = reset when stuck)
  GROUND          DIVERGE         DECIDE          BUILD
- set the goal    rank where      think one       take one task to
- (North Star)    it could go     fork through    done: built,
- + the roadmap   next (a menu)   to ONE answer   verified, committed
+ set the goal    rank where      work out HOW    take one task to
+ (North Star)    it could go     to build the    done: built,
+ + the roadmap   next (a menu)   pick (one way)  verified, committed
 ```
 
 Everything here is plain Markdown + JSON (instructions for Claude Code — no app code, no build).
@@ -26,8 +26,10 @@ Then equip it with the plugins it orchestrates (see [What it orchestrates](#what
 ```
 /cc-init
 ```
-This shows a plan of what's missing, asks you to confirm, then installs the gaps from the
-official marketplace. Idempotent — re-run it any time (e.g. on a new machine).
+`/cc-init` is a 4-stage setup wizard (each stage skippable, driven by your choices): it installs
+missing dependencies, installs the harness's recommended rules into this project's `.claude/rules/`,
+reconciles your docs against reality, and offers to run `/chart-it`. Idempotent — re-run any time
+(e.g. on a new machine).
 
 Then **ground your product once** — every other command depends on it:
 ```
@@ -42,10 +44,10 @@ This captures the product's *North Star* (the goal) into `CLAUDE.md` and then of
 |---|---|---|
 | **`/chart-it [--reground]`** | The **grounding loop** — the front door. Captures the product's *North Star* (goal-setting: vision · core problem · level) into `CLAUDE.md`, then **offers** to chart the *roadmap* — a *layered* route of lightweight milestones (`done when …` + theme): ordered **stages**, with **parallel milestones inside each** (`order → split stages; independent → same stage`), saved to `.claude/ccharness/roadmap.md`. Run once up front; re-run to revise (or `--reground` the North Star). Every other command routes here when no North Star exists. | "Set the goal and plan the project far ahead." |
 | **`/point-it [theme]`** | The **direction loop.** Surveys a product and emits a **ranked menu** of where it could go next — across four moves: **add** (new features), **finish** (half-built work), **rebuild** (redo better), **refactor** (tech debt) — each scored against the product's goal, and **biased toward the roadmap's current frontier** (the parallel milestones open now) if one exists. Requires the *North Star* — no North Star → routes you to `/chart-it`. Runs with or without a prompt. Decides nothing — you pick. | "Where should this product go next?" |
-| **`/grill-it <decision>`** | The **decision loop.** Turns a fork-laden question into ONE reasoned decision via four opposed proposers (MVP / Final / Conventional / Contrarian) → cross-examination → synthesis. Depth scales to stakes. | "Which way — and why?" |
+| **`/grill-it <decision>`** | The **decision loop.** Works out HOW to build a picked direction (or resolves a standalone fork) — four opposed proposers (MVP / Final / Conventional / Contrarian) argue different ways to build it → cross-examination → synthesis into ONE buildable approach. It decides the *how*, not *whether* (the pick is point-it's); a pick that looks wrong it flags rather than overrides. Depth scales to stakes. | "How to build it — and why?" |
 | **`/implement-it <task>`** | The **strict executor.** Runs one well-scoped task through a gated `0→6` pipeline (below). Requires the *North Star* (routes to `/chart-it` if missing). Refuses fork-laden or ambiguous tasks instead of guessing — a real fork goes back to `/grill-it`, pure ambiguity to brainstorming; never declares done with work open; never commits unverified code. | "Take this concrete task to done." |
 | **`/slap`** | The **reset.** When a fix has gone three rounds deep in a rabbit hole, forces a step back: restate the problem, list what was tried, question assumptions, research alternatives, propose a fresh angle. | "Stop digging — rethink this." |
-| **`/cc-init`** | **Setup.** Installs the plugins the harness orchestrates (see below) from the official marketplace — detects what's missing, shows a plan, confirms, installs only the gaps (user scope). Idempotent. | "Set this up on a new machine." |
+| **`/cc-init`** | **Setup wizard (4 stages).** Driven by your choices, each stage skippable: (1) install missing dependencies from the official marketplace (user scope); (2) install the harness's recommended rules into this project's `.claude/rules/`; (3) reconcile the project's prose docs against your current understanding so stale text doesn't mislead later decisions; (4) offer to run `/chart-it`. Idempotent. | "Set this up on a new machine." |
 
 ## The funnel
 
@@ -61,9 +63,11 @@ each owning a different kind of thinking:
   is not its job. It reads the North Star and ranks moves *toward it* — **biased toward the roadmap's
   current frontier** (the parallel milestones open now) if one exists — which keeps the menu from
   degenerating into generic feature-list filler.
-- **`/grill-it`** *converges* — you hand it one picked direction (or any fork) and it reasons it
-  down to a single decision, then flows that decision straight into `/implement-it`. You can
-  redirect, but you don't have to re-approve.
+- **`/grill-it`** *converges* — you hand it one picked direction (or any fork) and it works out
+  **how** to build it, reasoning the implementation forks down to a single buildable approach, then
+  flows that straight into `/implement-it`. It doesn't re-pick the direction (that was point-it's
+  job) — it decides the *how*; and if the pick itself looks wrong, it flags you rather than silently
+  overriding. You can redirect, but you don't have to re-approve.
 - **`/implement-it`** *builds* — it takes the decided, well-scoped task (handed down by grill-it,
   or given directly) and drives it to a verified local commit.
 
@@ -113,4 +117,4 @@ table mirrors these nine plugins. Add or drop a dependency here, and update the 
 - `skills/grill-it/SKILL.md` — the decision loop (four proposers → synthesis).
 - `skills/implement-it/SKILL.md` — the gated `0→6` executor (the brains).
 - `skills/slap/SKILL.md` — the reset protocol, invoked by implement-it at three strikes (and by you via `/slap`).
-- `commands/cc-init.md` — setup: installs the orchestrated plugins (self-contained, no skill).
+- `commands/cc-init.md` — setup wizard (deps → rules → doc reconciliation → /chart-it; self-contained, no skill).

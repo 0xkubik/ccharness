@@ -1,14 +1,38 @@
 ---
-description: "Install the Claude Code plugins this harness orchestrates. Detects what's already present, shows a plan of what's missing, waits for your confirmation, then installs only the gaps from the official marketplace (user scope). Idempotent — safe to run any time, e.g. when setting up a new machine."
+description: "4-stage onboarding wizard for the cc-* harness, driven by AskUserQuestion. Stage 1 installs missing marketplace dependencies; Stage 2 installs the harness's recommended rules into this project's .claude/rules/; Stage 3 reconciles the project's prose docs against your current understanding so stale text doesn't mislead later decisions; Stage 4 offers to run /chart-it. Every stage is offered and skippable; idempotent — safe to re-run."
 argument-hint: "(no arguments)"
 ---
 
-# cc-init — equip the harness with the plugins it orchestrates
+# cc-init — set up the harness in four guided stages
 
-cc-tools is glue: `/point-it`, `/grill-it`, and `/implement-it` route to skills from
-**other** plugins. Those plugins are not bundled — this command installs them.
+A guided onboarding wizard. It runs four stages in order, each gated by an `AskUserQuestion` prompt
+so you choose what happens at every step:
 
-## The dependency set
+1. **Install dependencies** — the marketplace plugins the harness orchestrates.
+2. **Install rules** — the harness's recommended rule files, into this project's `.claude/rules/`.
+3. **Reconcile docs with reality** — check the project's prose docs against your current
+   understanding so stale text doesn't quietly steer later decisions.
+4. **Offer `/chart-it`** — set the product's North Star.
+
+## Wizard flow
+
+- The stages run **in order** but are **independent** — skipping one never breaks a later one.
+- Each stage opens with an `AskUserQuestion` gate offering **Do it / Skip this stage / Stop the
+  wizard** ("Skip" → next stage; "Stop" → end cleanly). The final stage's gate is **Run now / Not
+  now**.
+- The command is **idempotent** — re-running re-detects state and acts only on gaps, never silently
+  clobbering anything.
+- Use the `Bash` tool for shell steps. Redirect stdin from `/dev/null` on every `claude plugin …`
+  call so a prompt can never hang the session.
+
+---
+
+## Stage 1 — Install missing dependencies
+
+cc-tools is glue: `/point-it`, `/grill-it`, and `/implement-it` route to skills from **other**
+plugins. Those plugins are not bundled — this stage installs them.
+
+### The dependency set
 
 All of these live in the official marketplace `claude-plugins-official`
 (GitHub source: `anthropics/claude-plugins-official`):
@@ -28,26 +52,20 @@ All of these live in the official marketplace `claude-plugins-official`
 > **Source of truth:** this table mirrors the "What it orchestrates" section of
 > `plugins/cc-tools/README.md`. If you add or drop a dependency, update **both**.
 
-Missing plugins are not fatal — the harness simply skips those routes. This command
-just makes the full set available.
+Missing plugins are not fatal — the harness simply skips those routes. This stage just makes the
+full set available.
 
-## Procedure
-
-Run this as a strict, evidence-driven sequence. Use the `Bash` tool for every step.
-Redirect stdin from `/dev/null` on every `claude plugin …` call so a prompt can never
-hang the session.
-
-### 1. Check the CLI is available
+**1. Check the CLI is available**
 
 ```
 claude --version < /dev/null
 ```
 
-If `claude` is not found, **stop** and tell the user the harness must be installed/run
-via the Claude Code CLI for this command to work — then print the manual commands from
-step 4 so they can run them by hand.
+If `claude` is not found, **stop** and tell the user the harness must be installed/run via the
+Claude Code CLI for this command to work — then print the manual install commands below so they can
+run them by hand.
 
-### 2. Detect current state
+**2. Detect current state**
 
 ```
 claude plugin marketplace list < /dev/null
@@ -58,22 +76,19 @@ From the output determine:
 - whether the `claude-plugins-official` marketplace is already configured, and
 - which of the nine plugins above are already installed (any scope counts).
 
-### 3. Show the plan and get confirmation
+**3. Gate + show the plan.** If nothing is missing, report "all nine dependencies already installed
+— nothing to do" and move straight on to Stage 2 (no gate needed). Otherwise print a short plan
+listing the marketplace add (only if not configured) and the **missing** plugins, noting the
+already-installed ones will be **skipped**, and state that installation is **user scope**
+(`--scope user`) — it changes global Claude Code config, not just this repo. Then gate with
+`AskUserQuestion`:
 
-Print a short plan listing:
-- the marketplace add (only if not already configured), and
-- the plugins that are **missing** (the ones to install), explicitly noting the
-  already-installed ones will be **skipped**.
+- question: "Install the missing harness dependencies?"
+- options: **Install missing** / **Skip this stage** / **Stop the wizard**
 
-State that installation is **user scope** (`--scope user`) — it changes global Claude
-Code config, not just this repo. Then **ask the user to confirm** before proceeding.
+On **Skip** → go to Stage 2. On **Stop** → end the wizard.
 
-If nothing is missing, report "all nine dependencies already installed — nothing to do"
-and stop (no confirmation needed).
-
-### 4. Install (after confirmation)
-
-Add the marketplace if it was missing:
+**4. Install (on "Install missing").** Add the marketplace if it was missing:
 
 ```
 claude plugin marketplace add anthropics/claude-plugins-official < /dev/null
@@ -85,20 +100,104 @@ Then install each **missing** plugin (skip the ones already present):
 claude plugin install <name>@claude-plugins-official --scope user < /dev/null
 ```
 
-…where `<name>` is each missing entry from the table. Capture the exit code of every
-install. A non-zero exit means that install failed (e.g. an unexpected prompt that hit
-EOF) — do **not** report it as installed; collect it for the failure list instead.
+…where `<name>` is each missing entry from the table. Capture the exit code of every install. A
+non-zero exit means that install failed (e.g. an unexpected prompt that hit EOF) — do **not** report
+it as installed; collect it for the failure list instead.
 
-### 5. Report honestly
-
-Summarize what actually happened:
+**5. Report honestly.** Summarize what actually happened:
 - ✅ newly installed (with the names),
 - ⏭️  already present (skipped),
 - ❌ failed, if any — show the command and its output so the user can run it by hand.
 
-Then add the restart note:
-
-> Newly installed plugins load on the **next** Claude Code session. Restart Claude Code
-> (or start a fresh session) for the harness to pick them up.
+> Newly installed plugins load on the **next** Claude Code session. Restart Claude Code (or start a
+> fresh session) for the harness to pick them up.
 
 Do not claim success for any plugin whose install you did not see exit `0`.
+
+---
+
+## Stage 2 — Install recommended rules
+
+The harness ships rule files (the `.claude/rules/` instructions Claude reads every session). This
+stage copies the ones you pick into **this project's** `.claude/rules/` (committed to your repo).
+
+**1. Gate** with `AskUserQuestion`:
+- question: "Install the harness's recommended rules into this project?"
+- options: **Install rules** / **Skip this stage** / **Stop the wizard**
+
+On **Skip** → go to Stage 3. On **Stop** → end the wizard.
+
+**2. List the available rules.**
+
+```
+ls "${CLAUDE_PLUGIN_ROOT}/rules/"*.md < /dev/null
+```
+
+For each file, read its first heading line (`# …`) to use as a human-readable label.
+
+**3. Let the user choose** which to install via `AskUserQuestion` with `multiSelect: true` — one
+option per rule file (label = its heading), so the user can install any subset.
+
+**4. Copy each selected rule** to `.claude/rules/<filename>` in the current project (create
+`.claude/rules/` if it doesn't exist). **Before copying, check for a collision:** if
+`.claude/rules/<filename>` already exists, gate with `AskUserQuestion` (**Overwrite** / **Skip**) —
+never overwrite silently. Then:
+
+```
+mkdir -p .claude/rules
+cp "${CLAUDE_PLUGIN_ROOT}/rules/<file>" .claude/rules/<file>
+```
+
+**5. Report** which rules were installed, skipped, or overwritten. Note they load on the next
+session.
+
+---
+
+## Stage 3 — Reconcile docs with reality
+
+Stale prose quietly steers later decisions wrong. This stage checks the project's **descriptive
+docs** against your current understanding. It reads only prose — **Code and tests are out of
+scope.**
+
+**1. Detect whether this is a working project.** It qualifies if any of these holds: there is at
+least one commit —
+
+```
+git rev-list --count HEAD 2>/dev/null
+```
+
+— or there are source files beyond `.claude/` config, or descriptive docs exist. If none of these
+hold → print "fresh project, nothing described yet — skipping" and go to Stage 4 (no gate).
+
+**2. Gate** with `AskUserQuestion`:
+- question: "Reconcile this project's docs against your current understanding?"
+- options: **Reconcile** / **Skip this stage** / **Stop the wizard**
+
+On **Skip** → go to Stage 4. On **Stop** → end the wizard.
+
+**3. Read the descriptive prose only** — `README*`, `docs/**`, `CLAUDE.md`, `.claude/rules/*.md`,
+`AGENTS.md`, `CHANGELOG*`, `.claude/ccharness/roadmap.md`, and other top-level descriptive `*.md`.
+**Code and tests are out of scope.**
+
+**4. Distill the load-bearing facts and invariants** the prose asserts into a concise,
+plain-language **digest** — a bulleted list of claims, each tagged with its source doc. Not a
+verbatim retelling; the load-bearing assertions only. Print the digest into the chat.
+
+**5. Ask, in plain prose (not `AskUserQuestion`):** "Does this match your current understanding, or
+is anything off? Write what doesn't match." Wait for the user's free-text reply.
+
+**6. Fix the mismatches.** For each one, apply a **minimal** edit to the affected doc (the smallest
+diff that fixes it — follow the `keep-files-lean` rule), or remove the obsolete with confirmation.
+Report what changed.
+
+---
+
+## Stage 4 — Set the product's direction
+
+**Gate** with `AskUserQuestion`:
+- question: "Run /chart-it now to set the product's North Star?"
+- options: **Run /chart-it now** / **Not now**
+
+On **Run /chart-it now**, hand off to `/chart-it` (it owns the North Star write). Note for the user:
+plugins installed in Stage 1 only activate on the next session, but `/chart-it` does not
+hard-require them, so running it now is safe.
