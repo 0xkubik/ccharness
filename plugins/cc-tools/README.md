@@ -110,6 +110,29 @@ This list is the **source of truth** for what `/cc-init` installs — its depend
 table mirrors these nine plugins. Add or drop a dependency here, and update the table in
 `commands/cc-init.md` to match.
 
+## Usage-limits bridge (optional)
+
+`bin/cc-usage-statusline.sh` lets the loops (semipilot/autopilot) see your remaining
+subscription budget. A running session can't query that itself — `/usage` is TUI-only and there
+is no CLI/file/hook/env for it. The **only** channel that carries it is the statusLine stdin
+payload (`rate_limits.five_hour` / `rate_limits.seven_day`: used % + reset time). This script
+sits in `statusLine.command`, tees those numbers into `<project>/.claude/ccharness/usage.json`,
+then forwards the payload to your real status line — so your display is unchanged.
+
+Install — point `statusLine.command` at it (wraps your existing status line):
+
+```jsonc
+// ~/.claude/settings.json
+"statusLine": { "type": "command",
+  "command": "/abs/path/to/cc-tools/bin/cc-usage-statusline.sh" }
+```
+
+Your previous status line keeps rendering: it runs downstream from `$CC_USAGE_DOWNSTREAM`
+(default `ccstatusline` if on PATH; set to `""` to render nothing). Best-effort and fail-open —
+a capture failure never breaks your status line. Caveats: only interactive sessions render a
+status line (headless `claude -p` does not, so the pilots fall back to a token estimate there);
+`rate_limits` is Pro/Max-only and absent until the session's first API response.
+
 ## Layout
 - `commands/find-goal.md` · `commands/what-to-do.md` · `commands/how-to-do.md` · `commands/do.md` — the entry points.
 - `skills/find-goal/SKILL.md` — the grounding loop (goal-setting → North Star capture, then the sequenced roadmap). The front door every other skill routes to when ungrounded.
@@ -118,3 +141,4 @@ table mirrors these nine plugins. Add or drop a dependency here, and update the 
 - `skills/do/SKILL.md` — the gated `0→6` executor (the brains).
 - `skills/slap/SKILL.md` — the reset protocol, invoked by do at three strikes (and by you via `/slap`).
 - `commands/cc-init.md` — setup wizard (deps → rules → doc reconciliation → /find-goal; self-contained, no skill).
+- `bin/cc-usage-statusline.sh` — optional statusLine wrapper that exposes subscription usage limits to the loops (see above).
