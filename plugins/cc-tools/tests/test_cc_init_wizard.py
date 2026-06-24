@@ -39,6 +39,8 @@ class TestDistributableRules(unittest.TestCase):
         "no-comments.md",
         "require-goal-and-roadmap.md",
         "speak-plainly.md",
+        "manage-git-history.md",
+        "weigh-by-importance.md",
     )
 
     def rule_files(self):
@@ -78,6 +80,17 @@ class TestDistributableRules(unittest.TestCase):
         self.assertIn("plain", low)
         self.assertIn("self-contained", low)  # the fresh-eyes final answer
         self.assertNotIn("russian", low)  # distributable => no user-specific language coupling
+
+    def test_git_autonomy_covers_full_flow_without_asking(self):
+        low = (RULES_DIR / "manage-git-history.md").read_text().lower()
+        for action in ("branch", "commit", "push"):
+            self.assertIn(action, low)
+        self.assertIn("never ask", low)  # the autonomy promise: own git, never ask
+
+    def test_weigh_by_importance_decouples_recency(self):
+        low = (RULES_DIR / "weigh-by-importance.md").read_text().lower()
+        self.assertIn("importance", low)
+        self.assertIn("recen", low)  # recency / recent — importance decoupled from recency
 
 
 class TestCcInitWizard(unittest.TestCase):
