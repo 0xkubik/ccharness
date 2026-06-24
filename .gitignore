@@ -1,3 +1,2 @@
 .DS_Store
-.claude/ccharness/*
-!.claude/ccharness/roadmap.md
+.pytest_cache
