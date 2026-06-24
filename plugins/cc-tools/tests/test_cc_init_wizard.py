@@ -30,6 +30,56 @@ class TestSeedRule(unittest.TestCase):
         self.assertIn("smallest diff", self.text.lower())
 
 
+class TestDistributableRules(unittest.TestCase):
+    """Every file in rules/ must be wizard-installable: a bare, always-on rule whose first line is
+    the `# ` heading the cc-init Stage 2 multiselect shows as its label."""
+
+    EXPECTED = (
+        "keep-files-lean.md",
+        "no-comments.md",
+        "require-goal-and-roadmap.md",
+        "speak-plainly.md",
+    )
+
+    def rule_files(self):
+        return sorted(RULES_DIR.glob("*.md"))
+
+    def test_expected_rules_present(self):
+        names = {p.name for p in self.rule_files()}
+        for expected in self.EXPECTED:
+            self.assertIn(expected, names, f"{expected} missing from rules/")
+
+    def test_each_rule_first_line_is_heading(self):
+        for p in self.rule_files():
+            first = p.read_text().splitlines()[0]
+            self.assertTrue(
+                first.startswith("# "),
+                f"{p.name}: first line must be a '# ' heading (the wizard's label)",
+            )
+
+    def test_each_rule_always_on(self):
+        # No `paths:` frontmatter => every rule loads every session, not path-scoped.
+        for p in self.rule_files():
+            self.assertNotIn("paths:", p.read_text(), f"{p.name}: must ship always-on")
+
+    def test_no_comments_keeps_nonobvious_exception(self):
+        low = (RULES_DIR / "no-comments.md").read_text().lower()
+        self.assertIn("non-obvious", low)  # the carve-out, not an absolute ban
+        self.assertIn("why", low)  # explain why, not what
+
+    def test_grounding_rule_is_tiered(self):
+        low = (RULES_DIR / "require-goal-and-roadmap.md").read_text().lower()
+        self.assertIn("goal", low)
+        self.assertIn("roadmap", low)
+        self.assertIn("multi-step", low)  # roadmap gates only multi-step => won't break goal-only flows
+
+    def test_speak_plainly_fresh_self_contained_and_language_agnostic(self):
+        low = (RULES_DIR / "speak-plainly.md").read_text().lower()
+        self.assertIn("plain", low)
+        self.assertIn("self-contained", low)  # the fresh-eyes final answer
+        self.assertNotIn("russian", low)  # distributable => no user-specific language coupling
+
+
 class TestCcInitWizard(unittest.TestCase):
     def setUp(self):
         self.text = CC_INIT.read_text() if CC_INIT.exists() else ""
