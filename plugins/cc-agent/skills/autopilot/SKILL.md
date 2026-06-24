@@ -1,6 +1,6 @@
 ---
 name: autopilot
-description: Use when you want the cc-tools funnel to run autonomously milestone by milestone — autopilot is a thin meta-loop over semipilot: it arms a fresh semipilot per roadmap milestone and, in the gap between milestones, advances/retries/parks/stops based on the give-up ladder. Requires a roadmap (run /chart-it first). Invoked by /autopilot; the primary brake is /autopilot-cancel, though a hard dependency block can also stop it legitimately. Optional flags — `--ultracode` (force maximum parallelism: mandatory Workflow + subagents + worktrees in every build) and `--spend-session` (never self-stop; generate work instead of idling and park instead of hard-stopping, so it runs until the subscription limit cuts the session). Weekly spend is a separate cc-maestro supervisor, not a flag here.
+description: Use when you want the cc-tools funnel to run autonomously milestone by milestone — autopilot is a thin meta-loop over semipilot: it arms a fresh semipilot per roadmap milestone and, in the gap between milestones, advances/retries/parks/stops based on the give-up ladder. Requires a roadmap (run /find-goal first). Invoked by /autopilot; the primary brake is /autopilot-cancel, though a hard dependency block can also stop it legitimately. Optional flags — `--ultracode` (force maximum parallelism: mandatory Workflow + subagents + worktrees in every build) and `--spend-session` (never self-stop; generate work instead of idling and park instead of hard-stopping, so it runs until the subscription limit cuts the session). Weekly spend is a separate cc-maestro supervisor, not a flag here.
 ---
 
 # autopilot — the meta-loop over semipilot
@@ -18,7 +18,7 @@ fails**.
                                                                              a hard block hits
 ```
 
-The funnel cycle (point-it → grill-it → implement-it) lives **only in semipilot**. autopilot sees
+The funnel cycle (what-to-do → how-to-do → do) lives **only in semipilot**. autopilot sees
 only the milestone-level outcome (`achieved` / `gave-up` / `capped`) and acts on it.
 
 ## Arm (only when invoked by `/autopilot` — the user starting the loop)
@@ -27,9 +27,9 @@ When `/autopilot` invokes you to arm, do this before the first semipilot cycle:
 
 1. **Roadmap gate (now required).** Check `.claude/ccharness/roadmap.md`.
    - No `## Product North Star` in `CLAUDE.md` → do not arm; tell the user _"No North Star yet —
-     run `/chart-it` first."_ No state written; the Stop hook lets this turn end normally.
+     run `/find-goal` first."_ No state written; the Stop hook lets this turn end normally.
    - North Star present but no roadmap file → do not arm; tell the user _"No roadmap yet — run
-     `/chart-it` to chart the route, then `/autopilot`."_ No state written.
+     `/find-goal` to chart the route, then `/autopilot`."_ No state written.
    - Roadmap present → resolve the current milestone = the **first unchecked `[ ]` in document order**
      (under a layered roadmap that's a milestone on the current stage's frontier), continue to step 2.
 
@@ -89,7 +89,7 @@ Two derived terms drive the whole cycle:
 - **NEXT()** = the first unchecked, **non-parked** milestone of the FRONTIER STAGE (document order).
   NEXT **never crosses into a later stage while the frontier stage still holds unfinished work** — and
   a **parked** milestone counts as unfinished (it stays `[ ]`), so it keeps its stage frontier-open.
-  This is what keeps autopilot's position and point-it's frontier on the same stage.
+  This is what keeps autopilot's position and what-to-do's frontier on the same stage.
 
 **ADVANCE-OR-STALL** (both outcomes below end here):
     NEXT() exists                          → current_milestone = NEXT(), arm a fresh semipilot, END TURN.
@@ -107,7 +107,7 @@ outcome == gave-up | capped:
     current_retries == 1 → STAGE TEST: park the stuck milestone (autopilot/blocked.jsonl),
                            current_retries = 0, → run ADVANCE-OR-STALL.
         NEXT() exists = a workable **same-stage** sibling = INDEPENDENT (same stage = parallel by
-            chart-it's contract) → advance to it.
+            find-goal's contract) → advance to it.
         no NEXT() but a later stage has workable milestones = DEPENDENT (the stuck one was the last
             workable in its stage; later stages need it) → HARD STOP.
 ```
@@ -138,7 +138,7 @@ structure *is* the dependency answer — no guessing needed. The DEPEND question
 milestone be done without the stuck one?" becomes a **structural lookup**:
 
 - **Another unchecked, non-parked milestone shares the stuck one's stage → INDEPENDENT.** Same stage
-  means parallel by chart-it's contract ("order → split stages; independent → same stage"), so the
+  means parallel by find-goal's contract ("order → split stages; independent → same stage"), so the
   sibling can proceed. Park the stuck one, advance to the sibling.
 - **The stuck one is the last open milestone in its stage → DEPENDENT.** If the only remaining work is
   in a *later* stage (which exists precisely because it needs this one finished) → HARD STOP. If
@@ -156,14 +156,14 @@ This replaces the old soft-model guess with a rule that reads straight off the r
   explicit `## Stage` with parallel milestones if you want that skip. (This is the one behaviour
   change for heading-less roadmaps.)
 - If a same-stage sibling *seems* to actually need the stuck one, that's a **mis-grouped roadmap**, not
-  an autopilot bug — fix it in `/chart-it` (split the stage). autopilot trusts the stage structure.
+  an autopilot bug — fix it in `/find-goal` (split the stage). autopilot trusts the stage structure.
 
 ## Cheap idle (roadmap exhausted)
 
 When all milestones are `[x]` or parked (`autopilot/blocked.jsonl`): enter **cheap idle** — never
 stop, never spin a full semipilot cycle. Log an `idle` line to `autopilot/log.jsonl` and end the
 turn. The Stop hook re-feeds; the next idle cycle is cheap because there is nothing to do. A new
-milestone added by `/chart-it` is picked up on a later idle cycle.
+milestone added by `/find-goal` is picked up on a later idle cycle.
 
 This is not "the product is done, I should stop." Cheap idle keeps the loop alive without burning
 tokens. Only `/autopilot-cancel` or a HARD STOP ends it.
@@ -182,7 +182,7 @@ must fan out instead of running inline:
 - **verify findings adversarially** (independent checker agents).
 
 Insert this at the **loop/build level** — i.e. how the milestone's work is carried out — not by
-fighting `implement-it`'s gated 0→6 pipeline. The flag propagates to each nested semipilot so the
+fighting `do`'s gated 0→6 pipeline. The flag propagates to each nested semipilot so the
 fan-out happens inside the cycle where the building actually occurs.
 
 ## Spend mode (`--spend-session`)
@@ -195,8 +195,8 @@ the subscription limit cutting the session is the natural — and only — termi
 
 autopilot already never self-stops except a hard dependency-block, so spend mode changes exactly two
 branches of the meta-cycle (the Stop hook injects these):
-1. **Exhausted roadmap is NOT cheap idle → GENERATE work.** Re-survey with `point-it` for new
-   improvements, extend the roadmap via `chart-it`, then keep building. Idling would burn ~zero
+1. **Exhausted roadmap is NOT cheap idle → GENERATE work.** Re-survey with `what-to-do` for new
+   improvements, extend the roadmap via `find-goal`, then keep building. Idling would burn ~zero
    tokens, which defeats the purpose.
 2. **A hard dependency-block does NOT stop → park + mine.** Park the blocker (as today) and advance
    to any other workable milestone instead of hard-stopping. Under spend, the dependency block is no
@@ -205,9 +205,9 @@ branches of the meta-cycle (the Stop hook injects these):
 **Honesty + churn guard (important).** Burning the full limit is *best-effort, bounded by how much
 real work exists* — say so; do not pretend otherwise. To avoid a week-long run degenerating into
 hundreds of junk commits:
-- route every generated direction through `grill-it`, which can **reject** weak work;
+- route every generated direction through `how-to-do`, which can **reject** weak work;
 - keep every commit **LOCAL** (reviewable / revertable), as the normal loop already does;
-- when work-generation is genuinely **dry** (nothing worth doing passes grill-it), fall back to a
+- when work-generation is genuinely **dry** (nothing worth doing passes how-to-do), fall back to a
   **light idle** for that cycle — never lower the bar or manufacture churn just to fill time.
 
 The only stops in spend mode are **`/autopilot-cancel`** and the **subscription limit** itself.
@@ -251,7 +251,7 @@ removed — park the blocker and keep mining; only `/autopilot-cancel` or the su
 
 ## Quick reference
 
-Arm: roadmap required (no North Star / no roadmap → `/chart-it`) · write outer `autopilot/state.json`
+Arm: roadmap required (no North Star / no roadmap → `/find-goal`) · write outer `autopilot/state.json`
 (`current_milestone, current_retries:0, max_retries:1, mode:"autopilot"`) · arm first semipilot ·
 touch `autopilot/log.jsonl` + `autopilot/blocked.jsonl`.
 

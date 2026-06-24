@@ -41,6 +41,7 @@ class TestDistributableRules(unittest.TestCase):
         "speak-plainly.md",
         "manage-git-history.md",
         "weigh-by-importance.md",
+        "stay-in-scope.md",
     )
 
     def rule_files(self):
@@ -92,6 +93,12 @@ class TestDistributableRules(unittest.TestCase):
         self.assertIn("importance", low)
         self.assertIn("recen", low)  # recency / recent — importance decoupled from recency
 
+    def test_stay_in_scope_forbids_creep_and_building_ahead(self):
+        low = (RULES_DIR / "stay-in-scope.md").read_text().lower()
+        self.assertIn("scope", low)
+        self.assertIn("exactly what was asked", low)  # the boundary: only the request
+        self.assertIn("future", low)  # don't build ahead for imagined needs (YAGNI)
+
 
 class TestCcInitWizard(unittest.TestCase):
     def setUp(self):
@@ -119,11 +126,17 @@ class TestCcInitWizard(unittest.TestCase):
         self.assertIn("CLAUDE_PLUGIN_ROOT", self.text)
         self.assertIn(".claude/rules/", self.text)
 
+    def test_stage2_batches_rules_under_four_option_cap(self):
+        # rules/ already ships >4 rules, but AskUserQuestion caps a question at 4 options. Stage 2
+        # must batch across several multiSelect questions, not cram every rule into one question.
+        self.assertGreater(len(list(RULES_DIR.glob("*.md"))), 4)
+        self.assertIn("4 options", self.text.lower())
+
     def test_stage3_prose_only(self):
         self.assertIn("Code and tests are out of scope", self.text)
 
-    def test_stage4_offers_chart_it(self):
-        self.assertIn("/chart-it", self.text)
+    def test_stage4_offers_find_goal(self):
+        self.assertIn("/find-goal", self.text)
 
     def test_idempotent_documented(self):
         self.assertIn("idempotent", self.text.lower())

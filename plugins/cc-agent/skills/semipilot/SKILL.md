@@ -1,6 +1,6 @@
 ---
 name: semipilot
-description: Use when driving the cc-tools funnel toward ONE roadmap milestone and stopping when its `done when:` is met (or giving up after N no-progress cycles / a cycle cap). The bounded unit; autopilot wraps it. Invoked by /semipilot. Needs a roadmap — routes to /chart-it if absent. Not the never-stop autopilot; not a single task (implement-it). Optional `--ultracode` flag forces maximum parallelism in the build (mandatory Workflow + subagents + worktrees); there is no spend flag here (spend is autopilot-only).
+description: Use when driving the cc-tools funnel toward ONE roadmap milestone and stopping when its `done when:` is met (or giving up after N no-progress cycles / a cycle cap). The bounded unit; autopilot wraps it. Invoked by /semipilot. Needs a roadmap — routes to /find-goal if absent. Not the never-stop autopilot; not a single task (do). Optional `--ultracode` flag forces maximum parallelism in the build (mandatory Workflow + subagents + worktrees); there is no spend flag here (spend is autopilot-only).
 ---
 
 # semipilot — the bounded done-first loop
@@ -21,9 +21,9 @@ When `/semipilot` first invokes you, do this before cycle 1:
 
 1. **Roadmap gate.** Look for `.claude/ccharness/roadmap.md`.
    - No `## Product North Star` in repo-root `CLAUDE.md` → do **not** arm. Tell the user
-     _"No North Star yet — run `/chart-it` once to set it and chart the roadmap, then `/semipilot`."_
+     _"No North Star yet — run `/find-goal` once to set it and chart the roadmap, then `/semipilot`."_
      No state file is written; the hook lets this turn end normally.
-   - North Star present but no roadmap → tell the user _"No roadmap yet — run `/chart-it` to
+   - North Star present but no roadmap → tell the user _"No roadmap yet — run `/find-goal` to
      build one, then `/semipilot`."_ Same: no state, normal exit.
    - Roadmap present → resolve the **target milestone**: the id passed as argument (e.g. `M3`),
      or if none, the **current** = the first unchecked `[ ]` milestone **in document order** (under a
@@ -69,16 +69,16 @@ skip arming, run the next cycle directly.
 
 ```
 1. READ   semipilot/state.json + semipilot/blocked.jsonl
-2. DONE?  Survey "now" (point-it Phase 1), judge against state.done_when.
+2. DONE?  Survey "now" (what-to-do Phase 1), judge against state.done_when.
           MET → active:false, outcome:"achieved", mark milestone [x] in roadmap.md, final log line,
                  (terse if nested / full report if standalone), END TURN.
 3. GIVE-UP?  no_progress_streak >= max_no_progress  OR  cycle >= max_cycles
           → active:false, outcome:"gave-up" | "capped", final log line, report blocked queue, END TURN.
-4. POINT  cc-tools:point-it — menu as DATA ("I pick — do NOT call AskUserQuestion").
+4. POINT  cc-tools:what-to-do — menu as DATA ("I pick — do NOT call AskUserQuestion").
           Keep ONLY directions whose `advances` == target milestone AND not in blocked.jsonl.
           → auto-pick the top.   NONE qualify → no-progress cycle: streak++, go to 8.
-5. DECIDE cc-tools:grill-it on that direction → one buildable approach (decides the *how*)
-6. BUILD  cc-tools:implement-it → verify → LOCAL commit (no push)
+5. DECIDE cc-tools:how-to-do on that direction → one buildable approach (decides the *how*)
+6. BUILD  cc-tools:do → verify → LOCAL commit (no push)
           handback (unbuildable/forked, or slap-twice) → append to blocked.jsonl, no-progress cycle.
 7. PROGRESS?  committed work that moves done_when closer → streak = 0
               otherwise → streak++
@@ -88,19 +88,19 @@ skip arming, run the next cycle directly.
 
 ## Milestone-scoped, not roadmap-biased
 
-Under autopilot, the roadmap **biases** point-it toward the current frontier — but it does not
-filter out anything. Under semipilot, point-it is **filtered**: you keep ONLY directions whose
+Under autopilot, the roadmap **biases** what-to-do toward the current frontier — but it does not
+filter out anything. Under semipilot, what-to-do is **filtered**: you keep ONLY directions whose
 `advances` field matches the target milestone. An empty filtered set is itself a no-progress
 signal — it feeds the same `no_progress_streak` counter as a failed build. This is how "all paths
 to the goal are blocked" eventually reaches the give-up exit without spinning.
 
-The **direction filter** is target-only. The **milestone done-check** (point-it Phase 1) is not: if a
+The **direction filter** is target-only. The **milestone done-check** (what-to-do Phase 1) is not: if a
 *sibling* frontier milestone's `done when:` is observably met, marking it `[x]` is a truthful state
 update and is fine — semipilot still only ever *targets*, *builds toward*, and *exits on* its own
 milestone. A sibling getting checked off as a side effect just saves autopilot a later cycle.
 
 **Do not re-pick directions already in `blocked.jsonl`** — the slug/direction is the exclusion key.
-Append to `blocked.jsonl` whenever implement-it hands back (unbuildable, forked, or slap fired
+Append to `blocked.jsonl` whenever do hands back (unbuildable, forked, or slap fired
 twice with no progress). The blocked queue is never a stop; it is the asynchronous handoff to the
 human.
 
@@ -124,7 +124,7 @@ blocking; once it is false, the session ends normally.
 | Rationalization | Reality |
 | --- | --- |
 | "I just built something — skip the done-check and build more." | Done-check **leads every cycle**, before any pick. The milestone may be met after the last commit. |
-| "The `done_when` is hard to judge — I'll keep building to be safe." | Soft judgment over an observable outcome is explicit. If it is unobservable, that is a chart-it problem, not a reason to loop forever. |
+| "The `done_when` is hard to judge — I'll keep building to be safe." | Soft judgment over an observable outcome is explicit. If it is unobservable, that is a find-goal problem, not a reason to loop forever. |
 | "I'll ask the user whether we're done (`AskUserQuestion`)." | **Forbidden.** `AskUserQuestion` blocks the loop on a human; the Stop hook re-feeds you on a turn boundary. The done judgment is yours. `AskUserQuestion` must **not** be called at any point inside the semipilot cycle. |
 | "No qualifying directions — I'll pick from the full roadmap instead." | Empty filtered set = no-progress cycle. streak++. Go to step 8. |
 | "The streak is high but I feel progress is near — skip the give-up check." | The give-up thresholds exist exactly for this feeling. Trust `no_progress_streak` and `max_cycles`. |
@@ -132,7 +132,7 @@ blocking; once it is false, the session ends normally.
 ## Red flags — you are about to make the wrong call
 
 - You're running the cycle without doing the done-check first (step 2 must come before step 4).
-- **point-it is about to call `AskUserQuestion`** (the interactive checkbox) — forbid it; emit menu as data, auto-pick.
+- **what-to-do is about to call `AskUserQuestion`** (the interactive checkbox) — forbid it; emit menu as data, auto-pick.
 - You're picking a direction that is already in `blocked.jsonl`.
 - You're picking a direction whose `advances` does not match the target milestone.
 - You're continuing the loop after setting `active:false` (both exits END TURN immediately).
@@ -152,14 +152,14 @@ you should use them whenever they help; `--ultracode` raises that to **mandatory
 `ultracode` is set in state (the Stop hook injects this each cycle), step 6's **build** must fan out:
 author a Workflow and/or dispatch parallel subagents instead of building inline, isolate parallel
 file-mutating work in **git worktrees**, and verify findings adversarially. Apply this at the
-build level — don't fight `implement-it`'s gated pipeline. The done-check, give-up, and cap exits are
+build level — don't fight `do`'s gated pipeline. The done-check, give-up, and cap exits are
 unchanged; ultracode only affects *how* the build is carried out.
 
 ## Quick reference
 
 `1` read state + blocked · `2` **DONE?** survey → if MET stop achieved · `3` **GIVE-UP?** streak/cap
-→ if hit stop gave-up/capped · `4` point-it DATA, filter to `advances`==milestone, auto-pick top ·
-`5` grill-it → buildable approach (the *how*) · `6` implement-it → local commit (no push) · `7` progress? streak=0 or
+→ if hit stop gave-up/capped · `4` what-to-do DATA, filter to `advances`==milestone, auto-pick top ·
+`5` how-to-do → buildable approach (the *how*) · `6` do → local commit (no push) · `7` progress? streak=0 or
 streak++ · `8` log + bump cycle (atomic) · `9` end turn → hook re-feeds. Handback → **append
 blocked.jsonl + no-progress cycle**, never wait. No done-check → wrong. `AskUserQuestion` → forbidden.
 

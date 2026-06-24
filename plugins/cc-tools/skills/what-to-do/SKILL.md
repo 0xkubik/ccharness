@@ -1,17 +1,17 @@
 ---
-name: point-it
+name: what-to-do
 description: "Use when you want to find product direction — to look at a product and surface where it could go next as a ranked menu of moves (new features, finishing half-built work, rebuilding rough parts, paying down tech debt). 
 ---
 
-Invoked by /point-it, with or without a prompt. Requires the product's North Star (set once via /chart-it) — if it's missing, point-it routes you there. With it present, point-it reads the North Star (and the roadmap, if one exists, biasing toward the current frontier — the parallel milestones open right now) and lets you check off (via a built-in choice prompt) which directions to pursue and hand that list to grill-it. It explores and ranks; it never decides _how_ — that is grill-it. Not for deciding a known fork (grill-it) or building a task (implement-it).
+Invoked by /what-to-do, with or without a prompt. Requires the product's North Star (set once via /find-goal) — if it's missing, what-to-do routes you there. With it present, what-to-do reads the North Star (and the roadmap, if one exists, biasing toward the current frontier — the parallel milestones open right now) and lets you check off (via a built-in choice prompt) which directions to pursue and hand that list to how-to-do. It explores and ranks; it never decides _how_ — that is how-to-do. Not for deciding a known fork (how-to-do) or building a task (do).
 
-# point-it — the direction loop
+# what-to-do — the direction loop
 
-You are running **point-it**: look at a product and produce a **ranked menu of directions** it could
-take next. **You do the exploring; the human picks; you never decide.** point-it is the mouth of the
+You are running **what-to-do**: look at a product and produce a **ranked menu of directions** it could
+take next. **You do the exploring; the human picks; you never decide.** what-to-do is the mouth of the
 funnel — it generates the agenda the other tools act on.
 The funnel:
-**chart-it** grounds the goal → **point-it** fans out a menu (nothing chosen) → **grill-it** decides _how_ (one way) → **implement-it** builds one task to done (committed).
+**find-goal** grounds the goal → **what-to-do** fans out a menu (nothing chosen) → **how-to-do** decides _how_ (one way) → **do** builds one task to done (committed).
 
 Its whole job is to fight the **fortune-cookie failure** — ungrounded "add SSO, add analytics, add
 dark mode" lists that fit any product — by anchoring every move to the **North Star** and asking one
@@ -21,8 +21,8 @@ question: _what moves us toward that goal, and how far?_
 
 - **Roadmap biases, never gates.** It boosts moves on the current **frontier**, but every lane still
   runs — **a menu that hides off-roadmap moves is a bug.**
-- **A menu, never a decision.** point-it ranks and hands off; it never picks the winner (that's
-  grill-it) — **emitting one recommended direction as "the answer" is a bug.**
+- **A menu, never a decision.** what-to-do ranks and hands off; it never picks the winner (that's
+  how-to-do) — **emitting one recommended direction as "the answer" is a bug.**
 - **The empty-lane valve.** A lens with nothing real says so — **fabricating a direction to fill its
   slot is a bug.**
 - **Scored against the goal.** Every candidate carries how much it closes the gap to the North Star,
@@ -49,12 +49,12 @@ usually spans more than one — the **empty-lane valve** keeps any barren lane h
 ## Phase 0 — Ground (the gate: North Star, then roadmap)
 
 **North Star detection.** Look for a `## Product North Star` heading in the repo-root `CLAUDE.md`.
-The **heading** is the stable contract — its marker comment / parenthetical owner may read `point-it`
-or `chart-it`, both count.
+The **heading** is the stable contract — its marker comment / parenthetical owner may read `what-to-do`
+or `find-goal`, both count.
 
 | State       | Path                                                                                                                                                                                                                                                                      |
 | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Absent**  | **Not grounded — route to `/chart-it` and stop.** Say _"No North Star yet — run `/chart-it` to set the goal, then re-issue this."_ If a prompt was given, tell the human it didn't run and to re-issue `/point-it <theme>` after — **never silently discard the prompt.** |
+| **Absent**  | **Not grounded — route to `/find-goal` and stop.** Say _"No North Star yet — run `/find-goal` to set the goal, then re-issue this."_ If a prompt was given, tell the human it didn't run and to re-issue `/what-to-do <theme>` after — **never silently discard the prompt.** |
 | **Present** | **Read it = the goal.** A prompt (if given) scopes the run to a theme/area; no prompt = full survey. Then read the roadmap (below) and proceed to Phase 1.                                                                                                                |
 
 **Read the roadmap (if any).** Look for `.claude/ccharness/roadmap.md`. If present, read it and derive
@@ -62,8 +62,8 @@ the **frontier** = the unchecked `[ ]` milestones of the **earliest `## Stage` t
 unchecked box** (tracking is checkboxes only — no separate pointer; the frontier is a _set_, often
 just one). A roadmap with **no stage headings** is a legacy line → each milestone its own stage → the
 frontier is exactly the first unchecked box (unchanged behaviour). The frontier biases Phase 2 and
-Phase 3. If absent, point-it runs exactly as before (unbiased) — you may emit a one-line nudge _("no
-roadmap yet — `/chart-it` charts the route far ahead")_, then proceed.
+Phase 3. If absent, what-to-do runs exactly as before (unbiased) — you may emit a one-line nudge _("no
+roadmap yet — `/find-goal` charts the route far ahead")_, then proceed.
 
 ---
 
@@ -179,27 +179,27 @@ direction, top first, tagged with its move), then collect picks with the built-i
   in.
 
 The options checked across all lenses form a **list** of directions, each carrying its move tag and
-Phase-3 rank. Hand the **whole list** to `cc-tools:grill-it` — **not one at a time**: grill-it
+Phase-3 rank. Hand the **whole list** to `cc-tools:how-to-do` — **not one at a time**: how-to-do
 takes the list and scales its depth per move (its Phase 0). Nothing checked → say so and stop; the
 human can re-run or pick later.
 
-**point-it still never decides _how_.** It surfaces and ranks; the human marks _what_; grill-it
+**what-to-do still never decides _how_.** It surfaces and ranks; the human marks _what_; how-to-do
 decides _how_ and flows each into the build. A checkbox is still the human's direction call, not
-point-it's.
+what-to-do's.
 
 ---
 
 ## Quick reference
 
-`0` Ground — `## Product North Star` heading? no → **route to `/chart-it*`\*, stop; yes → read = goal, then read `.claude/ccharness/roadmap.md` (**frontier** = unchecked
+`0` Ground — `## Product North Star` heading? no → **route to `/find-goal*`\*, stop; yes → read = goal, then read `.claude/ccharness/roadmap.md` (**frontier** = unchecked
 `[ ]` of the earliest open `## Stage`; no headings = first `[ ]`) · `1` Survey — repo = where we are
 now; if roadmap, check **each frontier milestone's** `done when` (interactive: offer to check off ·
 autopilot: auto-mark) · `2` Fan-out — four lenses (ADD / FINISH / REBUILD / REFACTOR), parallel,
 empty-lane valve, **fed the frontier milestones as a steer (not a gate)** · `3`
 Rank — dedupe + score + **production-caution** (in production → careful; not → carte blanche) +
 **roadmap-fit** → menu (off-roadmap never dropped) · `4` Boundary — interactive: `AskUserQuestion`
-multiSelect per lens → checked **list** → grill-it; under autopilot: emit menu as data, **no
+multiSelect per lens → checked **list** → how-to-do; under autopilot: emit menu as data, **no
 `AskUserQuestion`\*\*, caller auto-picks.
 
-**Invariant:** point-it diverges and ranks; it never decides _how_. A menu that pre-decides the
-approach is a bug — that's grill-it. The human marks _what_; never block a live autopilot loop.
+**Invariant:** what-to-do diverges and ranks; it never decides _how_. A menu that pre-decides the
+approach is a bug — that's how-to-do. The human marks _what_; never block a live autopilot loop.

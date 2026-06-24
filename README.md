@@ -28,19 +28,19 @@ CLI for the console — no app to build, no compile step.
 A product funnel that refuses to skip the thinking:
 
 ```
-/chart-it  ──►  /point-it  ──►  /grill-it  ──►  /implement-it     (/slap = reset when stuck)
+/find-goal  ──►  /what-to-do  ──►  /how-to-do  ──►  /do     (/slap = reset when stuck)
  GROUND          DIVERGE         DECIDE          BUILD
  set the goal    rank where      work out HOW    take one task to
  (North Star)    it could go     to build the    done: built,
  + the roadmap   next (a menu)   pick (one way)  verified, committed
 ```
 
-- **`/chart-it`** — set the product's goal (its *North Star*) and chart a roadmap of milestones.
+- **`/find-goal`** — set the product's goal (its *North Star*) and chart a roadmap of milestones.
   The front door: every other command sends you here first if no goal is set.
-- **`/point-it`** — survey the product and get a ranked menu of where it could go next.
-- **`/grill-it`** — work out **how** to build the direction you picked (it converges the
+- **`/what-to-do`** — survey the product and get a ranked menu of where it could go next.
+- **`/how-to-do`** — work out **how** to build the direction you picked (it converges the
   implementation forks into one buildable approach; it doesn't re-pick the direction).
-- **`/implement-it`** — take one concrete task to a verified local commit through a gated pipeline.
+- **`/do`** — take one concrete task to a verified local commit through a gated pipeline.
 - **`/slap`** — when a fix is stuck in a rabbit hole, force a step back and a fresh angle.
 
 Full details: [`plugins/cc-tools/README.md`](plugins/cc-tools/README.md).
@@ -103,7 +103,7 @@ safe to re-run on a new machine.
 Then **ground your product once** — every command depends on it:
 
 ```
-/chart-it
+/find-goal
 ```
 
 ## How the layers depend on each other

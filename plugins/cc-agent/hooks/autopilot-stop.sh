@@ -83,7 +83,7 @@ ULTRACODE (mandatory this run): push parallelism to the max. The build inside ea
 fi
 if [ -n "$SPEND" ]; then
   REFEED="$REFEED
-SPEND MODE (burn the subscription limit): the ONLY stops are /autopilot-cancel or the subscription limit itself cutting the session. Two overrides to the meta-step above: (a) an exhausted roadmap is NOT cheap idle — GENERATE fresh work: re-survey with point-it for new improvements and extend the roadmap via chart-it, then keep building; (b) a hard dependency-block does NOT stop — park the blocker and mine other workable milestones instead. Honesty guard: route every generated direction through grill-it (it may reject weak ones) and keep commits LOCAL; if work-gen is genuinely dry, fall back to a LIGHT idle — never manufacture churn to fill time."
+SPEND MODE (burn the subscription limit): the ONLY stops are /autopilot-cancel or the subscription limit itself cutting the session. Two overrides to the meta-step above: (a) an exhausted roadmap is NOT cheap idle — GENERATE fresh work: re-survey with what-to-do for new improvements and extend the roadmap via find-goal, then keep building; (b) a hard dependency-block does NOT stop — park the blocker and mine other workable milestones instead. Honesty guard: route every generated direction through how-to-do (it may reject weak ones) and keep commits LOCAL; if work-gen is genuinely dry, fall back to a LIGHT idle — never manufacture churn to fill time."
 fi
 
 if command -v jq >/dev/null 2>&1; then

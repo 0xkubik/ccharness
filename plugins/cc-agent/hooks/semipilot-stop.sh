@@ -56,7 +56,7 @@ REFEED="$(cat <<'PROMPT'
 1. Read .claude/ccharness/semipilot/state.json + blocked.jsonl.
 2. DONE-CHECK FIRST: survey "now" and judge it against state.done_when. If MET → mark the milestone [x] in roadmap.md, set active:false (atomic temp+mv) with outcome:"achieved", append a final log.jsonl line, report, END THE TURN.
 3. GIVE-UP CHECK: if no_progress_streak >= max_no_progress OR cycle >= max_cycles → set active:false with outcome:"gave-up" or "capped", report the blocked queue, END THE TURN.
-4. Otherwise run ONE funnel cycle SCOPED to the target milestone: cc-tools:point-it (menu as DATA, NO AskUserQuestion) → keep only directions whose `advances` == target milestone and not in blocked.jsonl → auto-pick the top → cc-tools:grill-it → cc-tools:implement-it → LOCAL commit. Update no_progress_streak (reset on real progress; ++ on blocked/idle/no-movement; a handback from implement-it appends to blocked.jsonl and counts as no-progress), append a log line, bump cycle (atomic), END THE TURN.
+4. Otherwise run ONE funnel cycle SCOPED to the target milestone: cc-tools:what-to-do (menu as DATA, NO AskUserQuestion) → keep only directions whose `advances` == target milestone and not in blocked.jsonl → auto-pick the top → cc-tools:how-to-do → cc-tools:do → LOCAL commit. Update no_progress_streak (reset on real progress; ++ on blocked/idle/no-movement; a handback from do appends to blocked.jsonl and counts as no-progress), append a log line, bump cycle (atomic), END THE TURN.
 You stop ONLY by flipping active:false on achieved/gave-up/capped, or the user runs /semipilot-cancel. Do not otherwise stop.
 PROMPT
 )"

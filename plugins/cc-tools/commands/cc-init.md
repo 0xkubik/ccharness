@@ -1,5 +1,5 @@
 ---
-description: "4-stage onboarding wizard for the cc-* harness, driven by AskUserQuestion. Stage 1 installs missing marketplace dependencies; Stage 2 installs the harness's recommended rules into this project's .claude/rules/; Stage 3 reconciles the project's prose docs against your current understanding so stale text doesn't mislead later decisions; Stage 4 offers to run /chart-it. Every stage is offered and skippable; idempotent — safe to re-run."
+description: "4-stage onboarding wizard for the cc-* harness, driven by AskUserQuestion. Stage 1 installs missing marketplace dependencies; Stage 2 installs the harness's recommended rules into this project's .claude/rules/; Stage 3 reconciles the project's prose docs against your current understanding so stale text doesn't mislead later decisions; Stage 4 offers to run /find-goal. Every stage is offered and skippable; idempotent — safe to re-run."
 argument-hint: "(no arguments)"
 ---
 
@@ -12,7 +12,7 @@ so you choose what happens at every step:
 2. **Install rules** — the harness's recommended rule files, into this project's `.claude/rules/`.
 3. **Reconcile docs with reality** — check the project's prose docs against your current
    understanding so stale text doesn't quietly steer later decisions.
-4. **Offer `/chart-it`** — set the product's North Star.
+4. **Offer `/find-goal`** — set the product's North Star.
 
 ## Wizard flow
 
@@ -29,7 +29,7 @@ so you choose what happens at every step:
 
 ## Stage 1 — Install missing dependencies
 
-cc-tools is glue: `/point-it`, `/grill-it`, and `/implement-it` route to skills from **other**
+cc-tools is glue: `/what-to-do`, `/how-to-do`, and `/do` route to skills from **other**
 plugins. Those plugins are not bundled — this stage installs them.
 
 ### The dependency set
@@ -40,14 +40,14 @@ All of these live in the official marketplace `claude-plugins-official`
 | Plugin | What the harness uses it for |
 |---|---|
 | `superpowers` | brainstorming, writing/executing plans, TDD, subagents, systematic-debugging, code-review review loop |
-| `claude-md-management` | North Star capture / CLAUDE.md upkeep (point-it) |
-| `frontend-design` | UI build route (implement-it stage 2) |
-| `playwright` | browser-driven verification of UI (implement-it stage 4) |
-| `code-simplifier` | the simplify pass (implement-it stage 5) |
-| `ralph-loop` | long autonomous build loops (implement-it stage 2) |
-| `code-review` | the review pass (implement-it stage 5) |
-| `commit-commands` | the local commit + push/PR step (implement-it stage 6) |
-| `gitlab` | GitLab MR path at push time (implement-it stage 6) |
+| `claude-md-management` | North Star capture / CLAUDE.md upkeep (what-to-do) |
+| `frontend-design` | UI build route (do stage 2) |
+| `playwright` | browser-driven verification of UI (do stage 4) |
+| `code-simplifier` | the simplify pass (do stage 5) |
+| `ralph-loop` | long autonomous build loops (do stage 2) |
+| `code-review` | the review pass (do stage 5) |
+| `commit-commands` | the local commit + push/PR step (do stage 6) |
+| `gitlab` | GitLab MR path at push time (do stage 6) |
 
 > **Source of truth:** this table mirrors the "What it orchestrates" section of
 > `plugins/cc-tools/README.md`. If you add or drop a dependency, update **both**.
@@ -135,8 +135,11 @@ ls "${CLAUDE_PLUGIN_ROOT}/rules/"*.md < /dev/null
 
 For each file, read its first heading line (`# …`) to use as a human-readable label.
 
-**3. Let the user choose** which to install via `AskUserQuestion` with `multiSelect: true` — one
-option per rule file (label = its heading), so the user can install any subset.
+**3. Let the user choose** which to install with `AskUserQuestion`, `multiSelect: true` — one
+option per rule file (label = its heading) — so the user can install any subset. The tool caps each
+question at **4 options**; when there are more than four rules, split them across several
+`multiSelect` questions of ≤4 options each (up to 4 questions ride in one `AskUserQuestion` call;
+balance the batches so no question holds fewer than 2 options). Union the picks across all questions.
 
 **4. Copy each selected rule** to `.claude/rules/<filename>` in the current project (create
 `.claude/rules/` if it doesn't exist). **Before copying, check for a collision:** if
@@ -195,9 +198,9 @@ Report what changed.
 ## Stage 4 — Set the product's direction
 
 **Gate** with `AskUserQuestion`:
-- question: "Run /chart-it now to set the product's North Star?"
-- options: **Run /chart-it now** / **Not now**
+- question: "Run /find-goal now to set the product's North Star?"
+- options: **Run /find-goal now** / **Not now**
 
-On **Run /chart-it now**, hand off to `/chart-it` (it owns the North Star write). Note for the user:
-plugins installed in Stage 1 only activate on the next session, but `/chart-it` does not
+On **Run /find-goal now**, hand off to `/find-goal` (it owns the North Star write). Note for the user:
+plugins installed in Stage 1 only activate on the next session, but `/find-goal` does not
 hard-require them, so running it now is safe.

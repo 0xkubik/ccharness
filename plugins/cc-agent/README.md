@@ -7,11 +7,11 @@ and **autopilot** (the meta-loop wrapper over it):
 
 ### `/semipilot` — bounded, one-milestone unit
 
-Drives the cc-tools funnel (point-it → grill-it → implement-it) toward **one roadmap milestone**
+Drives the cc-tools funnel (what-to-do → how-to-do → do) toward **one roadmap milestone**
 and **stops itself** when that milestone's `done when:` is met — or gives up after N no-progress
 cycles / a hard cycle cap.
 
-- Requires a roadmap (`.claude/ccharness/roadmap.md`). No roadmap → `/chart-it` first.
+- Requires a roadmap (`.claude/ccharness/roadmap.md`). No roadmap → `/find-goal` first.
 - Two exits: **achieved** (done-check met → marks `[x]` in roadmap) or **gave-up / capped**
   (streak ≥ `max_no_progress` or `cycle ≥ max_cycles`).
 - `/semipilot-cancel` is the manual brake.
@@ -22,7 +22,7 @@ Arms a fresh semipilot on the current milestone; when it finishes, advances to t
 walking the roadmap milestone by milestone. The funnel logic lives entirely inside semipilot;
 autopilot only decides which milestone runs next and what to do when one fails.
 
-- **Requires a roadmap.** No roadmap (or no North Star) → `/chart-it` first. The old
+- **Requires a roadmap.** No roadmap (or no North Star) → `/find-goal` first. The old
   "drive directly toward the North Star without a roadmap" path is removed.
 - **Give-up ladder:** if a semipilot gives up → retry once → if still stuck, the **stage test**
   reads the dependency off the roadmap's layers (no guessing) — is another open milestone in the
@@ -38,7 +38,7 @@ autopilot only decides which milestone runs next and what to do when one fails.
 - **Two ways autopilot stops:** `/autopilot-cancel` (manual brake, works any time) OR a hard
   dependency block (a legitimate self-stop — no longer only cancel can end it).
 - When the roadmap is exhausted (all milestones done or parked), autopilot cheap-idles — it
-  never stops on its own in the normal case; new milestones added via `/chart-it` are picked
+  never stops on its own in the normal case; new milestones added via `/find-goal` are picked
   up on the next idle cycle.
 
 ## State directories (layered)
@@ -79,8 +79,8 @@ in the gap between milestones.
 
 ## Dependencies & supervision
 
-- Depends on **cc-tools** (invokes `cc-tools:point-it`, `cc-tools:grill-it`,
-  `cc-tools:implement-it`, `cc-tools:slap`).
+- Depends on **cc-tools** (invokes `cc-tools:what-to-do`, `cc-tools:how-to-do`,
+  `cc-tools:do`, `cc-tools:slap`).
 - Supervised by **cc-maestro**: a `semipilot` state file signals a bounded agent (terminal
   outcome); an `autopilot` state file signals the meta-loop (can reach `blocked` self-stop
   in addition to cancel).

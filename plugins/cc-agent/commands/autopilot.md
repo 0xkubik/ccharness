@@ -1,5 +1,5 @@
 ---
-description: "Walk the roadmap milestone by milestone via semipilot — arms a fresh /semipilot on the current milestone, and when it finishes advances to the next (with a retry-once, then a stage-test: same-stage sibling → park+advance, else hard-stop). Requires a roadmap (/chart-it first). Stops on /autopilot-cancel OR a hard dependency block."
+description: "Walk the roadmap milestone by milestone via semipilot — arms a fresh /semipilot on the current milestone, and when it finishes advances to the next (with a retry-once, then a stage-test: same-stage sibling → park+advance, else hard-stop). Requires a roadmap (/find-goal first). Stops on /autopilot-cancel OR a hard dependency block."
 argument-hint: "[optional focus] [--ultracode] [--spend-session]"
 ---
 
@@ -19,11 +19,11 @@ Invoke the `autopilot` skill to **arm the meta-loop**, with this focus (and any 
 
 autopilot is a **meta-loop over semipilot**: it arms `/semipilot` on the current milestone, waits
 for it to finish, then advances to the next — walking the roadmap milestone by milestone. The funnel
-logic (point-it → grill-it → implement-it) lives inside semipilot; autopilot only decides **which
+logic (what-to-do → how-to-do → do) lives inside semipilot; autopilot only decides **which
 milestone to run next, and what to do when one fails.**
 
-**Requires a roadmap.** No North Star → run `/chart-it` first. North Star but no roadmap → run
-`/chart-it` to chart the route. (The old "drive directly toward the North Star without a roadmap"
+**Requires a roadmap.** No North Star → run `/find-goal` first. North Star but no roadmap → run
+`/find-goal` to chart the route. (The old "drive directly toward the North Star without a roadmap"
 path is removed.)
 
 **Give-up ladder** — when a semipilot gives up on a milestone, autopilot:

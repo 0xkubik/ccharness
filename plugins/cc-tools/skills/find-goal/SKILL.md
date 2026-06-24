@@ -1,19 +1,19 @@
 ---
-name: chart-it
+name: find-goal
 description: Use when setting up or revising a product's long-horizon direction — the grounding loop that sets the goal and versions the road to it.
 ---
 
 Guides a human to **set the product's goal** and **version the route to it** (v0 → v1 → v2 → …).
 Captures the **North Star** (the goal) into `CLAUDE.md`, then builds a `.claude/ccharness/roadmap.md`
 organized as **versions of the product** — and, inside each version, the features broken down into
-ordered work **stages**. Invoked by `/chart-it`. Run once up front (every other product skill routes
-here when no goal exists); re-run to revise. The roadmap then biases point-it toward the current
+ordered work **stages**. Invoked by `/find-goal`. Run once up front (every other product skill routes
+here when no goal exists); re-run to revise. The roadmap then biases what-to-do toward the current
 frontier and feeds the autopilot/semipilot loops.
 
-# chart-it — set the goal, then version the road to it
+# find-goal — set the goal, then version the road to it
 
 You are the harness's **grounding front door**, and this is a **high-stakes conversation**, not a
-form to fill in. What you capture here decides the product's whole direction — point-it ranks moves
+form to fill in. What you capture here decides the product's whole direction — what-to-do ranks moves
 against it, and autopilot/semipilot will **build, milestone by milestone, off the roadmap you write**.
 A sloppy goal or a vague version makes every later automated step aim at the wrong target.
 
@@ -53,7 +53,7 @@ on until the answer is concrete. The **durable artifact** is this stable block �
 ```markdown
 ## Product North Star (cc-tools)
 
-<!-- managed by chart-it · edit freely, the harness re-reads this · captured: <YYYY-MM-DD> -->
+<!-- managed by find-goal · edit freely, the harness re-reads this · captured: <YYYY-MM-DD> -->
 
 - **Vision:** <a few sentences — how the finished product looks at the end>
 - **In production?** <yes — live users, move carefully · no — full carte blanche>
@@ -145,7 +145,7 @@ a valid sequential walk. The **frontier** = the unchecked `[ ]` milestones of th
 ```markdown
 # Roadmap — <product>
 
-<!-- managed by chart-it · edit freely, chart-it re-reads this · captured: <YYYY-MM-DD> · North Star → CLAUDE.md -->
+<!-- managed by find-goal · edit freely, find-goal re-reads this · captured: <YYYY-MM-DD> · North Star → CLAUDE.md -->
 <!-- VERSIONS over STAGES: versions (v0,v1,…) are the product's milestones; inside each, `## Stage` bands run in order, milestones within a stage are parallel (any order). -->
 <!-- Frontier = unchecked milestones of the earliest `## Stage` in document order that still has any. No stage headings = legacy line. -->
 
@@ -192,5 +192,5 @@ bands (_order → split stages; independent → same stage_) with stable `Mn` id
 → **write the version to `roadmap.md` and urge a review** → next version or finish · re-run = revise
 the living roadmap.
 
-**Invariant:** chart-it owns the North Star write and versions the route; it never decides a fork
-(grill-it) or builds a task (implement-it). The roadmap only _biases_ point-it — it never gates it.
+**Invariant:** find-goal owns the North Star write and versions the route; it never decides a fork
+(how-to-do) or builds a task (do). The roadmap only _biases_ what-to-do — it never gates it.

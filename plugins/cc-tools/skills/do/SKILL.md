@@ -1,18 +1,18 @@
 ---
-name: implement-it
-description: "Use when handing a concrete, well-scoped coding task to be taken all the way to done — implemented, verified, and committed — with minimal back-and-forth. Invoked by /implement-it. Not for vague or fork-laden tasks: it refuses those — a real fork goes to cc-tools:grill-it (the funnel's decision loop), pure ambiguity to superpowers:brainstorming."
+name: do
+description: "Use when handing a concrete, well-scoped coding task to be taken all the way to done — implemented, verified, and committed — with minimal back-and-forth. Invoked by /do. Not for vague or fork-laden tasks: it refuses those — a real fork goes to cc-tools:how-to-do (the funnel's decision loop), pure ambiguity to superpowers:brainstorming."
 ---
 
-# implement-it — the strict executor
+# do — the strict executor
 
-You are running the **implement-it** pipeline: take ONE concrete task from understood →
+You are running the **do** pipeline: take ONE concrete task from understood →
 built → verified → committed, and stop with nothing half-done. It is the **foot of the funnel**
-(point-it → grill-it → implement-it) and also runs standalone on any concrete task. **You own
+(what-to-do → how-to-do → do) and also runs standalone on any concrete task. **You own
 execution; the human owns direction.** Drive the seven stages below in order. Do not skip a
 stage. Do not declare done while the Stage-1 checklist has open items.
 
 **Core invariants — non-negotiable:**
-- **Refuse, don't guess** (Stage 0 — and the fork-test stays armed all the way through Stage 3). A serious fork goes to grill-it; a vague task goes to brainstorming — never a guessed default.
+- **Refuse, don't guess** (Stage 0 — and the fork-test stays armed all the way through Stage 3). A serious fork goes to how-to-do; a vague task goes to brainstorming — never a guessed default.
 - **Verify before you claim** (Stage 4). Evidence, not assertion.
 - **Never commit unverified code** (Stage 6 only runs after Stage 4 is green).
 - **3 strikes on one problem → reset, don't keep patching** (slap) — then pick the fresh approach yourself; **implementation never hands back to the human.**
@@ -22,18 +22,18 @@ stage. Do not declare done while the Stage-1 checklist has open items.
 ## Grounding precondition (the gate — before Stage 0)
 
 Confirm a `## Product North Star` heading exists in repo-root `CLAUDE.md`. **Absent → STOP and route
-to `/chart-it`** (cc-tools builds from the goal outward; don't run ungrounded). Arriving from grill-it
+to `/find-goal`** (cc-tools builds from the goal outward; don't run ungrounded). Arriving from how-to-do
 or under autopilot, the North Star already exists — the gate just passes.
 
 ---
 
 ## Stage 0 — Clarity gate (refuse if unclear)
 
-**Arrived here from grill-it?** Then the fork is already resolved — grill-it's decision *is* the
+**Arrived here from how-to-do?** Then the fork is already resolved — how-to-do's decision *is* the
 direction, and any `decision_axes` it shows were already ruled (the human could have vetoed and
 didn't). Pass the gate and proceed; do **not** re-open the choice or route it back up — that's
-the grill-it→implement-it→grill-it loop. The gate below is for tasks that reach you *without* a
-grill-it decision behind them.
+the how-to-do→do→how-to-do loop. The gate below is for tasks that reach you *without* a
+how-to-do decision behind them.
 
 Before touching anything, decide whether this task is safe to execute autonomously. It is
 safe **only if all three hold**:
@@ -50,18 +50,18 @@ or which fork is unresolved, then route by *what* is wrong — this is the funne
 upward, not a dead end:
 
 - **A serious fork** (two materially different options, no obvious winner) → hand the task to
-  **`cc-tools:grill-it`**, the funnel's decision loop. Resolving forks is grill-it's lane, not
+  **`cc-tools:how-to-do`**, the funnel's decision loop. Resolving forks is how-to-do's lane, not
   yours; it decides and flows the chosen approach back into build.
 - **Pure ambiguity** (you cannot write the acceptance criteria — missing facts, unclear intent,
   *no* genuine fork) → invoke **`superpowers:brainstorming`** to surface what's wanted, or just
   ask the human. This is a clarification, not a decision.
 
-Re-enter implement-it only once the task comes back clear and fork-free.
+Re-enter do only once the task comes back clear and fork-free.
 
 | Rationalization | Reality |
 |---|---|
 | "I'm autonomous, so I should just decide." | Autonomy is over *execution*, not *direction*. Choosing between materially different approaches or outcomes is the human's call — not a default to set. |
-| "I'll pick a sensible default and note the caveat in the commit." | A defaulted fork is an unmade decision shipped as code. If the choice carries real business or architectural weight, it is a fork — refuse and route to grill-it. |
+| "I'll pick a sensible default and note the caveat in the commit." | A defaulted fork is an unmade decision shipped as code. If the choice carries real business or architectural weight, it is a fork — refuse and route to how-to-do. |
 | "The task says 'get it done', so clarifying is disobeying." | "Get it done" is the *what*. It never authorizes guessing the *direction*. Resolving the fork first IS getting it done right. |
 | "Clarifying is slow / annoying." | Guessing wrong is far slower. brainstorming resolves the fork in minutes; a wrong rebuild costs hours. |
 
@@ -76,7 +76,7 @@ Re-enter implement-it only once the task comes back clear and fork-free.
 
 ## Stage 1 — Scope the work
 
-**If you arrived here from grill-it**, its decision is your starting point: the fork is already
+**If you arrived here from how-to-do**, its decision is your starting point: the fork is already
 resolved and the approach chosen — turn that decided approach into the checklist, do not
 re-litigate the decision or bounce it back up. Produce an explicit, **ordered checklist** of the
 concrete deliverables — this is your definition of done for Stage 3 and must stay visible. Then
@@ -110,7 +110,7 @@ Pick the execution machinery from the Stage-1 signals, then **say your choice ou
 
 **Workflow note:** launch a Workflow when you can **justify** it — a large, structured fan-out
 where deterministic orchestration (staged fan-out, per-item verify) earns its token cost. You
-may do this **autonomously, without asking the user** — invoking `/implement-it` is itself the
+may do this **autonomously, without asking the user** — invoking `/do` is itself the
 opt-in, so just state your justification out loud and proceed. For only a handful of
 independent pieces, prefer subagents (`superpowers:dispatching-parallel-agents`) — they're
 lighter; reserve Workflows for genuine scale.
@@ -170,18 +170,18 @@ If you change anything, return to Stage 4 and re-verify.
 Past the Stage-0 gate you own the build to its end, and **implementation never escalates to the
 human.** The only human touchpoints are the Stage-0 gate (before the build) and the optional
 push offer (after Stage 6) — never the middle. Two things still route *upward to the right
-machinery*, and neither is the user: a **decision** goes to grill-it, a **stuck fix** goes to slap.
+machinery*, and neither is the user: a **decision** goes to how-to-do, a **stuck fix** goes to slap.
 
-### A serious fork surfaces mid-build → `grill-it`
+### A serious fork surfaces mid-build → `how-to-do`
 
 The Stage-0 fork-test **does not expire at the gate — it stays armed through Stage 3.** As you
 learn the terrain you will hit technical choices that weren't visible at the start. For each,
 apply the same test: it is a **serious fork** only when it has **(a)** materially different
 consequences, **(b)** no obvious winner, **and (c)** is costly to reverse. All three → stop and
-hand it **up to `cc-tools:grill-it`**; it's the decision loop (not the user), it rules the fork,
+hand it **up to `cc-tools:how-to-do`**; it's the decision loop (not the user), it rules the fork,
 and its fork-free decision flows back into the build. Not all three → it's a **routine call:
 decide it yourself and keep moving** — a strict executor keeps momentum on anything it can later
-undo. A fork grill-it has already ruled is fork-free; never send the same one up twice.
+undo. A fork how-to-do has already ruled is fork-free; never send the same one up twice.
 
 *This is a **decision** — a choice between approaches that all work. Distinct from slap below,
 which is for an approach that **isn't working.***
@@ -207,10 +207,10 @@ and deciding the next move yourself. Keep driving until the work is done and ver
 
 ## Quick reference
 
-Grounding — no `## Product North Star` → **route to `/chart-it`**, stop · `0` Gate — fork → grill-it,
+Grounding — no `## Product North Star` → **route to `/find-goal`**, stop · `0` Gate — fork → how-to-do,
 vague → brainstorming · `1` Scope — checklist + size · `2` Tools — route & announce · `3` Build —
 goal-loop to done · `4` Verify — evidence, debug to green · `5` Review+simplify — only if
 non-trivial · `6` Commit — local only, then offer push.
 
-Mid-build, a serious fork (material · no clear winner · costly to reverse) → **grill-it**; routine/reversible calls you make yourself.
+Mid-build, a serious fork (material · no clear winner · costly to reverse) → **how-to-do**; routine/reversible calls you make yourself.
 Strike 3 on one problem → **slap**, then pick the fresh approach yourself. Implementation never hands back to the human — re-decide as needed.

@@ -2,19 +2,19 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-CHART = ROOT / "skills" / "chart-it" / "SKILL.md"
-POINT = ROOT / "skills" / "point-it" / "SKILL.md"
+FIND_GOAL = ROOT / "skills" / "find-goal" / "SKILL.md"
+WHAT_TO_DO = ROOT / "skills" / "what-to-do" / "SKILL.md"
 
 
-class TestChartItSkill(unittest.TestCase):
+class TestFindGoalSkill(unittest.TestCase):
     def setUp(self):
-        self.text = CHART.read_text() if CHART.exists() else ""
+        self.text = FIND_GOAL.read_text() if FIND_GOAL.exists() else ""
 
     def test_exists(self):
-        self.assertTrue(CHART.exists(), "chart-it SKILL.md missing")
+        self.assertTrue(FIND_GOAL.exists(), "find-goal SKILL.md missing")
 
     def test_owns_north_star_write(self):
-        # chart-it owns the shared North Star contract block.
+        # find-goal owns the shared North Star contract block.
         self.assertIn("## Product North Star", self.text)
 
     def test_layered_stage_format(self):
@@ -37,12 +37,12 @@ class TestChartItSkill(unittest.TestCase):
         self.assertIn("legacy", self.text.lower())
 
 
-class TestPointItSkill(unittest.TestCase):
+class TestWhatToDoSkill(unittest.TestCase):
     def setUp(self):
-        self.text = POINT.read_text() if POINT.exists() else ""
+        self.text = WHAT_TO_DO.read_text() if WHAT_TO_DO.exists() else ""
 
     def test_exists(self):
-        self.assertTrue(POINT.exists(), "point-it SKILL.md missing")
+        self.assertTrue(WHAT_TO_DO.exists(), "what-to-do SKILL.md missing")
 
     def test_reads_frontier(self):
         self.assertIn("frontier", self.text.lower())
@@ -53,7 +53,7 @@ class TestPointItSkill(unittest.TestCase):
         self.assertIn("off-roadmap", self.text)
 
     def test_qualified_handoff(self):
-        self.assertIn("cc-tools:grill-it", self.text)
+        self.assertIn("cc-tools:how-to-do", self.text)
 
 
 if __name__ == "__main__":

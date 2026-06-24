@@ -1,31 +1,31 @@
 ---
-name: grill-it
-description: Use when a task carries a real fork — a business or technical decision with materially different options and no obvious winner — or when an idea must be thought through before building, or when point-it hands over a checked list of picked directions. Works out HOW to build each picked direction (or, standalone, resolves one fork), converging the open implementation forks into ONE buildable approach via four opposed proposers (a compass) → cross-examination → synthesis, scaling depth to stakes and to each item's move. It does not re-pick the direction — that was point-it's job; if a human's pick itself looks wrong, it flags the human rather than silently overriding. A faster, more rigorous replacement for open-ended brainstorming. The human rules only at the boundaries.
+name: how-to-do
+description: Use when a task carries a real fork — a business or technical decision with materially different options and no obvious winner — or when an idea must be thought through before building, or when what-to-do hands over a checked list of picked directions. Works out HOW to build each picked direction (or, standalone, resolves one fork), converging the open implementation forks into ONE buildable approach via four opposed proposers (a compass) → cross-examination → synthesis, scaling depth to stakes and to each item's move. It does not re-pick the direction — that was what-to-do's job; if a human's pick itself looks wrong, it flags the human rather than silently overriding. A faster, more rigorous replacement for open-ended brainstorming. The human rules only at the boundaries.
 ---
 
-# grill-it — the decision loop
+# how-to-do — the decision loop
 
-You are running **grill-it**. Your job is to **work out HOW to build something** and land on one
+You are running **how-to-do**. Your job is to **work out HOW to build something** and land on one
 buildable approach — crisp enough to wave through or redirect at a glance — then flow it into the
 build. **You do the thinking; the human owns direction and rules at the boundaries.**
 
 **Two modes — the difference matters.**
 
-- **From point-it (the funnel):** the human already picked *what* to do (the checked direction[s]).
-  Your job is **not to re-pick it** — point-it diverges and the human chooses the *what*; you work
+- **From what-to-do (the funnel):** the human already picked *what* to do (the checked direction[s]).
+  Your job is **not to re-pick it** — what-to-do diverges and the human chooses the *what*; you work
   out the *how*. You get a **list** of checked directions, each tagged with its move (ADD / FINISH /
   REBUILD / REFACTOR). See the whole list at once — so you can order and relate the items — then
   work each, **scaling depth to the move** (Phase 0). One approach per item; the list is the wrapper.
-- **Standalone (`/grill-it <fork>`):** no upstream pick — you resolve one arbitrary fork to one
+- **Standalone (`/how-to-do <fork>`):** no upstream pick — you resolve one arbitrary fork to one
   decision from scratch.
 
 **"ONE" means one buildable approach for the *how*, not one pick among directions.** You still
 converge — but on how to build the pick, not on which pick to make. This is load-bearing: the next
-stage, **implement-it, refuses a task that still carries a live fork** (it routes it right back
+stage, **do, refuses a task that still carries a live fork** (it routes it right back
 here), so the *how*-forks must be resolved into a single buildable approach before the work flows on.
 Phases 0–3 describe working ONE item; **Phase 4** says how the list flows out to the build.
 
-**Stay in the how-lane.** When the direction came from a human's pick (point-it), the human already
+**Stay in the how-lane.** When the direction came from a human's pick (what-to-do), the human already
 settled *whether* to do it — so if the grilling concludes the **pick itself** is wrong or
 unnecessary, you do **not** silently drop it or silently build something else: you **flag it to the
 human** and stop (Phase 4). (Standalone, or when the direction was machine-generated under autopilot
@@ -44,13 +44,13 @@ leave nothing to decide.
 - **Convergence must be earned, not instructed.** Agreement that _survives_ the grilling is
   signal; agreement _imposed_ by a "be balanced" prompt is noise.
 - **Depth scales to stakes.** The full grill is for irreversible/expensive decisions. Cheap,
-  reversible ones take the fast path — or grill-it doesn't run at all.
+  reversible ones take the fast path — or how-to-do doesn't run at all.
 - **Synthesis is load-bearing.** All decision quality lives there. It scores against explicit
   criteria and carries its assumptions forward; it never just "picks the nicest essay."
 
 **Grounding precondition (the gate).** Before anything else, confirm a `## Product North Star` heading
-exists in repo-root `CLAUDE.md`. **Absent → stop and route to `/chart-it`** (don't run ungrounded).
-grill-it leans on the North Star's **production flag** (is it live?) to set its depth (Phase 0).
+exists in repo-root `CLAUDE.md`. **Absent → stop and route to `/find-goal`** (don't run ungrounded).
+how-to-do leans on the North Star's **production flag** (is it live?) to set its depth (Phase 0).
 
 ---
 
@@ -79,7 +79,7 @@ other axis you have lost the orthogonality that makes the four genuinely distinc
 
 ## Phase 0 — Triage (frame + pick depth)
 
-**If you were handed a list** (from point-it), split it by move first: **ADD / REBUILD** are the
+**If you were handed a list** (from what-to-do), split it by move first: **ADD / REBUILD** are the
 *heavy* items — each gets its own full triage below. **FINISH / REFACTOR** are the *light* items —
 group them and give the group one quick pass, not four-proposer grilling. Decide the heavy items
 individually; clear the light group together. Then, per item:
@@ -97,7 +97,7 @@ Before spawning anyone, do two things:
 | **Material stakes, reversible**               | **Compass**    | Phase 1 + Synthesis. No cross-examination.                                                                                    |
 | **Irreversible / expensive / hard to unwind** | **Full grill** | Phase 1 + Phase 2 + Synthesis.                                                                                                |
 
-**Seed the door from the move.** A point-it tag is a depth prior — let the move set the *default*
+**Seed the door from the move.** A what-to-do tag is a depth prior — let the move set the *default*
 door, then let the stakes-test above refine it:
 
 | Move                      | Default door             | Why                                                                                          |
@@ -110,7 +110,7 @@ climb to the compass; an obvious ADD can drop to the fast path. **Whether the pr
 pushes the same way — a REBUILD in production earns more depth than one in a prototype.
 
 If the task is actually unambiguous with no fork → say so and hand it straight to
-`cc-tools:implement-it` (the funnel's build stage). It doesn't need a decision loop, it just
+`cc-tools:do` (the funnel's build stage). It doesn't need a decision loop, it just
 needs building.
 
 ---
@@ -207,7 +207,7 @@ decision:            <chosen approach (the *how*) + plan sketch>
 robust_core:         [ <points that converged through the grilling> ]
 beaten_alternatives: [ { alternative, why_not } ]
 assumptions:         [ { claim, confidence, kill_signal } ]   # kill_signal = a FALSIFIABLE trip-condition: "a single export > 50k rows" or "the library buffers instead of streams" — NEVER "if it gets too big"
-decision_axes:       [ { axis, options, recommendation } ]    # held disagreements — grill-it rules each; human can veto
+decision_axes:       [ { axis, options, recommendation } ]    # held disagreements — how-to-do rules each; human can veto
 framing:             ok | reframe(<the *how* was mis-framed — restart Phase 0>) | flag_to_human(<the human-picked direction itself looks wrong/unnecessary — stop, surface, do NOT build>)
 ```
 
@@ -218,24 +218,24 @@ can't be checked and protects nothing; a sharp one ("the library buffers instead
 catches the drift the moment it surfaces. This is why Phase 4 persists them to disk.
 
 Keep `decision`'s plan sketch **thin** — _what_ approach won and _why_. The ordered build
-checklist (and any written plan) is **implement-it's** Stage 1, not synthesis's job: grill-it
-decides the *how* (the approach), implement-it plans and builds it. Don't do its work here.
+checklist (and any written plan) is **do's** Stage 1, not synthesis's job: how-to-do
+decides the *how* (the approach), do plans and builds it. Don't do its work here.
 
 ---
 
 ## Phase 4 — Hand off to build (flow through, veto-able)
 
 The human's directional choice already happened upstream — the pick(s) that opened this
-decision. So grill-it does **not** stop for a fresh approval. It **resolves every open axis
+decision. So how-to-do does **not** stop for a fresh approval. It **resolves every open axis
 itself** and flows the decided, fork-free approach straight into the build.
 
 **One exception — flag, don't override.** If synthesis set `framing: flag_to_human` (the grilling
 concluded the *picked direction itself* is wrong or unnecessary, not just that the *how* needed
-reframing), grill-it does **not** build and does **not** silently drop it. It **stops** and surfaces
+reframing), how-to-do does **not** build and does **not** silently drop it. It **stops** and surfaces
 the finding to the human — the picked direction, why it looks wrong, and the recommended
-alternative — then lets them re-pick (back to point-it), override ("build it anyway"), or drop it.
+alternative — then lets them re-pick (back to what-to-do), override ("build it anyway"), or drop it.
 This applies only to a **human-picked** direction; a standalone fork or an autopilot-generated
-direction (no human in the loop) grill-it rules on itself.
+direction (no human in the loop) how-to-do rules on itself.
 
 **For one item** (a standalone fork, or one entry of a list), in one pass:
 
@@ -248,14 +248,14 @@ direction (no human in the loop) grill-it rules on itself.
    - the **decision_axes** — each with _your_ ruling and why, recommendation first (you decide
      them; you do not hand the human a quiz to fill in),
    - the **assumptions** it rests on (each with its `kill_signal`).
-3. Hand the decided approach to **`cc-tools:implement-it`** (the funnel's build stage) by
+3. Hand the decided approach to **`cc-tools:do`** (the funnel's build stage) by
    default, **without waiting** — and make the veto cheap and explicit, e.g.:
-   _"Building this via implement-it unless you redirect — say so to change direction, or to stop
+   _"Building this via do unless you redirect — say so to change direction, or to stop
    at the decision."_
 
-**For a list** (from point-it): first **order and relate** the items — rank order by default,
+**For a list** (from what-to-do): first **order and relate** the items — rank order by default,
 but pull dependencies earlier and fold any that overlap. Then walk the list, running the
-per-item pass above for each: **one decision record, one implement-it hand-off, one veto line —
+per-item pass above for each: **one decision record, one do hand-off, one veto line —
 per item.** Heavy items (ADD/REBUILD) are decided individually; the light FINISH/REFACTOR group
 is reasoned in one pass but still **fans out to a per-item build** so each lands as its own
 commit. The cadence is **autonomous, veto-only** by default — the human curated the list by
@@ -263,8 +263,8 @@ checking boxes, so you don't re-ask between items; you build them in rank order 
 interrupt to redirect or stop any one. (5 checked boxes ⇒ up to 5 decisions ⇒ 5 local commits.)
 
 The human rules by **interrupting**, not by being asked. On a redirect → fold their ruling into
-Phase 0 and re-run only what changed. (Invoked standalone via `/grill-it` for just a decision?
-The same veto is your stop — say so and grill-it ends at the decision instead of building.)
+Phase 0 and re-run only what changed. (Invoked standalone via `/how-to-do` for just a decision?
+The same veto is your stop — say so and how-to-do ends at the decision instead of building.)
 
 ---
 
@@ -274,7 +274,7 @@ The same veto is your stop — say so and grill-it ends at the decision instead 
 depth **seeded by move** (ADD/REBUILD grill properly · FINISH/REFACTOR light), fast path the floor ·
 `1` Compass — 4 partisan poles, parallel, low-conviction valve · `2` Grill — opposites cross-examine, harvest
 the ledger (full grill only) · `3` Synthesis — the one objective pass: robust core + live axes +
-scored decision · `4` Hand off — per item: persist record, resolve axes, flow into implement-it (veto per item) —
+scored decision · `4` Hand off — per item: persist record, resolve axes, flow into do (veto per item) —
 **unless** synthesis flagged the human-picked direction itself as wrong (`flag_to_human`) → stop &
 surface, don't build; a **list** → order/relate, then one approach + one commit per item, autonomous
 veto-only.

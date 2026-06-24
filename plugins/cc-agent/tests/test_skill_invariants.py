@@ -28,11 +28,11 @@ class TestSemipilotSkill(unittest.TestCase):
         self.assertIn("AskUserQuestion", self.text)  # must mention it to forbid it
 
     def test_roadmap_gate(self):
-        self.assertIn("chart-it", self.text)
+        self.assertIn("find-goal", self.text)
 
     def test_qualified_funnel_skill_names(self):
         # The directly-invoked funnel skills must be referenced by QUALIFIED name.
-        for name in ("cc-tools:point-it", "cc-tools:grill-it", "cc-tools:implement-it"):
+        for name in ("cc-tools:what-to-do", "cc-tools:how-to-do", "cc-tools:do"):
             self.assertIn(name, self.text)
 
     def test_semipilot_state_path(self):
@@ -70,7 +70,7 @@ class TestAutopilotSkill(unittest.TestCase):
             self.assertIn(token, self.text)
 
     def test_roadmap_required(self):
-        self.assertIn("chart-it", self.text)
+        self.assertIn("find-goal", self.text)
 
     def test_idle_on_exhaustion(self):
         self.assertIn("idle", self.text)

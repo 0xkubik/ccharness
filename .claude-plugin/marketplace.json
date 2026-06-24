@@ -9,7 +9,7 @@
   "plugins": [
     {
       "name": "cc-tools",
-      "description": "The tools layer: /chart-it, /point-it, /grill-it, /implement-it, /slap — single-purpose product skills forming a ground -> diverge -> decide -> build funnel. Zero-config.",
+      "description": "The tools layer: /find-goal, /what-to-do, /how-to-do, /do, /slap — single-purpose product skills forming a ground -> diverge -> decide -> build funnel. Zero-config.",
       "author": { "name": "kubik" },
       "category": "workflow",
       "source": "./plugins/cc-tools"
