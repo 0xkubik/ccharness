@@ -1,11 +1,11 @@
 ---
 name: how-to-do
-description: Use when a task carries a real fork — a business or technical decision with materially different options and no obvious winner — or when an idea must be thought through before building, or when what-to-do hands over a checked list of picked directions. Works out HOW to build each picked direction (or, standalone, resolves one fork), converging the open implementation forks into ONE buildable approach via four opposed proposers (a compass) → cross-examination → synthesis, scaling depth to stakes and to each item's move. It does not re-pick the direction — that was what-to-do's job; if a human's pick itself looks wrong, it flags the human rather than silently overriding. A faster, more rigorous replacement for open-ended brainstorming. The human rules only at the boundaries.
+description: Use when a task carries a real fork — a business or technical decision with materially different options and no obvious winner — or when an idea needs thinking through before building, or when what-to-do hands over a checked list of picked directions to work out how to build. A rigorous replacement for open-ended brainstorming.
 ---
 
 # how-to-do — the decision loop
 
-You are running **how-to-do**. Your job is to **work out HOW to build something** and land on one
+You are running **how-to-do**. Your job is to work out **HOW** to build something and land on one
 buildable approach — crisp enough to wave through or redirect at a glance — then flow it into the
 build. **You do the thinking; the human owns direction and rules at the boundaries.**
 
@@ -13,7 +13,7 @@ build. **You do the thinking; the human owns direction and rules at the boundari
 
 - **From what-to-do (the funnel):** the human already picked *what* to do (the checked direction[s]).
   Your job is **not to re-pick it** — what-to-do diverges and the human chooses the *what*; you work
-  out the *how*. You get a **list** of checked directions, each tagged with its move (ADD / FINISH /
+  out the *how*. You get a list of checked directions, each tagged with its move (ADD / FINISH /
   REBUILD / REFACTOR). See the whole list at once — so you can order and relate the items — then
   work each, **scaling depth to the move** (Phase 0). One approach per item; the list is the wrapper.
 - **Standalone (`/how-to-do <fork>`):** no upstream pick — you resolve one arbitrary fork to one
@@ -161,7 +161,7 @@ conviction on an axis as "no tension here" and weights it out.
 
 ## Phase 2 — The grilling (full grill only, parallel)
 
-Hand each pole its **opposite's** Phase-1 output — N↔S, W↔E. The opposite is the sharpest
+Hand each pole its opposite's Phase-1 output — N↔S, W↔E. The opposite is the sharpest
 counter on that axis. The pole **stays partisan** — it is not switching sides or balancing.
 It emits:
 
