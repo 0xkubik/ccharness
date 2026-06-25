@@ -73,6 +73,16 @@ commits, scattered `TODO`/`FIXME`/stub markers. Two or three paragraphs, not an 
 
 ---
 
+## Read the musician's proposals first (if any)
+
+Before versioning, check `.claude/ccharness/roadmap-proposals.md`. As the musician works it appends
+**forward-looking observations** there ("v2 might need X") — it is barred from editing the roadmap's
+goal/version layer itself, so this file is how its ideas reach you. Read it and **surface each as a
+candidate input** to the version loop below — never auto-apply; the human decides what (if anything)
+lands. Once integrated or dismissed, clear/archive the file. Absent → skip.
+
+---
+
 ## Phase 2 — Version the product (the heart — a loop)
 
 Walk the product forward one version at a time, starting at v0 (MVP). A version is a recognizable

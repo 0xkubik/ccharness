@@ -1,0 +1,4 @@
+# Skill and command markdown carry YAML frontmatter and hand-tuned markdown
+# (bold next to inline code, exact spacing) that Prettier mangles. Keep it out.
+**/SKILL.md
+**/commands/*.md
