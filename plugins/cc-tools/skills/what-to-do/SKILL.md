@@ -3,15 +3,13 @@ name: what-to-do
 description: "Use when you want to find product direction — to look at a product and surface where it could go next as a ranked menu of moves (new features, finishing half-built work, rebuilding rough parts, paying down tech debt)."
 ---
 
-Invoked by /what-to-do, with or without a prompt. Requires the product's North Star (set once via /find-goal) — if it's missing, what-to-do routes you there. With it present, what-to-do reads the North Star (and the roadmap, if one exists, biasing toward the current frontier — the parallel milestones open right now) and lets you check off (via a built-in choice prompt) which directions to pursue and hand that list to how-to-do. It explores and ranks; it never decides _how_ — that is how-to-do. Not for deciding a known fork (how-to-do) or building a task (do).
-
 # what-to-do — the direction loop
 
-You are running **what-to-do**: look at a product and produce a **ranked menu of directions** it could
+You are running **what-to-do**: look at a product and produce a ranked menu of directions it could
 take next. **You do the exploring; the human picks; you never decide.** what-to-do is the mouth of the
 funnel — it generates the agenda the other tools act on.
 The funnel:
-**find-goal** grounds the goal → **what-to-do** fans out a menu (nothing chosen) → **how-to-do** decides _how_ (one way) → **do** builds one task to done (committed).
+find-goal grounds the goal → what-to-do fans out a menu (nothing chosen) → how-to-do decides _how_ (one way) → do builds one task to done (committed).
 
 Its whole job is to fight the **fortune-cookie failure** — ungrounded "add SSO, add analytics, add
 dark mode" lists that fit any product — by anchoring every move to the **North Star** and asking one
@@ -19,7 +17,7 @@ question: _what moves us toward that goal, and how far?_
 
 **Core rules — non-negotiable:**
 
-- **Roadmap biases, never gates.** It boosts moves on the current **frontier**, but every lane still
+- **Roadmap biases, never gates.** It boosts moves on the current frontier, but every lane still
   runs — **a menu that hides off-roadmap moves is a bug.**
 - **A menu, never a decision.** what-to-do ranks and hands off; it never picks the winner (that's
   how-to-do) — **emitting one recommended direction as "the answer" is a bug.**
@@ -42,7 +40,7 @@ current product (full hunting mandates in Phase 2):
 - **REFACTOR** — pay down debt that slows everything: _"where is the mess expensive?"_
 
 ADD and REBUILD push the product _forward_; FINISH and REFACTOR pay down what's _owed_. A healthy menu
-usually spans more than one — the **empty-lane valve** keeps any barren lane honest.
+usually spans more than one — the empty-lane valve keeps any barren lane honest.
 
 ---
 
@@ -69,12 +67,12 @@ roadmap yet — `/find-goal` charts the route far ahead")_, then proceed.
 
 ## Phase 1 — Survey (where we are NOW)
 
-Build a short, factual picture of the _current_ product from the repo: `README`, docs, recent commits and scattered `TODO`/`FIXME`/stub markers. Two or three paragraphs, not an audit. This is the **"now"**; the North Star is the **"end"**; the distance between them is the working field every lens explores. Hand this picture to all four lenses so none re-reads the whole repo from scratch.
+Build a short, factual picture of the _current_ product from the repo: `README`, docs, recent commits and scattered `TODO`/`FIXME`/stub markers. Two or three paragraphs, not an audit. This is the "now"; the North Star is the "end"; the distance between them is the working field every lens explores. Hand this picture to all four lenses so none re-reads the whole repo from scratch.
 
 **Milestone check (only if a roadmap exists).** Compare the survey against the `done when:` of **each
 frontier milestone** (there may be several parallel ones). For every one that now appears met:
 
-- _Interactive run:_ offer to check it off (`[ ]` → `[x]` in `roadmap.md`). When the **last**
+- _Interactive run:_ offer to check it off (`[ ]` → `[x]` in `roadmap.md`). When the last
   unchecked milestone of the current stage gets checked, the frontier advances to the next stage.
 - _Under the musician:_ **auto-mark it** `[x]` (no human mid-loop to confirm). See the musician's
   contract.
@@ -126,22 +124,24 @@ empty_reason:  <if candidates == [] : why this lane has nothing real here>
 
 One pass in the main thread. Collect all candidates, then:
 
-1. **Dedupe / merge** overlapping candidates across lenses (a FINISH and a REBUILD pointing at
-   the same thing collapse to one).
-2. **Score** each on **goal-fit × effort**, then **adjust for production-state** — the one boolean
-   from the North Star (**is the product in production?**) swings the same candidate:
+**1. Dedupe / merge** overlapping candidates across lenses (a FINISH and a REBUILD pointing at the
+same thing collapse to one).
+
+**2. Score** each on goal-fit × effort, then **adjust for production-state** — the one boolean from
+the North Star (is the product in production?) swings the same candidate:
 
 | In production?           | REBUILD / REFACTOR                                                                   | ADD                                      | risk weighting                           |
 | ------------------------ | ------------------------------------------------------------------------------------ | ---------------------------------------- | ---------------------------------------- |
 | **No — carte blanche**   | cheap, encouraged (debt is cheap pre-production)                                     | bold — the product is still being shaped | reversibility barely counts              |
 | **Yes — move carefully** | REBUILD is expensive (live users); favour FINISH/REFACTOR + careful, incremental ADD | incremental only                         | reversibility is the dominant multiplier |
 
-1. **Roadmap-fit** (only if a roadmap exists). Apply a final adjustment from each candidate's
-   `advances`: advances **any frontier** milestone → **boost**; a **next-stage** milestone → light
-   boost; **off-roadmap → no boost, but never dropped.** This is _bias, not a gate_ — a strong
-   off-roadmap candidate that ranks high on its own merits still ranks high and still appears.
-2. **Rank** into a single ordered menu. Drop nothing silently — if a strong-looking candidate
-   ranks low _because of production-caution or roadmap-fit_, keep it and say why.
+**3. Roadmap-fit** (only if a roadmap exists). Apply a final adjustment from each candidate's
+`advances`: advances any frontier milestone → **boost**; a next-stage milestone → light boost;
+**off-roadmap → no boost, but never dropped.** This is _bias, not a gate_ — a strong off-roadmap
+candidate that ranks high on its own merits still ranks high and still appears.
+
+**4. Rank** into a single ordered menu. Drop nothing silently — if a strong-looking candidate ranks
+low _because of production-caution or roadmap-fit_, keep it and say why.
 
 **Menu entry contract:**
 
