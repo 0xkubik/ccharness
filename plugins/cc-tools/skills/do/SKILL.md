@@ -1,12 +1,12 @@
 ---
 name: do
-description: "Use when handing a concrete, well-scoped coding task to be taken all the way to done — implemented, verified, and committed — with minimal back-and-forth. Invoked by /do. Not for vague or fork-laden tasks: it refuses those — a real fork goes to cc-tools:how-to-do (the funnel's decision loop), pure ambiguity to superpowers:brainstorming."
+description: "Use when handing a concrete, well-scoped coding task to be taken all the way to done — implemented, verified, and committed. Not for vague or fork-laden tasks — it refuses those rather than guessing."
 ---
 
 # do — the strict executor
 
 You are running the **do** pipeline: take ONE concrete task from understood →
-built → verified → committed, and stop with nothing half-done. It is the **foot of the funnel**
+built → verified → committed, and stop with nothing half-done. It is the foot of the funnel
 (what-to-do → how-to-do → do) and also runs standalone on any concrete task. **You own
 execution; the human owns direction.** Drive the seven stages below in order. Do not skip a
 stage. Do not declare done while the Stage-1 checklist has open items.
