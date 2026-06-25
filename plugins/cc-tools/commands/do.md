@@ -10,6 +10,6 @@ Invoke the `do` skill (the strict executor pipeline) with this task:
 do is the foot of the funnel and builds from the product's goal outward, so it first
 checks the product is grounded: **no North Star → it routes you to `/find-goal`** to set one, then
 re-issue the task (arriving from how-to-do or under the musician, the North Star already exists). Past
-that, it will **refuse to start** rather than guess: an unresolved business/technical fork hands off
-to `/how-to-do` (the funnel's decision loop), while a merely vague task goes to
-`superpowers:brainstorming`.
+that, it will **refuse to start** rather than guess: an unresolved technical fork hands off to
+`/how-to-do` (the funnel's decision loop); a business / non-technical one it declines outright; a
+merely vague task goes to `superpowers:brainstorming`.

@@ -1,6 +1,6 @@
 ---
 name: how-to-do
-description: Use when a task carries a real fork — a business or technical decision with materially different options and no obvious winner — or when an idea needs thinking through before building, or when what-to-do hands over a checked list of picked directions to work out how to build. A rigorous replacement for open-ended brainstorming.
+description: Use when a task carries a real fork — a technical or implementation decision with materially different options and no obvious winner — or when an idea needs thinking through before building, or when what-to-do hands over a checked list of picked directions to work out how to build. A rigorous replacement for open-ended brainstorming.
 ---
 
 # how-to-do — the decision loop

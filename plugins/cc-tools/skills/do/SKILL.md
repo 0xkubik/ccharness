@@ -12,7 +12,7 @@ execution; the human owns direction.** Drive the seven stages below in order. Do
 stage. Do not declare done while the Stage-1 checklist has open items.
 
 **Core invariants — non-negotiable:**
-- **Refuse, don't guess** (Stage 0 — and the fork-test stays armed all the way through Stage 3). A serious fork goes to how-to-do; a vague task goes to brainstorming — never a guessed default.
+- **Refuse, don't guess** (Stage 0 — and the fork-test stays armed all the way through Stage 3). A technical fork goes to how-to-do; a business / non-technical one it refuses outright; a vague task goes to brainstorming — never a guessed default.
 - **Verify before you claim** (Stage 4). Evidence, not assertion.
 - **Never commit unverified code** (Stage 6 only runs after Stage 4 is green).
 - **3 strikes on one problem → reset, don't keep patching** (slap) — then pick the fresh approach yourself; **implementation never hands back to the human.**
@@ -40,18 +40,23 @@ safe **only if all three hold**:
 
 1. **End state is unambiguous** — you can write the acceptance criteria from the task alone,
    without inventing a requirement.
-2. **No serious fork** — neither a **business fork** (money, legal, irreversible, scope,
-   product direction) nor a **technical fork** (an architecture/approach choice with
-   materially different consequences and no obvious winner).
+2. **No serious fork** — neither a **business fork** (money, legal, product direction — a
+   *what/whether* call, not a build choice) nor a **technical fork** (an architecture, approach,
+   or build-scope choice with materially different consequences and no obvious winner).
 3. **You have what you need to start** — repo, stack, access, constraints.
 
 If ANY fails → **STOP. Do not implement.** Emit one short block naming exactly what is unclear
 or which fork is unresolved, then route by *what* is wrong — this is the funnel talking back
 upward, not a dead end:
 
-- **A serious fork** (two materially different options, no obvious winner) → hand the task to
-  **`cc-tools:how-to-do`**, the funnel's decision loop. Resolving forks is how-to-do's lane, not
-  yours; it decides and flows the chosen approach back into build.
+- **A technical fork** (architecture, approach, or build-scope — materially different options, no
+  obvious winner) → hand the task to **`cc-tools:how-to-do`**, the funnel's decision loop. Resolving
+  *how-to-build* forks is how-to-do's lane, not yours; it decides and flows the chosen approach back
+  into the build.
+- **A business / non-technical fork** (money, legal, product direction — a *what/whether* call) →
+  **refuse to run.** It is not yours to decide and not how-to-do's either — its compass picks build
+  approaches, not business questions. Name the snag, stop, and leave it to the human. Re-enter do
+  only once they've settled it.
 - **Pure ambiguity** (you cannot write the acceptance criteria — missing facts, unclear intent,
   *no* genuine fork) → invoke **`superpowers:brainstorming`** to surface what's wanted, or just
   ask the human. This is a clarification, not a decision.
@@ -61,7 +66,7 @@ Re-enter do only once the task comes back clear and fork-free.
 | Rationalization | Reality |
 |---|---|
 | "I'm autonomous, so I should just decide." | Autonomy is over *execution*, not *direction*. Choosing between materially different approaches or outcomes is the human's call — not a default to set. |
-| "I'll pick a sensible default and note the caveat in the commit." | A defaulted fork is an unmade decision shipped as code. If the choice carries real business or architectural weight, it is a fork — refuse and route to how-to-do. |
+| "I'll pick a sensible default and note the caveat in the commit." | A defaulted fork is an unmade decision shipped as code. A choice with architectural weight is a fork — route it to how-to-do; a business one (money, legal, direction) is not yours either — refuse and leave it to the human. |
 | "The task says 'get it done', so clarifying is disobeying." | "Get it done" is the *what*. It never authorizes guessing the *direction*. Resolving the fork first IS getting it done right. |
 | "Clarifying is slow / annoying." | Guessing wrong is far slower. brainstorming resolves the fork in minutes; a wrong rebuild costs hours. |
 
@@ -172,7 +177,7 @@ human.** The only human touchpoints are the Stage-0 gate (before the build) and 
 push offer (after Stage 6) — never the middle. Two things still route *upward to the right
 machinery*, and neither is the user: a **decision** goes to how-to-do, a **stuck fix** goes to slap.
 
-### A serious fork surfaces mid-build → `how-to-do`
+### A serious technical fork surfaces mid-build → `how-to-do`
 
 The Stage-0 fork-test **does not expire at the gate — it stays armed through Stage 3.** As you
 learn the terrain you will hit technical choices that weren't visible at the start. For each,
@@ -207,10 +212,10 @@ and deciding the next move yourself. Keep driving until the work is done and ver
 
 ## Quick reference
 
-Grounding — no `## Product North Star` → **route to `/find-goal`**, stop · `0` Gate — fork → how-to-do,
+Grounding — no `## Product North Star` → **route to `/find-goal`**, stop · `0` Gate — technical fork → how-to-do, business → refuse,
 vague → brainstorming · `1` Scope — checklist + size · `2` Tools — route & announce · `3` Build —
 goal-loop to done · `4` Verify — evidence, debug to green · `5` Review+simplify — only if
 non-trivial · `6` Commit — local only, then offer push.
 
-Mid-build, a serious fork (material · no clear winner · costly to reverse) → **how-to-do**; routine/reversible calls you make yourself.
+Mid-build, a serious technical fork (material · no clear winner · costly to reverse) → **how-to-do**; routine/reversible calls you make yourself.
 Strike 3 on one problem → **slap**, then pick the fresh approach yourself. Implementation never hands back to the human — re-decide as needed.
