@@ -160,6 +160,12 @@ class TestMusicianRefeedContent(unittest.TestCase):
         self.assertIn("done_when", out)
         self.assertIn("DONE-CHECK", out)
 
+    def test_refeed_writes_awareness_note_on_close(self):
+        # The close-write must live in the re-fed checklist, not only the SKILL: most closes run
+        # under the hook, so a write absent here would silently skip — worse than no memory.
+        out = self._refeed()
+        self.assertIn("git notes append", out)
+
 
 if __name__ == "__main__":
     unittest.main()

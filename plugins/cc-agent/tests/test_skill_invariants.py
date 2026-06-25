@@ -76,6 +76,15 @@ class TestMusicianSkill(unittest.TestCase):
         self.assertIn("route", lowered)       # the musician may edit the route
         self.assertIn("read-only", lowered)   # the goal layer is read-only to it
 
+    def test_awareness_memory_git_notes_only_shrinks(self):
+        # Cross-run awareness = closed facts in git notes, written at close, read at arm as a
+        # "don't repeat" filter. Forward intentions are fenced OUT of notes (anti-loop) — they
+        # keep their human-gated home in roadmap-proposals.md.
+        self.assertIn("git notes append", self.text)   # write at close
+        self.assertIn("git log --notes", self.text)    # read at arm
+        self.assertIn("forward intention", self.text.lower())
+        self.assertIn("roadmap-proposals.md", self.text)
+
     def test_no_autopilot_residue(self):
         # The whole point of the redesign: no autopilot / semipilot / milestone-walking loop left.
         lowered = self.text.lower()

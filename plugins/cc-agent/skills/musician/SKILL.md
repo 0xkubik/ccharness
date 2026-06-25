@@ -87,6 +87,29 @@ Upkeep is bounded like everything else: a small reconciliation at the **end** of
 a standing rewrite. No roadmap, or task-mode work that maps to no roadmap item → skip the upkeep (a
 proposal is still fine).
 
+## Awareness — read what's already closed, never feed yourself what's next
+
+Each `/musician` starts **fresh and forgetful**, so without a memory a new run will happily re-open
+work a past run already settled. The fix is git-native and file-free: **`git notes`** carrying
+*closed facts* — what was built, declined, or hit a dead end, and **why**. Its only job is to make
+the next run's search **smaller** (rule things out); a memory that can only shrink the space can't
+drive the single-direction loop a self-written to-do list would.
+
+- **Write at close — one past-tense line, only on a real outcome.** `achieved` → `built:`,
+  `declined` → `declined:`, `gave-up`/`capped` → `dead-end:`. Append it to `HEAD`'s note:
+  `git notes append -m "<built|declined|dead-end>: <what> — <why>"`. `stopped-budget` writes
+  **nothing** — that's a budget event, not a fact about the work. Notes ride the commit SHA, so they
+  live with the local history (squashing those commits away drops them) — fine for this local awareness.
+- **Read at arm — as a "don't repeat" filter, nothing more.** A fresh run glances at the recent
+  `git log --notes` to see what's already closed. It tells you what NOT to redo; it does **not** tell
+  you what to do. Direction still comes from `what-to-do` against the North Star — never from "what I
+  touched last."
+- **NEVER write a forward intention here.** No "next", no "want", no "TODO", no "continue X". A
+  self-written list of future wishes that you then re-read IS the infinite-single-direction loop this
+  forbids. Forward ideas keep their human-gated home, `roadmap-proposals.md` (above): you write it but
+  never self-read it; `find-goal` surfaces it to the human. **Notes feed you closed past; proposals
+  feed the human open future — never cross the two.**
+
 ## Arm (only when invoked by `/musician` — not when the hook re-feeds)
 
 When `/musician` first invokes you, before cycle 1:
@@ -131,7 +154,9 @@ When `/musician` first invokes you, before cycle 1:
    expensive work; `weekly_stop_pct` is the weekly **used** % at/above which the loop stops (see
    **Headroom**). Set `ultracode:true` if `--ultracode` was passed. Touch `musician/blocked.jsonl`
    and `musician/log.jsonl` if missing.
-4. **Announce** the entry mode and the input (note `[ultracode]` if set), then run cycle 1.
+4. **Read the awareness notes** — recent `git log --notes` (see **Awareness**): what past runs
+   closed, so you don't re-open it. Then **announce** the entry mode and the input (note
+   `[ultracode]` if set), and run cycle 1.
 
 When the Stop hook **re-feeds** you (the normal in-loop path): `state.json` already exists — skip
 arming, run the next cycle directly.
@@ -190,6 +215,9 @@ arming, run the next cycle directly.
 - **stopped-budget** — the weekly limit is at/over `weekly_stop_pct` (default 98% used). Reports
   `seven_day.resets_at`. Not a failure and not worth parking — re-run `/musician` after the weekly
   resets. (The 5-hour limit does NOT exit this way — it **suspends**; see Headroom.)
+
+On every terminal exit **except `stopped-budget`**, append one closed-fact line to git —
+`built:` / `declined:` / `dead-end:` + why (see **Awareness**) — before ending the turn.
 
 Setting `active:false` is the only thing that releases the Stop hook on a terminal exit. There is
 also a **non-terminal** release — **suspended** (`awaiting` set, or `blocked-external`): the work is
@@ -281,7 +309,8 @@ build is carried out.
 ## Quick reference
 
 `Arm` open-mode grounding gate (no North Star → `/find-goal`) · parse `--ultracode` (no spend flag) ·
-write `musician/state.json` (`entry`, `input`, empty `done_when`) · touch log/blocked.
+write `musician/state.json` (`entry`, `input`, empty `done_when`) · touch log/blocked · read
+awareness (`git log --notes`, closed facts only).
 `Cycle`: `1` read state + usage (**budget**: weekly ≥`weekly_stop_pct` → STOP; 5h <floor → SUSPEND;
 else <floor → no expensive launch) · `2` **BRAIN** while `done_when==""`: think sized-to-input
 (crux / fit / skip; open → what-to-do auto-pick top) → decline/intent-reframe/nothing-worth-doing →
@@ -289,6 +318,8 @@ else <floor → no expensive launch) · `2` **BRAIN** while `done_when==""`: thi
 `achieved` · `4` **GIVE-UP?** streak/cap → close `gave-up`/`capped` · `5` how-to-do → buildable
 approach · `6` do → local commit (async → `awaiting`; handback/slap-twice → blocked + no-progress) ·
 `7` progress? streak=0/++ · `8` log + bump cycle (atomic) · `9` end turn → hook re-feeds.
+On any close except `stopped-budget`: `git notes append` one closed fact (`built`/`declined`/`dead-end`
++ why) — never a forward intent.
 
 **Invariant:** the brain leads and may say no (`declined`); you forge your own `done_when`; the
 done-check leads every build cycle; one piece of work, to its end, then **close**. `active:false` is

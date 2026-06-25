@@ -75,6 +75,7 @@ REFEED="$(cat <<'PROMPT'
 4. DONE-CHECK: survey "now" and judge against state.done_when. MET → set active:false outcome:"achieved", final log line, report, END TURN.
 5. GIVE-UP CHECK: no_progress_streak >= max_no_progress OR cycle >= max_cycles → set active:false outcome:"gave-up"|"capped", report the blocked queue, END TURN.
 6. Otherwise build ONE step toward done_when: cc-tools:how-to-do → cc-tools:do → verify → LOCAL commit (no push). Async build that cannot finish in-turn → set awaiting and END TURN (no cycle/streak). Handback (unbuildable/forked, or slap twice) → append to blocked.jsonl, no-progress cycle. External transient block → suspend (awaiting), do not streak++. Update no_progress_streak (reset on real progress; ++ on blocked/idle), append a log line, bump cycle (atomic), END TURN.
+7. ON ANY CLOSE (achieved/declined/gave-up/capped — NOT stopped-budget): before END TURN, append ONE past-tense closed-fact line as awareness for the next run — git notes append -m "<built|declined|dead-end>: <what> — <why>". NEVER a forward intent (those go to roadmap-proposals.md, not git notes).
 You stop ONLY by flipping active:false (achieved/declined/gave-up/capped/stopped-budget), or the user runs /musician-cancel. The brain may DECLINE before building — that is a success, not a give-up. Do not otherwise stop.
 PROMPT
 )"
@@ -90,7 +91,7 @@ if command -v jq >/dev/null 2>&1; then
     --arg m "🎼 musician (${ENTRY}) cycle ${CYCLE}$([ -n "$ULTRA" ] && printf ' [ultracode]') -> continuing (brain → done-check; /musician-cancel to stop)" \
     '{decision:"block", reason:$r, systemMessage:$m}'
 else
-  FALLBACK_REASON='musician is active — run one bounded cycle: read .claude/ccharness/musician/state.json, check budget, run the BRAIN while done_when is empty (it may DECLINE before building), then DONE-check, then give-up check, then one build step (how-to-do -> do -> local commit); flip active:false on achieved/declined/gave-up/capped/stopped-budget. /musician-cancel to stop.'
+  FALLBACK_REASON='musician is active — run one bounded cycle: read .claude/ccharness/musician/state.json, check budget, run the BRAIN while done_when is empty (it may DECLINE before building), then DONE-check, then give-up check, then one build step (how-to-do -> do -> local commit); flip active:false on achieved/declined/gave-up/capped/stopped-budget; on close (not stopped-budget) git notes append one closed fact (built/declined/dead-end + why), never a forward intent. /musician-cancel to stop.'
   [ -n "$ULTRA" ] && FALLBACK_REASON="$FALLBACK_REASON ULTRACODE: fan out via Workflow + parallel subagents + git worktrees (mandatory)."
   printf '%s' "{\"decision\":\"block\",\"reason\":\"$FALLBACK_REASON\"}"
 fi
