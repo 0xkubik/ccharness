@@ -3,23 +3,19 @@ name: find-goal
 description: Use when setting up or revising a product's long-horizon direction — the grounding loop that sets the goal and versions the road to it.
 ---
 
-Guides a human to **set the product's goal** and **version the route to it** (v0 → v1 → v2 → …).
-Captures the **North Star** (the goal) into `CLAUDE.md`, then builds a `.claude/ccharness/roadmap.md`
-organized as **versions of the product** — and, inside each version, the features broken down into
-ordered work **stages**. Invoked by `/find-goal`. Run once up front (every other product skill routes
-here when no goal exists); re-run to revise. The roadmap then biases what-to-do toward the current
-frontier and feeds the musician loop.
-
 # find-goal — set the goal, then version the road to it
 
-You are the harness's **grounding front door**, and this is a **high-stakes conversation**, not a
-form to fill in. What you capture here decides the product's whole direction — what-to-do ranks moves
-against it, and **the musician builds from the roadmap you write**.
-A sloppy goal or a vague version makes every later automated step aim at the wrong target.
+You are the harness's grounding front door: you guide a human to **set the product's goal** (the
+**North Star** → `CLAUDE.md`) and **version the route to it** (v0 → v1 → …, written to
+`.claude/ccharness/roadmap.md`, each version broken into ordered work **stages**). This is a
+**high-stakes conversation**, not a form — every later step builds on it: what-to-do ranks moves
+against the goal, the musician builds straight from the roadmap, so a sloppy goal or vague version
+aims every automated step at the wrong target. Run once up front (other product skills route here
+when no goal exists); re-run to revise.
 
 **Tell the human this up front, plainly:** this defines what we're building and the order we build it;
 many later steps (manual and automated) depend on it; it's worth slowing down for. Then run a real
-guided interview — **lead with questions**, one decision at a time, until the picture is sharp.
+guided interview — lead with questions, one decision at a time, until the picture is sharp.
 
 **How you ask:**
 
@@ -30,7 +26,7 @@ guided interview — **lead with questions**, one decision at a time, until the 
   free-text fallback). This is where you actively steer — "for v0, which of these is the core?", "does
   the product at v0 look more like X or Y?".
 - **One decision at a time** (borrow `superpowers:brainstorming`'s technique). The terminal is
-  `CLAUDE.md` + `roadmap.md` — **not** `writing-plans`.
+  `CLAUDE.md` + `roadmap.md` — not `writing-plans`.
 
 ---
 
@@ -44,10 +40,10 @@ guided interview — **lead with questions**, one decision at a time, until the 
 | **Absent**       | Run the goal-setting questions below, then **write the block yourself**.                |
 | **`--reground`** | Re-run the questions, overwrite the block (preserve the rest of `CLAUDE.md`), continue. |
 
-**The goal-setting dialogue — open questions only, no multiple-choice.** Draw out, one question at a
+The goal-setting dialogue — open questions only, no multiple-choice. Draw out, one question at a
 time, in plain language: what does the finished product look like at the very end — who is it for, and
 what does success look like? And **is it already in production (real users), or not yet?** Don't move
-on until the answer is concrete. The **durable artifact** is this stable block — append it to the project-root `CLAUDE.md`,
+on until the answer is concrete. The durable artifact is this stable block — append it to the project-root `CLAUDE.md`,
 **preserving everything already there**:
 
 ```markdown
@@ -66,27 +62,27 @@ detects. Then move into the version loop.
 
 ## Phase 1 — Survey "now"
 
-Build a short, factual picture of the **current** product from the repo: `README`, docs, recent
+Build a short, factual picture of the current product from the repo: `README`, docs, recent
 commits, scattered `TODO`/`FIXME`/stub markers. Two or three paragraphs, not an audit. This is the
-**"now"**; the North Star is the **"end"**; the versions are the steps between them.
+"now"; the North Star is the "end"; the versions are the steps between them.
 
 ---
 
 ## Phase 2 — Version the product (the heart — a loop)
 
-Walk the product forward **one version at a time**, starting at **v0 (MVP)**. A version is a recognizable
+Walk the product forward one version at a time, starting at v0 (MVP). A version is a recognizable
 state of the _product_ — "what a user would see and do at this point" — not a pile of tasks. For
-**each** version, in order:
+each version, in order:
 
 **1. Elicit the version with `AskUserQuestion`.** Lead the human: "What do you want to see in **v0** —
 which features, and what does the product look and feel like at that point?" Keep asking leading
 questions (with options + free-text) until the version's shape is clear: its headline features, what's
 deliberately _out_, and how it looks to a user. Then do the same for v1, v2, …
 
-**2. Break the version's features into ordered stages.** Before moving on, decompose **this version's**
+**2. Break the version's features into ordered stages.** Before moving on, decompose this version's
 features into work **stages** so the human can see the rough path of work inside the version. The
 single rule: **need "A before B" → put them in different stages; independent → same stage** (parallel,
-any order within a stage). Each feature lands as a lightweight milestone with a **stable global id**
+any order within a stage). Each feature lands as a lightweight milestone with a stable global id
 (`M1`, `M2`, … — continuous across all versions) and `name + done when: <observable outcome> + theme:
 <one line>`. The `done when:` must be **observable** — that's what later lets the musician judge it
 complete. Don't manufacture parallelism that isn't there; a genuinely linear version is one milestone
@@ -127,7 +123,7 @@ the **full `.claude/ccharness/roadmap.md`**. Ask it to judge:
 - Is every **`done when:` observable**, and does it truly mean that milestone is done?
 - Name the **contradictions, gaps, and over- or under-scoped versions** it finds.
 
-Relay its assessment to the human in plain language and **offer to act on it** — re-open the loop to
+Relay its assessment to the human in plain language and offer to act on it — re-open the loop to
 revise the flagged versions/stages/goal, or accept as-is. The review is **advice, not a gate**: the
 human decides. Then stop.
 
