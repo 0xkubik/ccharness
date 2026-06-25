@@ -5,17 +5,20 @@
 # untouched. This hook does NOTHING unless nonstop is ARMED — a marker written by
 # /nonstop-on, removed by /nonstop-off. When armed AND the musician has just
 # CLOSED a piece (its state is active:false), it BLOCKS the stop and asks the
-# model to run the cc-agent:nonstop skill, which owns ALL the advance logic
-# (record the closed milestone, pick the next, or disarm when done/blocked).
+# model to simply RE-LAUNCH /musician (open mode) for the next piece — or disarm
+# if the musician found nothing left. The musician's OWN brain decides WHAT to do
+# next (open-mode what-to-do + roadmap + its git-notes awareness); nonstop only
+# re-invokes it. There is no nonstop "advance" logic — that would duplicate the
+# musician.
 #
 # Zones never overlap with musician-stop.sh:
 #   musician active:true  -> musician-stop.sh drives (re-feed one cycle); we no-op.
-#   musician active:false -> musician-stop.sh releases;  WE block (advance).
+#   musician active:false -> musician-stop.sh releases;  WE block (re-launch).
 #
 # Fail OPEN: on any doubt -> exit 0 (no-op). A bug here must never trap the loop —
 # the musician's own brakes and /nonstop-off still work. This hook is DUMB: it only
-# gates on (marker armed + same session + musician closed); all decisions live in
-# the skill.
+# gates on (marker armed + same session + musician closed); the next-piece decision
+# lives in the musician, not here.
 set -u
 
 NS_STATE=".claude/ccharness/nonstop/state.json"
@@ -57,12 +60,13 @@ if [ -z "$MUS_ACTIVE" ] && command -v grep >/dev/null 2>&1; then
 fi
 [ "$MUS_ACTIVE" = "false" ] || exit 0
 
-# 5. Armed + musician CLOSED for this session -> BLOCK and hand off to the skill (which owns the logic).
-REASON='🔁 nonstop is ARMED and the musician just CLOSED a milestone — do NOT stop. Run the cc-agent:nonstop skill now to advance the roadmap: it records the closed milestone (mark done or park), picks the next milestone and launches /musician on it, or disarms if the roadmap version is done / the stage is blocked / the musician closed on budget or cancellation. /nonstop-off to disarm; Esc to interrupt.'
+# 5. Armed + musician CLOSED for this session -> BLOCK and ask the model to re-launch the musician.
+#    The musician's brain decides WHAT to do; we only re-invoke it (or stop on its "nothing left" verdict).
+REASON='🔁 nonstop is ARMED and the musician just CLOSED — do NOT stop. Read its outcome in .claude/ccharness/musician/state.json. If outcome is "declined" (open-mode: nothing worth doing — the roadmap frontier is exhausted) or "stopped-budget", run /nonstop-off and stop. Otherwise (achieved / gave-up / capped) re-launch the musician for the next piece: invoke /musician with NO prompt (open mode) — it picks the next roadmap milestone itself via what-to-do and its git-notes awareness; you do NOT pick or plan, you only re-invoke. If /musician cannot arm (no North Star), run /nonstop-off and stop. /nonstop-off to disarm; Esc to interrupt.'
 
 if command -v jq >/dev/null 2>&1; then
   jq -n --arg r "$REASON" \
-        --arg m "🔁 nonstop -> advancing the roadmap (run cc-agent:nonstop; /nonstop-off to stop)" \
+        --arg m "🔁 nonstop -> re-launching the musician for the next piece (open mode; /nonstop-off to stop)" \
         '{decision:"block", reason:$r, systemMessage:$m}'
 else
   printf '%s' "{\"decision\":\"block\",\"reason\":\"$REASON\"}"

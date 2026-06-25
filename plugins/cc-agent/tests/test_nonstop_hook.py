@@ -5,7 +5,6 @@ ROOT = Path(__file__).resolve().parent.parent
 HOOK = ROOT / "hooks" / "nonstop-stop.sh"
 HOOKS_JSON = ROOT / "hooks" / "hooks.json"
 MUS_HOOK = ROOT / "hooks" / "musician-stop.sh"
-SKILL = ROOT / "skills" / "nonstop" / "SKILL.md"
 CMD_ON = ROOT / "commands" / "nonstop-on.md"
 CMD_OFF = ROOT / "commands" / "nonstop-off.md"
 SESSION = "11111111-1111-1111-1111-111111111111"
@@ -43,7 +42,7 @@ def repo_with(ns=None, mus=None):
 
 
 def armed(session=SESSION):
-    return {"on": True, "session_id": session, "current": None}
+    return {"on": True, "session_id": session}
 
 
 class TestNonstopHook(unittest.TestCase):
@@ -78,12 +77,12 @@ class TestNonstopHook(unittest.TestCase):
         self.assertEqual(out.strip(), "")
 
     def test_armed_musician_closed_blocks(self):
-        # The core path: armed + musician CLOSED -> block + hand off to the skill.
+        # The core path: armed + musician CLOSED -> block + re-launch the musician (no nonstop skill).
         rc, out = run_hook(repo_with(ns=armed(), mus={"active": False, "session_id": SESSION}),
                            {"session_id": SESSION})
         self.assertEqual(rc, 0)
         self.assertIn("block", out)
-        self.assertIn("cc-agent:nonstop", out)
+        self.assertIn("/musician", out)
 
     def test_different_session_noop(self):
         # A nonstop armed in another session must not fire here.
@@ -105,11 +104,8 @@ class TestNonstopHook(unittest.TestCase):
 
 
 class TestNonstopInvariants(unittest.TestCase):
-    def setUp(self):
-        self.skill = SKILL.read_text() if SKILL.exists() else ""
-
     def test_files_exist(self):
-        for p in (HOOK, SKILL, CMD_ON, CMD_OFF):
+        for p in (HOOK, CMD_ON, CMD_OFF):
             self.assertTrue(p.exists(), f"missing {p}")
 
     def test_registered_in_hooks_json(self):
@@ -119,30 +115,17 @@ class TestNonstopInvariants(unittest.TestCase):
         # The separation contract: the musician's own hook carries NO nonstop logic.
         self.assertNotIn("nonstop", MUS_HOOK.read_text().lower())
 
-    def test_skill_is_the_authority(self):
-        # nonstop owns "what's done" via its own `current`, not a fuzzy match of the musician input.
-        self.assertIn("current", self.skill)
-        self.assertIn("authority", self.skill.lower())
+    def test_nonstop_has_no_brain_skill(self):
+        # The musician owns ALL the "what to do next" intelligence; nonstop only re-invokes it.
+        # A nonstop "advance" skill would duplicate the musician's brain — pin that it stays absent.
+        self.assertFalse((ROOT / "skills" / "nonstop").exists(),
+                         "nonstop must have no skill — the musician decides what to do next")
 
-    def test_skill_records_then_picks(self):
-        lowered = self.skill.lower()
-        self.assertIn("[x]", self.skill)          # mark achieved milestone done
-        self.assertIn("park", lowered)            # park stuck milestones
-        self.assertIn("no retry", lowered)        # ...without retry this run
-        self.assertIn("frontier", lowered)        # pick the next in the frontier
-
-    def test_skill_disarm_conditions(self):
-        lowered = self.skill.lower()
-        self.assertIn("disarm", lowered)
-        self.assertIn("blocked", lowered)         # stage blocked -> stop (ordered stages)
-
-    def test_skill_goal_layer_read_only(self):
-        # Same split as the musician: may edit the route ([x]); the goal layer stays read-only.
-        self.assertIn("read-only", self.skill.lower())
-
-    def test_skill_delegates_to_musician(self):
-        # nonstop never builds; it hands the milestone to the untouched musician.
-        self.assertIn("/musician", self.skill)
+    def test_hook_relaunches_musician_not_a_skill(self):
+        # The hook's re-feed must re-invoke /musician (open mode), not point at a nonstop skill.
+        text = HOOK.read_text()
+        self.assertIn("/musician", text)
+        self.assertNotIn("cc-agent:nonstop", text)
 
 
 if __name__ == "__main__":
