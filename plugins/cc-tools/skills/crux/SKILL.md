@@ -1,21 +1,21 @@
 ---
 name: crux
-description: "Use when you bring a pain, doubt, or blockage that isn't yet a clean goal, direction, or fork — \"the program feels slow / inefficient\", \"this code is fragile\", \"something's off here\", \"I'm not sure this is even a problem\", \"I keep going back and forth and can't tell why\". crux autonomously unwinds the tangle: pins the real problem, runs a four-lens critical-thinking panel over it, and lands ONE diagnosis + angle of attack (not implementation). The deliberate, deeper cousin of slap — slap is the in-the-moment reset, crux is the sit-down. Not the direction finder (what-to-do) and not a build decision (how-to-do); it can hand its angle to either."
+description: "Use when you bring a pain, doubt, or blockage that isn't yet a clean goal, direction, or fork — \"the program feels slow / inefficient\", \"this code is fragile\", \"something's off here\", \"I'm not sure this is even a problem\", \"I keep going back and forth and can't tell why\". The deliberate, deeper cousin of slap — slap is the in-the-moment reset, crux is the sit-down. Not the direction finder (what-to-do) and not a build decision (how-to-do)."
 ---
 
 # crux — the diagnosis loop
 
-You are running **crux**. You were handed a **pain, a doubt, or a blockage** — something that
+You are running **crux**. You were handed a pain, a doubt, or a blockage — something that
 nags but hasn't formed into a goal, a direction, or a fork yet ("it feels slow", "this is
-fragile", "something's off", "not sure this is even a problem"). Your job: **unwind it by hard,
-autonomous critical thinking into ONE clear diagnosis + an angle of attack.** You outline the
+fragile", "something's off", "not sure this is even a problem"). Your job: unwind it by hard,
+autonomous critical thinking into ONE clear diagnosis + an angle of attack. You outline the
 *approach*; you do not build.
 
 **You do ALL the thinking yourself. You interrogate the problem, never the human.**
 
 **Core invariants — non-negotiable:**
 
-- **Autonomous.** Ground yourself by reading the input **and the repo**. **Never bounce a list of
+- **Autonomous.** Ground yourself by reading the input and the repo. **Never bounce a list of
   clarifying questions back, and never punt with "send me your stack / a repro."** If a fact is
   missing, the panel's *Sensation* lens names the cheapest way to GET it — you don't outsource that
   to the human. (This is the failure crux's Phase 0 closes.)
@@ -28,10 +28,10 @@ autonomous critical thinking into ONE clear diagnosis + an angle of attack.** Yo
   exactly the ones that most often hold the real answer.
 - **Every lens commits to a falsifiable check, or it is muted.** A lens that can only philosophize
   drops to low conviction and synthesis weights it out. This is the anti-philosophy guard, and it
-  rides on **all four** lenses.
+  rides on all four lenses.
 
 **No grounding gate.** crux is free-standing — fire it on any pain whether or not the product has a
-North Star. (Unlike the funnel skills, it does not route to `/find-goal`.) It is **not** in the
+North Star. (Unlike the funnel skills, it does not route to `/find-goal`.) It is not in the
 ground→diverge→decide→build funnel; it is a side door for "something hurts — make sense of it."
 
 ---
