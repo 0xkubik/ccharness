@@ -34,11 +34,16 @@ guided interview — lead with questions, one decision at a time, until the pict
 
 **Detect first.** Look for a `## Product North Star` heading in the repo-root `CLAUDE.md`.
 
-| State            | Path                                                                                    |
-| ---------------- | --------------------------------------------------------------------------------------- |
-| **Present**      | Read it = the goal. Offer `--reground` to revise. Continue to the version loop.         |
-| **Absent**       | Run the goal-setting questions below, then **write the block yourself**.                |
-| **`--reground`** | Re-run the questions, overwrite the block (preserve the rest of `CLAUDE.md`), continue. |
+| State       | Path                                                                     |
+| ----------- | ------------------------------------------------------------------------ |
+| **Absent**  | Run the goal-setting questions below, then **write the block yourself**. |
+| **Present** | This run is a revision — read it = the current goal, then see below.     |
+
+When the goal already exists, treat the run as a revision, not a fresh start: show the current North
+Star back and ask whether to **keep it or rework it** — rework → re-run the questions and overwrite the
+block (**preserving the rest of `CLAUDE.md`**); keep → leave it untouched. Either way you then enter the
+version loop, which revises an existing roadmap rather than building from scratch. **No flag for any of
+this** — re-running find-goal is always safe: it reads what exists and adapts.
 
 The goal-setting dialogue — open questions only, no multiple-choice. Draw out, one question at a
 time, in plain language: what does the finished product look like at the very end — who is it for, and
@@ -171,11 +176,17 @@ is its own stage = the frontier is always the first unchecked box (old linear be
 
 ## Re-run = revise (the roadmap is a living artifact)
 
-A re-run: **re-survey** "now" (Phase 1) → **show the roadmap + progress** (which milestones' `done
-when:` now hold, where the frontier sits) → **propose adjustments** one decision at a time (check off
-completed, add/split/reorder milestones, stages, or whole versions, drop the obsolete) → **rewrite**
-`roadmap.md`, urging a review per touched version. Keep ids stable. `--reground` is the same idea for
-the North Star.
+Re-running find-goal on a product that already has a goal or roadmap is a revision, not a restart —
+and it needs no flag. A re-run: **re-survey** "now" (Phase 1) → **show the current goal, roadmap, and
+progress** (which milestones' `done when:` now hold, where the frontier sits) → **propose adjustments**
+one decision at a time (rework the goal, check off completed, add/split/reorder milestones, stages, or
+whole versions, drop the obsolete) → **rewrite** the affected files, urging a review per touched
+version. Keep ids stable.
+
+**Reason about impact before you rewrite.** A revision ripples: reworking the goal can strand versions
+that no longer serve it; reordering or dropping a version shifts the frontier and what the downstream
+skills aim at. For each change the human proposes, say plainly what it touches and what follows — so
+they revise with eyes open.
 
 ---
 
