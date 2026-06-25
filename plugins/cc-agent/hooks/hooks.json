@@ -1,5 +1,5 @@
 {
-  "description": "cc-agent Stop hook: the musician bounded loop. While a musician is active for this session it re-feeds one cycle per Stop; it releases when the musician self-closes (achieved/declined/gave-up/capped/stopped-budget), suspends (awaiting), or is cancelled.",
+  "description": "cc-agent Stop hooks. (1) musician-stop.sh — the bounded loop: while a musician is active for this session it re-feeds one cycle per Stop, releasing when the musician self-closes (achieved/declined/gave-up/capped/stopped-budget), suspends (awaiting), or is cancelled. (2) nonstop-stop.sh — the OPTIONAL between-pieces layer: a no-op unless nonstop is armed (/nonstop-on); when armed and the musician has CLOSED, it blocks the stop and hands off to the cc-agent:nonstop skill to walk the roadmap milestone by milestone. The two never block on the same Stop (musician blocks on active:true, nonstop on active:false).",
   "hooks": {
     "Stop": [
       {
@@ -7,6 +7,14 @@
           {
             "type": "command",
             "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/musician-stop.sh\""
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/nonstop-stop.sh\""
           }
         ]
       }
