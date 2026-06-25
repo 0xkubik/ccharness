@@ -1,6 +1,6 @@
 import json
 from datetime import datetime, timezone
-from . import watchdog, autopilot as ap, paths
+from . import watchdog, musician as mus, paths
 
 def _completed_exit(meta):
     if not meta or not meta.get("agent_id"):
@@ -38,12 +38,12 @@ def build_rows(entries, now, *, summarizer, config):
         sid = e.get("sessionId")
         cwd = native.get("cwd") or meta.get("repo")
         summary = summarizer(sid)
-        is_ap = ap.is_autopilot(cwd)
-        v = watchdog.verdict(summary, {**e, "is_autopilot": is_ap, "completed_exit": _completed_exit(meta)}, config, now)
+        is_mus = mus.is_musician(cwd)
+        v = watchdog.verdict(summary, {**e, "is_musician": is_mus, "completed_exit": _completed_exit(meta)}, config, now)
         rows.append({
             "id": (sid or "")[:8],
             "sessionId": sid,
-            "kind": "autopilot" if is_ap else (meta.get("kind") or native.get("kind") or "?"),
+            "kind": "musician" if is_mus else (meta.get("kind") or native.get("kind") or "?"),
             "status": native.get("status") or native.get("state") or ("gone" if native == {} else "?"),
             "tokens": summary.get("total_tokens", 0),
             "last_activity": summary.get("last_activity"),
@@ -51,8 +51,8 @@ def build_rows(entries, now, *, summarizer, config):
             "reason": v["reason"],
             "cwd": cwd,
             "name": meta.get("task") or native.get("name") or "",
-            "autopilot": is_ap,
-            "cycles": ap.cycle_count(cwd) if is_ap else None,
+            "musician": is_mus,
+            "cycles": mus.cycle_count(cwd) if is_mus else None,
         })
     return rows
 

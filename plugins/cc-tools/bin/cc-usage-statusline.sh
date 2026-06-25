@@ -6,7 +6,7 @@
 # channel that sees it is the statusLine stdin payload, which carries `rate_limits.five_hour` and
 # `rate_limits.seven_day` (used_percentage + resets_at). This script sits in `statusLine.command`,
 # tees that payload into <project>/.claude/ccharness/usage.json, then forwards it verbatim to your
-# real status line so your display is unchanged. The cc-* pilots (semipilot/autopilot) read that
+# real status line so your display is unchanged. The cc-agent musician reads that
 # file to gate expensive work on remaining headroom.
 #
 # Install: set settings.json -> statusLine.command to this script's path. Your previous status

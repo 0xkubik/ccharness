@@ -1,7 +1,7 @@
 {
   "name": "cc-maestro",
   "version": "0.0.1",
-  "description": "cc-maestro — the conductor layer: the `ccmaestro` console observes and controls many coding agents and autopilots at once (token burn, stalls, loops, stop/steer), usable by a human in a terminal and by an external agent. Scaffolding only; the CLI is built in the cc-maestro tool plan.",
+  "description": "cc-maestro — the conductor layer: the `ccmaestro` console observes and controls many coding agents and musicians at once (token burn, stalls, loops, stop/steer), usable by a human in a terminal and by an external agent. Scaffolding only; the CLI is built in the cc-maestro tool plan.",
   "author": {
     "name": "kubik",
     "email": "dev@noxlabs.xyz"

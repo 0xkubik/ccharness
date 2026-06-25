@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
   "name": "cc-harness",
-  "description": "cc-harness — a layered harness for Claude Code: cc-tools (single-purpose product skills) -> cc-agent (autopilot, one self-driving agent) -> cc-maestro (the ccmaestro console that watches and controls many agents at once).",
+  "description": "cc-harness — a layered harness for Claude Code: cc-tools (single-purpose product skills) -> cc-agent (the musician, one self-driving agent) -> cc-maestro (the ccmaestro console that watches and controls many agents at once).",
   "owner": {
     "name": "kubik",
     "email": "dev@noxlabs.xyz"
@@ -16,14 +16,14 @@
     },
     {
       "name": "cc-agent",
-      "description": "The self-driving agent layer: /autopilot runs the cc-tools funnel in a never-stop loop that only /autopilot-cancel halts. Depends on cc-tools.",
+      "description": "The self-driving agent layer: the musician (/musician) drives one piece of work through the cc-tools funnel to its own falsifiable definition of done, then closes itself — bounded and self-closing, not a never-stop loop. With a prompt it thinks the task through first (and may decline a bad idea); without one it finds a direction itself. /musician-cancel is the manual brake. Depends on cc-tools.",
       "author": { "name": "kubik" },
       "category": "workflow",
       "source": "./plugins/cc-agent"
     },
     {
       "name": "cc-maestro",
-      "description": "The conductor layer: the ccmaestro console observes and controls many coding agents and autopilots at once (tokens, stalls, loops, stop/steer).",
+      "description": "The conductor layer: the ccmaestro console observes and controls many coding agents and musicians at once (tokens, stalls, loops, stop/steer).",
       "author": { "name": "kubik" },
       "category": "workflow",
       "source": "./plugins/cc-maestro"

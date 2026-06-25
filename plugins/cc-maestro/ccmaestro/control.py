@@ -1,6 +1,6 @@
 import os, signal
 from pathlib import Path
-from . import registry, autopilot as ap
+from . import registry, musician as mus
 
 def resolve(ident, *, native_runner=None):
     entries = registry.merge(registry.native_agents(runner=native_runner), registry.load_meta_records())
@@ -14,7 +14,7 @@ def resolve(ident, *, native_runner=None):
             pid = meta.get("pid") or native.get("pid")
             return {
                 "agent_id": aid, "sessionId": sid or None, "pid": pid, "cwd": cwd,
-                "is_autopilot": ap.is_autopilot(cwd),
+                "is_musician": mus.is_musician(cwd),
                 "native": e.get("native"), "meta": meta or None,
                 "launched_by_ccmaestro": e.get("launched_by_ccmaestro", False),
             }
@@ -30,23 +30,17 @@ def send_signal(pid, sig, sender=os.killpg):
         return False
 
 def stop_agent(info, *, sender=os.killpg):
-    if info.get("is_autopilot"):
-        base = Path(info["cwd"]) / ".claude" / "ccharness"
-        f = base / "autopilot" / "state.json"
-        # autopilot arms a nested semipilot per milestone; that inner loop's own Stop
-        # hook keeps re-feeding while its state is active, so cancelling autopilot must
-        # also clear any in-flight semipilot or the session never actually ends.
-        try:
-            (base / "semipilot" / "state.json").unlink()
-        except OSError:
-            pass
+    if info.get("is_musician"):
+        # The musician is a single bounded, self-closing loop — graceful cancel just
+        # removes its own state file so the Stop hook stops re-feeding it.
+        f = Path(info["cwd"]) / ".claude" / "ccharness" / "musician" / "state.json"
         try:
             f.unlink()
         except FileNotFoundError:
-            return ("autopilot-cancelled", "state already gone")
+            return ("musician-cancelled", "state already gone")
         except OSError as e:
             return ("not-found", str(e))
-        return ("autopilot-cancelled", str(f))
+        return ("musician-cancelled", str(f))
     pid = info.get("pid")
     if not pid:
         return ("no-pid", "no recorded pid")
@@ -64,8 +58,8 @@ def resume_agent(info, *, sender=os.killpg):
     return ("resumed", str(info.get("pid"))) if send_signal(info.get("pid"), signal.SIGCONT, sender=sender) else ("no-pid", "")
 
 def steer_agent(info, message, *, sender=os.killpg, spawn=None):
-    if info.get("is_autopilot"):
-        return ("refused-autopilot", "redirect an autopilot via its own funnel, not steer")
+    if info.get("is_musician"):
+        return ("refused-musician", "redirect a musician via its own funnel / /musician-cancel, not steer")
     sid = info.get("sessionId")
     if not sid:
         return ("no-session", "no sessionId to resume")

@@ -6,17 +6,17 @@ unsupervised across a whole fleet of agents.
 
 ```
 cc-tools   ──►   cc-agent   ──►   cc-maestro
-the skills       the autopilot     the console
+the skills       the musician      the console
 you run          that runs them    that watches them
 by hand          for you           all at once
 ```
 
 - **cc-tools** — the *tools layer*. Single-purpose skills that form a thinking funnel:
   `ground → diverge → decide → build`. You drive them by hand, one step at a time.
-- **cc-agent** — the *self-driving layer*. One agent that runs the cc-tools funnel for you in a
-  loop, milestone by milestone, until the roadmap is done.
+- **cc-agent** — the *self-driving layer*. The **musician**: a single agent that takes one piece of
+  work, runs the cc-tools funnel to drive it to its own definition of done, then closes itself.
 - **cc-maestro** — the *conductor layer*. A console (`ccmaestro`) that watches and controls many
-  agents and autopilots at once — token burn, stalls, loops, stop/steer.
+  agents and musicians at once — token burn, stalls, loops, stop/steer.
 
 Everything here is plain Markdown + JSON (instructions for Claude Code) plus a small Python/shell
 CLI for the console — no app to build, no compile step.
@@ -45,23 +45,23 @@ A product funnel that refuses to skip the thinking:
 
 Full details: [`plugins/cc-tools/README.md`](plugins/cc-tools/README.md).
 
-### 2. cc-agent — the autopilot that runs the funnel for you
+### 2. cc-agent — the musician that runs the funnel for you
 
-Two modes, one wrapping the other:
+One autonomous loop — the **musician** — the project's brain for **one piece of work**. It plays the
+cc-tools instruments (crux → what-to-do → how-to-do → do), forges its own falsifiable definition of
+done, drives to it, then **closes itself**. Bounded and self-closing: one piece of work, to its end,
+then stop. There is no never-stop loop above it.
 
-- **`/semipilot`** — the bounded unit. Drives the funnel toward **one roadmap milestone** and
-  stops itself when that milestone is done (or after a no-progress / cycle cap). `/semipilot-cancel`
-  is the manual brake.
-- **`/autopilot`** — the meta-loop. Walks the **whole roadmap** milestone by milestone, arming a
-  fresh semipilot each time. When one gets stuck it retries once, then decides — using the
-  roadmap's own layers — whether to park it and move to a sibling or hard-stop on a real dependency.
-  Stops only on `/autopilot-cancel` or a genuine dependency block.
+- **`/musician <prompt>`** — think the task through, then build it. It can **decline or reframe** a
+  bad idea rather than build it blindly.
+- **`/musician`** (no prompt) — find a direction itself (via what-to-do), then build it.
+- **`/musician-cancel`** — the manual brake.
 
 Full details: [`plugins/cc-agent/README.md`](plugins/cc-agent/README.md).
 
 ### 3. cc-maestro — the console that supervises the fleet
 
-The `ccmaestro` CLI watches and controls many coding agents and autopilots at once:
+The `ccmaestro` CLI watches and controls many coding agents and musicians at once:
 
 ```bash
 ccmaestro ls                      # dashboard: tokens, last activity, watchdog verdict
@@ -85,7 +85,7 @@ Add this repo as a plugin marketplace, then install the layers you want:
 ```
 /plugin marketplace add /Users/kubik/nox/misc/claude-code-harness
 /plugin install cc-tools@cc-harness
-/plugin install cc-agent@cc-harness      # optional — the autopilot
+/plugin install cc-agent@cc-harness      # optional — the musician
 /plugin install cc-maestro@cc-harness    # optional — the fleet console
 ```
 
@@ -112,7 +112,7 @@ Then **ground your product once** — every command depends on it:
 - **cc-agent** depends on cc-tools (it invokes the funnel skills) and writes its loop state under
   `.claude/ccharness/`.
 - **cc-maestro** observes and controls cc-agent (and any other Claude Code agent); it needs neither
-  of the others installed to watch a fleet, but it's most useful supervising autopilots.
+  of the others installed to watch a fleet, but it's most useful supervising musicians.
 
 ## Repository layout
 
@@ -120,7 +120,7 @@ Then **ground your product once** — every command depends on it:
 .claude-plugin/marketplace.json   the marketplace manifest (lists the 3 plugins)
 plugins/
   cc-tools/      funnel skills + commands + /cc-init      (README.md)
-  cc-agent/      semipilot + autopilot + Stop hooks        (README.md)
+  cc-agent/      the musician loop + Stop hooks            (README.md)
   cc-maestro/    the ccmaestro CLI + /maestro              (README.md)
 docs/
   research/      background notes on agentic loops

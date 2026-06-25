@@ -23,7 +23,7 @@ stage. Do not declare done while the Stage-1 checklist has open items.
 
 Confirm a `## Product North Star` heading exists in repo-root `CLAUDE.md`. **Absent → STOP and route
 to `/find-goal`** (cc-tools builds from the goal outward; don't run ungrounded). Arriving from how-to-do
-or under autopilot, the North Star already exists — the gate just passes.
+or under the musician, the North Star already exists — the gate just passes.
 
 ---
 

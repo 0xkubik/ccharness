@@ -58,30 +58,27 @@ class TestControl(unittest.TestCase):
         def boom(p, s): raise ProcessLookupError()
         self.assertFalse(self.control.send_signal(5, signal.SIGTERM, sender=boom))
 
-    def test_stop_autopilot_removes_state(self):
+    def test_stop_musician_removes_state(self):
         repo = tempfile.mkdtemp()
-        ap_dir = Path(repo) / ".claude" / "ccharness" / "autopilot"; ap_dir.mkdir(parents=True)
-        state = ap_dir / "state.json"; state.write_text(json.dumps({"active": True}))
-        semi_dir = Path(repo) / ".claude" / "ccharness" / "semipilot"; semi_dir.mkdir(parents=True)
-        semi = semi_dir / "state.json"; semi.write_text(json.dumps({"active": True}))
-        info = {"is_autopilot": True, "cwd": repo, "pid": 123}
+        mus_dir = Path(repo) / ".claude" / "ccharness" / "musician"; mus_dir.mkdir(parents=True)
+        state = mus_dir / "state.json"; state.write_text(json.dumps({"active": True}))
+        info = {"is_musician": True, "cwd": repo, "pid": 123}
         sent = []
         result, _ = self.control.stop_agent(info, sender=lambda p, s: sent.append((p, s)))
-        self.assertEqual(result, "autopilot-cancelled")
-        self.assertFalse(state.exists())     # autopilot state removed
-        self.assertFalse(semi.exists())      # in-flight nested semipilot also removed
+        self.assertEqual(result, "musician-cancelled")
+        self.assertFalse(state.exists())     # musician state removed
         self.assertEqual(sent, [])           # process NOT signalled
 
     def test_stop_normal_signals_group(self):
         import signal as sig
         sent = []
-        info = {"is_autopilot": False, "cwd": "/x", "pid": 555}
+        info = {"is_musician": False, "cwd": "/x", "pid": 555}
         result, _ = self.control.stop_agent(info, sender=lambda p, s: sent.append((p, s)))
         self.assertEqual(result, "stopped")
         self.assertEqual(sent, [(555, sig.SIGTERM)])
 
     def test_stop_no_pid(self):
-        result, _ = self.control.stop_agent({"is_autopilot": False, "pid": None}, sender=lambda p, s: None)
+        result, _ = self.control.stop_agent({"is_musician": False, "pid": None}, sender=lambda p, s: None)
         self.assertEqual(result, "no-pid")
 
     def test_pause_sends_sigstop(self):
@@ -99,7 +96,7 @@ class TestControl(unittest.TestCase):
     def test_steer_stops_then_respawns(self):
         import signal as sig
         sent = []; spawned = []
-        info = {"is_autopilot": False, "pid": 7, "sessionId": "sid-7", "cwd": "/r",
+        info = {"is_musician": False, "pid": 7, "sessionId": "sid-7", "cwd": "/r",
                 "meta": {"agent_id": "aid7", "model": None, "budget": None, "yolo": False}}
         result, _ = self.control.steer_agent(
             info, "go left",
@@ -111,10 +108,10 @@ class TestControl(unittest.TestCase):
         self.assertIn("go left", spawned[0][0])
         self.assertEqual(spawned[0][1], "/r")
 
-    def test_steer_refuses_autopilot(self):
-        result, _ = self.control.steer_agent({"is_autopilot": True, "cwd": "/r"}, "x",
+    def test_steer_refuses_musician(self):
+        result, _ = self.control.steer_agent({"is_musician": True, "cwd": "/r"}, "x",
                                              sender=lambda p, s: None, spawn=lambda a, c: 1)
-        self.assertEqual(result, "refused-autopilot")
+        self.assertEqual(result, "refused-musician")
 
 if __name__ == "__main__":
     unittest.main()

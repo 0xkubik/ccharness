@@ -40,7 +40,7 @@ def _stop(args):
         print(f"no agent matching {args.id}", file=sys.stderr); return 1
     result, detail = control.stop_agent(info)
     print(f"{args.id}: {result}" + (f" ({detail})" if detail else ""))
-    return 0 if result in ("stopped", "autopilot-cancelled") else 1
+    return 0 if result in ("stopped", "musician-cancelled") else 1
 
 def _steer(args):
     info = control.resolve(args.id)
@@ -71,15 +71,6 @@ def _check(args):
     print(json.dumps(events, indent=2) if args.json else f"{len(events)} new event(s)")
     return 0
 
-def _spend_weekly(args):
-    from . import spend
-    task = ("/autopilot --spend-session " + (args.focus or "")).strip()
-    res = spend.run_spend_weekly(task, repo=args.repo, model=args.model,
-                                 yolo=args.yolo, horizon_days=args.horizon_days)
-    print(json.dumps(res.get("final", {}), indent=2))
-    return 0
-
-
 def _pause(args):
     info = control.resolve(args.id)
     if not info: print(f"no agent matching {args.id}", file=sys.stderr); return 1
@@ -106,19 +97,11 @@ def build_parser():
     lg.add_argument("id")
     lg.add_argument("--tail", type=int, default=40)
     lg.set_defaults(func=_logs)
-    sp = sub.add_parser("stop", help="stop an agent (autopilot -> graceful cancel)")
+    sp = sub.add_parser("stop", help="stop an agent (musician -> graceful cancel)")
     sp.add_argument("id")
     sp.set_defaults(func=_stop)
     se = sub.add_parser("steer", help="stop an agent and resume it with a new instruction")
     se.add_argument("id"); se.add_argument("message"); se.set_defaults(func=_steer)
-    sw = sub.add_parser("spend-weekly",
-                        help="relaunch /autopilot --spend-session across 5h resets until a weekly horizon")
-    sw.add_argument("focus", nargs="?", default="", help="optional focus passed to each autopilot run")
-    sw.add_argument("--repo"); sw.add_argument("--model")
-    sw.add_argument("--horizon-days", type=float, default=7.0, help="wall-clock stop (default 7)")
-    sw.add_argument("--yolo", action="store_true",
-                    help="bypass ALL permissions — needed for unattended local commits (dangerous)")
-    sw.set_defaults(func=_spend_weekly)
     pa = sub.add_parser("pause", help="pause an agent (SIGSTOP)"); pa.add_argument("id"); pa.set_defaults(func=_pause)
     re_ = sub.add_parser("resume", help="resume a paused agent (SIGCONT)"); re_.add_argument("id"); re_.set_defaults(func=_resume)
     ck = sub.add_parser("check", help="detect agent state changes; record + optionally notify")

@@ -8,13 +8,13 @@ Captures the **North Star** (the goal) into `CLAUDE.md`, then builds a `.claude/
 organized as **versions of the product** — and, inside each version, the features broken down into
 ordered work **stages**. Invoked by `/find-goal`. Run once up front (every other product skill routes
 here when no goal exists); re-run to revise. The roadmap then biases what-to-do toward the current
-frontier and feeds the autopilot/semipilot loops.
+frontier and feeds the musician loop.
 
 # find-goal — set the goal, then version the road to it
 
 You are the harness's **grounding front door**, and this is a **high-stakes conversation**, not a
 form to fill in. What you capture here decides the product's whole direction — what-to-do ranks moves
-against it, and autopilot/semipilot will **build, milestone by milestone, off the roadmap you write**.
+against it, and **the musician builds from the roadmap you write**.
 A sloppy goal or a vague version makes every later automated step aim at the wrong target.
 
 **Tell the human this up front, plainly:** this defines what we're building and the order we build it;
@@ -88,13 +88,13 @@ features into work **stages** so the human can see the rough path of work inside
 single rule: **need "A before B" → put them in different stages; independent → same stage** (parallel,
 any order within a stage). Each feature lands as a lightweight milestone with a **stable global id**
 (`M1`, `M2`, … — continuous across all versions) and `name + done when: <observable outcome> + theme:
-<one line>`. The `done when:` must be **observable** — that's what later lets the loops judge it
+<one line>`. The `done when:` must be **observable** — that's what later lets the musician judge it
 complete. Don't manufacture parallelism that isn't there; a genuinely linear version is one milestone
 per stage.
 
 **3. Write this version into the roadmap, then urge a review.** Append the version's section to
 `.claude/ccharness/roadmap.md` (format below) and **strongly suggest the human read it back before you
-continue** — "Here's v0 laid out as stages. Please check it — the loops will build straight off this.
+continue** — "Here's v0 laid out as stages. Please check it — the musician will build straight off this.
 Look right before we move to v1?" Don't steamroll past their review.
 
 **4. At the version boundary, ask: continue, rethink, or finish?** Every time a version is written,
@@ -167,7 +167,7 @@ a valid sequential walk. The **frontier** = the unchecked `[ ]` milestones of th
 - [ ] M4 — <feature> · done when: <observable outcome> · theme: <one line>
 ```
 
-Ids stay **stable across re-runs** (semipilot/autopilot reference them) and are independent of which
+Ids stay **stable across re-runs** (the musician references them) and are independent of which
 stage or version a milestone sits in. **No `## Stage` headings at all = legacy line** = each milestone
 is its own stage = the frontier is always the first unchecked box (old linear behaviour, unchanged).
 

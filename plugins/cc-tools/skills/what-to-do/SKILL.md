@@ -76,8 +76,8 @@ frontier milestone** (there may be several parallel ones). For every one that no
 
 - _Interactive run:_ offer to check it off (`[ ]` → `[x]` in `roadmap.md`). When the **last**
   unchecked milestone of the current stage gets checked, the frontier advances to the next stage.
-- _Autopilot run:_ \*_auto-mark it `[x]_`\* (no human mid-loop to confirm; the frontier must advance for
-  the loop to keep walking the route). See autopilot's contract.
+- _Under the musician:_ \*_auto-mark it `[x]_`\* (no human mid-loop to confirm). See the musician's
+  contract.
 
 ---
 
@@ -159,14 +159,15 @@ score:     goal_fit / effort / reversibility  (+ production-caution and roadmap-
 
 ## Phase 4 — Human boundary (check off the work)
 
-How the human chooses depends on whether a never-stop loop is driving you:
+How the human chooses depends on whether a musician loop is driving you:
 
-**Under autopilot — do NOT interact.** If autopilot invoked you (it says _"produce the menu, I
-pick"_) **or** a loop is live (`.claude/ccharness/autopilot/state.json` exists with `active:true`
-and `session_id` == this session), emit the ranked menu as **data** and stop — the caller
-auto-picks. **Never call `AskUserQuestion` here:** it blocks on a human, and the loop must never
-wait. (If that state file is missing, stale, or for another session, treat yourself as
-interactive — fail toward asking, never toward blocking a loop.)
+**Under the musician — do NOT interact.** The musician in open mode runs what-to-do to find its own
+direction and must never be blocked on a human. If a musician loop is live
+(`.claude/ccharness/musician/state.json` exists with `active:true` and `session_id` == this
+session), emit the ranked menu as **data** and stop — the caller auto-picks. **Never call
+`AskUserQuestion` here:** it blocks on a human, and the loop must never wait. (If that state file is
+missing, stale, or for another session, treat yourself as interactive — fail toward asking, never
+toward blocking a loop.)
 
 **Interactive — let the human check off the work.** Present the ranked menu tightly (one line per
 direction, top first, tagged with its move), then collect picks with the built-in
@@ -194,12 +195,12 @@ what-to-do's.
 `0` Ground — `## Product North Star` heading? no → **route to `/find-goal*`\*, stop; yes → read = goal, then read `.claude/ccharness/roadmap.md` (**frontier** = unchecked
 `[ ]` of the earliest open `## Stage`; no headings = first `[ ]`) · `1` Survey — repo = where we are
 now; if roadmap, check **each frontier milestone's** `done when` (interactive: offer to check off ·
-autopilot: auto-mark) · `2` Fan-out — four lenses (ADD / FINISH / REBUILD / REFACTOR), parallel,
+under the musician: auto-mark) · `2` Fan-out — four lenses (ADD / FINISH / REBUILD / REFACTOR), parallel,
 empty-lane valve, **fed the frontier milestones as a steer (not a gate)** · `3`
 Rank — dedupe + score + **production-caution** (in production → careful; not → carte blanche) +
 **roadmap-fit** → menu (off-roadmap never dropped) · `4` Boundary — interactive: `AskUserQuestion`
-multiSelect per lens → checked **list** → how-to-do; under autopilot: emit menu as data, **no
+multiSelect per lens → checked **list** → how-to-do; under the musician: emit menu as data, **no
 `AskUserQuestion`\*\*, caller auto-picks.
 
 **Invariant:** what-to-do diverges and ranks; it never decides _how_. A menu that pre-decides the
-approach is a bug — that's how-to-do. The human marks _what_; never block a live autopilot loop.
+approach is a bug — that's how-to-do. The human marks _what_; never block a live musician loop.

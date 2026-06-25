@@ -12,5 +12,5 @@ find-goal is the harness's **grounding front door**. On a fresh repo it captures
 **roadmap** — a *layered* route of lightweight milestones (`.claude/ccharness/roadmap.md`): ordered
 **stages**, with **parallel milestones inside each** (`order → split stages; independent → same
 stage`), from where the product is now to that North Star. Other product skills (`what-to-do`, `how-to-do`, `do`,
-`autopilot`) route here when no North Star exists. Re-run any time to revise the roadmap, or pass
+`musician`) route here when no North Star exists. Re-run any time to revise the roadmap, or pass
 `--reground` to revise the North Star itself as the route drifts.

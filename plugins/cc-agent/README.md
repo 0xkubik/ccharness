@@ -1,86 +1,72 @@
 # cc-agent
 
-The self-driving agent layer of the cc-* harness. Two modes — **semipilot** (the bounded unit)
-and **autopilot** (the meta-loop wrapper over it):
+The self-driving agent layer of the cc-* harness. One loop — the **musician**: the project's brain
+for ONE piece of work. It plays the cc-tools instruments (`crux` → `what-to-do` → `how-to-do` →
+`do`), thinks before it builds, forges its own definition of done, drives to that done, then
+**closes**. Bounded and self-closing — there is no never-stop loop above it.
 
-## Modes
+## `/musician` — the bounded performer
 
-### `/semipilot` — bounded, one-milestone unit
+Hand it ONE thing to carry to a real finish — a task, a problem, or an idea.
 
-Drives the cc-tools funnel (what-to-do → how-to-do → do) toward **one roadmap milestone**
-and **stops itself** when that milestone's `done when:` is met — or gives up after N no-progress
-cycles / a hard cycle cap.
+- **With a prompt** (`/musician <task / problem / idea>`): it **thinks first**, sized to the input
+  (a fuzzy pain → `crux`; an idea → North-Star fit; a clear task → straight to build). The brain may
+  come back **declined** ("not worth it / wrong problem") or reframed, instead of blindly building.
+  If it clears, it forges a falsifiable definition of done and builds to it.
+- **Without a prompt** (`/musician`): it **finds the work itself** via `what-to-do` (auto-picking the
+  top direction — no human in the loop), then builds that one direction to done.
 
-- Requires a roadmap (`.claude/ccharness/roadmap.md`). No roadmap → `/find-goal` first.
-- Two exits: **achieved** (done-check met → marks `[x]` in roadmap) or **gave-up / capped**
-  (streak ≥ `max_no_progress` or `cycle ≥ max_cycles`).
-- `/semipilot-cancel` is the manual brake.
+It runs as a loop across turns (the Stop hook re-feeds one cycle per turn), but it is **bounded**:
+one piece of work, to its end, then stop. Want another — launch it again.
 
-### `/autopilot` — meta-loop over semipilot
+- **Exits (the only doors out):**
+  - **achieved** — the done-check is met.
+  - **declined** — the brain ruled the work shouldn't happen (leave-it / wrong problem / an
+    intent-changing reframe, or — in open mode — nothing worth doing). A smart "no" is a success,
+    not a failure; it is distinct from `gave-up`.
+  - **gave-up / capped** — *tried and couldn't*: `no_progress_streak ≥ max_no_progress` (default 3)
+    or `cycle ≥ max_cycles` (default 20).
+  - **stopped-budget** — the weekly subscription limit is essentially gone (the 5-hour limit instead
+    **suspends** and auto-resumes).
+- **Open mode requires a roadmap's North Star** (it leans on `what-to-do`). None → `/find-goal` first.
+- `/musician-cancel` is the manual brake.
+- `--ultracode` forces maximum parallelism in the build (mandatory Workflow + parallel subagents +
+  git worktrees). There is **no spend flag** — the musician is bounded by design.
 
-Arms a fresh semipilot on the current milestone; when it finishes, advances to the next —
-walking the roadmap milestone by milestone. The funnel logic lives entirely inside semipilot;
-autopilot only decides which milestone runs next and what to do when one fails.
-
-- **Requires a roadmap.** No roadmap (or no North Star) → `/find-goal` first. The old
-  "drive directly toward the North Star without a roadmap" path is removed.
-- **Give-up ladder:** if a semipilot gives up → retry once → if still stuck, the **stage test**
-  reads the dependency off the roadmap's layers (no guessing) — is another open milestone in the
-  **same `## Stage`** as the stuck one?
-  - **Independent** (a same-stage sibling is open) → park the stuck milestone (add to parked queue)
-    and advance to that sibling.
-  - **Dependent** (stuck one is the last open milestone in its stage → next work is in a later stage
-    that needs it) → **HARD STOP**: autopilot sets itself inactive, reports, and ends the session.
-
-  The same stage boundary holds after a *success*: autopilot only ever advances within the current
-  frontier stage and never crosses into a later stage while an earlier one still has a parked
-  (unfinished) milestone — a later stage gated by parked work is itself a dependency block (HARD STOP).
-- **Two ways autopilot stops:** `/autopilot-cancel` (manual brake, works any time) OR a hard
-  dependency block (a legitimate self-stop — no longer only cancel can end it).
-- When the roadmap is exhausted (all milestones done or parked), autopilot cheap-idles — it
-  never stops on its own in the normal case; new milestones added via `/find-goal` are picked
-  up on the next idle cycle.
-
-## State directories (layered)
+## State directory
 
 ```
 .claude/ccharness/
-  semipilot/
-    state.json     inner loop control — one milestone in flight
-                   {active, session_id, mode, target_milestone, done_when, cycle,
-                    no_progress_streak, max_no_progress, max_cycles, outcome, …}
-    blocked.jsonl  skipped DIRECTIONS within the current milestone (cycle-level)
-    log.jsonl      one line per semipilot cycle
-  autopilot/
-    state.json     outer meta-loop control — current milestone + retry counter
-                   {active, session_id, mode, current_milestone, current_retries,
-                    max_retries, outcome, …}
-    blocked.jsonl  PARKED MILESTONES queue (milestone-level — repurposed from directions)
-    log.jsonl      one line per meta-step (advanced / retried / parked / blocked-stop / idle)
+  musician/
+    state.json     loop control for the one piece of work in flight
+                   {active, session_id, mode:"musician", entry:"task"|"open", input,
+                    done_when, cycle, no_progress_streak, max_no_progress, max_cycles,
+                    ultracode, awaiting, headroom_floor_pct, weekly_stop_pct, outcome, …}
+    blocked.jsonl  directions handed back during this piece of work
+    log.jsonl      one line per cycle
 ```
 
-Two-level logging: semipilot logs cycle detail; autopilot logs milestone-level events.
-Parked milestones live in `autopilot/blocked.jsonl` (not in `roadmap.md`), so parking never
-edits the roadmap — the roadmap is just checkboxes under `## Stage` headings (or a plain checkbox
-list for a legacy linear roadmap).
+`outcome` is one of `achieved` / `declined` / `gave-up` / `capped` / `stopped-budget` (or `null`
+while running). A non-null `awaiting` object means the loop is **suspended** on async work or a
+transient outage — not done, not given up; the awaited task's completion notification resumes it.
 
-## Hook partition
+## Stop hook
 
-Two `Stop` hooks run on every stop event, partitioned so **exactly one ever blocks**:
+A single `Stop` hook drives the loop:
 
-| Situation | `semipilot-stop.sh` | `autopilot-stop.sh` | Result |
-| --- | --- | --- | --- |
-| semipilot active | blocks (re-feeds cycle) | yields | semipilot drives |
-| semipilot inactive, autopilot active | yields | blocks (re-feeds meta-step) | autopilot re-arms |
-| both inactive | yields | yields | session ends |
+| Situation | `musician-stop.sh` |
+| --- | --- |
+| musician active for this session | blocks (re-feeds one cycle) |
+| active but `awaiting` set | yields (suspended — terminal frees, no quota burned) |
+| `active:false` (achieved / declined / gave-up / capped / stopped-budget / cancelled) | yields (session ends) |
+| no state / a different session owns it | yields |
 
-This ensures no double-feed while a milestone is in flight, and the autopilot hook only acts
-in the gap between milestones.
+It fails **closed**: while a musician state file is active for this session (or present but
+unparseable), the hook re-feeds — so a real task is never accidentally dropped mid-flight.
 
 ## Dependencies & supervision
 
-- Depends on **cc-tools** (invokes `cc-tools:what-to-do`, `cc-tools:how-to-do`,
+- Depends on **cc-tools** (invokes `cc-tools:crux`, `cc-tools:what-to-do`, `cc-tools:how-to-do`,
   `cc-tools:do`, `cc-tools:slap`).
-- Supervised by **cc-maestro**: a `semipilot` state file signals a bounded agent (terminal
-  outcome); an `autopilot` state file signals the meta-loop (can reach `blocked` self-stop
-  in addition to cancel).
+- Supervised by **cc-maestro**: a `musician` state file signals an autonomous, bounded agent with a
+  terminal outcome — cc-maestro watches its progress and can cancel it gracefully.

@@ -1,7 +1,7 @@
 # cc-tools
 
 > **Layer:** cc-tools is the **tools layer** of the cc-* harness — the funnel skills and commands.
-> **cc-agent** (the self-driving autopilot loop) sits above it; **cc-maestro** (the fleet
+> **cc-agent** (the musician — its single self-driving loop) sits above it; **cc-maestro** (the fleet
 > orchestrator) sits at the top.
 
 A **product harness** for Claude Code: a `ground → diverge → decide → build` funnel that takes a
@@ -113,7 +113,7 @@ table mirrors these nine plugins. Add or drop a dependency here, and update the 
 
 ## Usage-limits bridge (optional)
 
-`bin/cc-usage-statusline.sh` lets the loops (semipilot/autopilot) see your remaining
+`bin/cc-usage-statusline.sh` lets the cc-agent musician see your remaining
 subscription budget. A running session can't query that itself — `/usage` is TUI-only and there
 is no CLI/file/hook/env for it. The **only** channel that carries it is the statusLine stdin
 payload (`rate_limits.five_hour` / `rate_limits.seven_day`: used % + reset time). This script
@@ -131,7 +131,7 @@ Install — point `statusLine.command` at it (wraps your existing status line):
 Your previous status line keeps rendering: it runs downstream from `$CC_USAGE_DOWNSTREAM`
 (default `ccstatusline` if on PATH; set to `""` to render nothing). Best-effort and fail-open —
 a capture failure never breaks your status line. Caveats: only interactive sessions render a
-status line (headless `claude -p` does not, so the pilots fall back to a token estimate there);
+status line (headless `claude -p` does not, so the musician falls back to a token estimate there);
 `rate_limits` is Pro/Max-only and absent until the session's first API response.
 
 ## Layout
@@ -143,4 +143,4 @@ status line (headless `claude -p` does not, so the pilots fall back to a token e
 - `skills/slap/SKILL.md` — the reset protocol, invoked by do at three strikes (and by you via `/slap`).
 - `skills/crux/SKILL.md` · `commands/crux.md` — the diagnosis loop (pin the pain → four-lens Jungian panel → one diagnosis + angle). Free-standing side door; the deliberate cousin of slap.
 - `commands/cc-init.md` — setup wizard (deps → rules → doc reconciliation → /find-goal; self-contained, no skill).
-- `bin/cc-usage-statusline.sh` — optional statusLine wrapper that exposes subscription usage limits to the loops (see above).
+- `bin/cc-usage-statusline.sh` — optional statusLine wrapper that exposes subscription usage limits to the musician (see above).

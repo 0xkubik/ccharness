@@ -1,5 +1,5 @@
 ---
-description: "5-stage onboarding wizard for the cc-* harness, driven by AskUserQuestion. Stage 1 installs missing marketplace dependencies; Stage 2 installs the harness's recommended rules into this project's .claude/rules/; Stage 3 connects the usage-limits bridge so the loops can see your subscription budget; Stage 4 reconciles the project's prose docs against your current understanding so stale text doesn't mislead later decisions; Stage 5 offers to run /find-goal. Every stage is offered and skippable; idempotent — safe to re-run."
+description: "5-stage onboarding wizard for the cc-* harness, driven by AskUserQuestion. Stage 1 installs missing marketplace dependencies; Stage 2 installs the harness's recommended rules into this project's .claude/rules/; Stage 3 connects the usage-limits bridge so the musician can see your subscription budget; Stage 4 reconciles the project's prose docs against your current understanding so stale text doesn't mislead later decisions; Stage 5 offers to run /find-goal. Every stage is offered and skippable; idempotent — safe to re-run."
 argument-hint: "(no arguments)"
 ---
 
@@ -10,7 +10,7 @@ so you choose what happens at every step:
 
 1. **Install dependencies** — the marketplace plugins the harness orchestrates.
 2. **Install rules** — the harness's recommended rule files, into this project's `.claude/rules/`.
-3. **Connect usage limits** — wrap your status line so `/semipilot` and `/autopilot` can read your
+3. **Connect usage limits** — wrap your status line so `/musician` can read your
    remaining subscription budget and avoid burning it on expensive work.
 4. **Reconcile docs with reality** — check the project's prose docs against your current
    understanding so stale text doesn't quietly steer later decisions.
@@ -158,12 +158,12 @@ session.
 
 ---
 
-## Stage 3 — Connect usage limits (let the loops see your budget)
+## Stage 3 — Connect usage limits (let the musician see your budget)
 
-`/semipilot` and `/autopilot` run on your Claude **subscription**, and a long build (a scan, a fuzz
+`/musician` runs on your Claude **subscription**, and a long build (a scan, a fuzz
 run) burns the same 5-hour + weekly quota you use yourself. A running session **cannot read its own
 remaining budget** — the only place Claude Code exposes it is the **statusLine** payload. This stage
-installs a tiny wrapper (`bin/cc-usage-statusline.sh`) as your statusLine so the loops can see your
+installs a tiny wrapper (`bin/cc-usage-statusline.sh`) as your statusLine so the musician can see your
 remaining limits and stop short of spending the last of your quota on expensive work.
 
 **1. Explain what will change — print this to the user, in plain words, BEFORE the gate:**
@@ -174,11 +174,11 @@ remaining limits and stop short of spending the last of your quota on expensive 
   runs (downstream), so **what you see at the bottom of the terminal stays the same.**
 - On each status-line refresh the wrapper writes `<project>/.claude/ccharness/usage.json` with your
   **5-hour and weekly used-% and reset time**.
-- `/semipilot` and `/autopilot` read that file at the start of each cycle and **won't launch an
-  expensive or long background build when your remaining budget is low** — they take a cheap step,
-  wait for the reset, or stop, instead of stranding you with no quota.
+- `/musician` reads that file at the start of each cycle and **won't launch an
+  expensive or long background build when your remaining budget is low** — it takes a cheap step,
+  waits for the reset, or stops, instead of stranding you with no quota.
 - **Caveats:** real numbers appear only on **Pro/Max** plans and only in **interactive** sessions
-  (a headless `claude -p` run renders no status line, so the loops fall back to a rough token
+  (a headless `claude -p` run renders no status line, so the musician falls back to a rough token
   estimate there). The wrapper is **best-effort and fail-open** — a hiccup never breaks or blanks
   your status line.
 - **Fully reversible:** set `statusLine.command` back to its previous value (this stage records it
@@ -211,7 +211,7 @@ On **Skip** → go to Stage 4. On **Stop** → end the wizard.
 
 **5. Report.** State what changed, the **previous** `statusLine.command` value (so the user can
 revert), and that it takes effect on the **next status-line refresh** (usually immediately; a fresh
-session guarantees it). Remind them the loops only act on real numbers on **Pro/Max + interactive**
+session guarantees it). Remind them the musician only acts on real numbers on **Pro/Max + interactive**
 sessions.
 
 ---

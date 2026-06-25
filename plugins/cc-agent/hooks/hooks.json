@@ -1,20 +1,12 @@
 {
-  "description": "cc-agent Stop hooks: autopilot meta-loop + semipilot bounded loop. Exactly one re-feeds per turn (semipilot while a milestone is in flight; autopilot in the gap).",
+  "description": "cc-agent Stop hook: the musician bounded loop. While a musician is active for this session it re-feeds one cycle per Stop; it releases when the musician self-closes (achieved/declined/gave-up/capped/stopped-budget), suspends (awaiting), or is cancelled.",
   "hooks": {
     "Stop": [
       {
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/autopilot-stop.sh\""
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/semipilot-stop.sh\""
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/musician-stop.sh\""
           }
         ]
       }

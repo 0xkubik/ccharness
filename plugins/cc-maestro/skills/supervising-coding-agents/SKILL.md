@@ -27,18 +27,17 @@ The CLI is `ccmaestro` (binary at `plugins/cc-maestro/bin/ccmaestro`; symlink it
 | `ccmaestro ls [--json]` | All agents: tokens, last activity, verdict, cwd, name |
 | `ccmaestro start "<task>" [--repo P] [--model M] [--budget USD] [--name N] [--yolo]` | Launch a managed agent; prints its `id` |
 | `ccmaestro logs <id> [--tail N]` | Print an agent's recent transcript lines |
-| `ccmaestro stop <id>` | Stop an agent (an autopilot is cancelled gracefully, not killed) |
+| `ccmaestro stop <id>` | Stop an agent (a musician is cancelled gracefully, not killed) |
 | `ccmaestro steer <id> "<message>"` | Stop it, then resume the session with a new instruction |
 | `ccmaestro pause <id>` / `resume <id>` | Freeze / unfreeze (SIGSTOP / SIGCONT) |
 | `ccmaestro check [--notify] [--json]` | Detect state changes; record to events.jsonl; POST to the webhook with `--notify` |
-| `ccmaestro spend-weekly ["focus"] [--repo P] [--horizon-days N] [--yolo]` | Relaunch `/autopilot --spend-session` across 5-hour resets until a 7-day horizon — spends the *weekly* limit. Blind death-classification (cancel→stop, sustained→relaunch, fast-crash→backoff). Foreground; background it yourself. |
 
 `<id>` is the short 8-char id shown in `ls` (a sessionId prefix also works).
 
 ## Verdicts (the `verdict` field)
 
 - `ok` — healthy.
-- `stalled` — no new activity past the threshold (autopilots use a longer one). Maybe stuck — check `logs`.
+- `stalled` — no new activity past the threshold (a musician uses a longer one). Maybe stuck — check `logs`.
 - `looping` — same tool call repeated; almost always needs a `steer` or `stop`.
 - `over-budget` — tokens over the configured cap.
 - `died` — a launched agent vanished from the registry with no clean exit (also what an agent **you stopped** shows — that's expected, the process is genuinely gone).
@@ -58,7 +57,7 @@ Then hermes hears about agents either way:
 - **Pull:** call `ccmaestro check --notify` on a schedule (cron / loop). It POSTs each new problem event.
 - **Push:** the bundled Stop/Notification hook POSTs as agents finish or need attention (active once the plugin is installed).
 
-Other tunables in that file: `stall_min`, `tool_stall_min`, `autopilot_stall_min`, `loop_n`, `token_budget` (0 = off), `max_concurrent` (0 = unlimited).
+Other tunables in that file: `stall_min`, `tool_stall_min`, `musician_stall_min`, `loop_n`, `token_budget` (0 = off), `max_concurrent` (0 = unlimited).
 
 ## Safety
 
@@ -69,6 +68,6 @@ Other tunables in that file: `stall_min`, `tool_stall_min`, `autopilot_stall_min
 
 - **Launching with raw `claude` instead of `ccmaestro start`** — raw runs still appear in `ls`, but you lose the launch metadata and clean control. Launch through `ccmaestro`.
 - **Parsing the human table** — use `--json`; the table is for humans.
-- **`steer` on an autopilot** — refused on purpose. Redirect an autopilot through its own funnel / `/autopilot-cancel`, not `steer`.
+- **`steer` on a musician** — refused on purpose. Redirect a musician through its own funnel / `/musician-cancel`, not `steer`.
 - **Treating `died` after your own `stop` as an error** — it isn't; the agent is gone as intended.
 - **Expecting `check` to push without setup** — it only POSTs with `--notify` AND a `report_endpoint` configured.

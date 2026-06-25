@@ -4,7 +4,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from ccmaestro import watchdog
 
 NOW = datetime(2026, 6, 23, 12, 0, 0, tzinfo=timezone.utc)
-CFG = {"stall_min": 5, "tool_stall_min": 20, "loop_n": 4, "loop_window": 8, "token_budget": 1000, "autopilot_stall_min": 30}
+CFG = {"stall_min": 5, "tool_stall_min": 20, "loop_n": 4, "loop_window": 8, "token_budget": 1000, "musician_stall_min": 30}
 
 def summary(**kw):
     base = {"total_tokens": 0, "last_activity": NOW, "tool_calls": [], "pending_tool": False}
@@ -55,15 +55,15 @@ class TestWatchdog(unittest.TestCase):
         v = watchdog.verdict(s, entry(), CFG, NOW)
         self.assertEqual(v["status"], "looping")
 
-    def test_autopilot_idle_under_threshold_is_ok(self):
+    def test_musician_idle_under_threshold_is_ok(self):
         s = summary(last_activity=NOW - timedelta(minutes=10))
-        e = {**entry(), "is_autopilot": True}
+        e = {**entry(), "is_musician": True}
         v = watchdog.verdict(s, e, CFG, NOW)
         self.assertEqual(v["status"], "ok")
 
-    def test_autopilot_idle_over_threshold_is_stalled(self):
+    def test_musician_idle_over_threshold_is_stalled(self):
         s = summary(last_activity=NOW - timedelta(minutes=40))
-        e = {**entry(), "is_autopilot": True}
+        e = {**entry(), "is_musician": True}
         v = watchdog.verdict(s, e, CFG, NOW)
         self.assertEqual(v["status"], "stalled")
 

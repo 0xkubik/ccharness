@@ -16,6 +16,12 @@ class TestConfig(unittest.TestCase):
             self.assertIn(k, cfg)
         self.assertEqual(cfg["loop_n"], 4)
 
+    def test_musician_stall_min_present_no_spend_knobs(self):
+        cfg = self.c.load_config()
+        self.assertIn("musician_stall_min", cfg)
+        self.assertNotIn("autopilot_stall_min", cfg)
+        self.assertFalse([k for k in cfg if k.startswith("spend_")])
+
     def test_file_overrides_defaults(self):
         (Path(self.tmp) / "config.json").write_text(json.dumps({"loop_n": 9}))
         cfg = self.c.load_config()

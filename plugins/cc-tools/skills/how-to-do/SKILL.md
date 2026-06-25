@@ -28,8 +28,9 @@ Phases 0–3 describe working ONE item; **Phase 4** says how the list flows out 
 **Stay in the how-lane.** When the direction came from a human's pick (what-to-do), the human already
 settled *whether* to do it — so if the grilling concludes the **pick itself** is wrong or
 unnecessary, you do **not** silently drop it or silently build something else: you **flag it to the
-human** and stop (Phase 4). (Standalone, or when the direction was machine-generated under autopilot
-with no human in the loop, there is no human pick to protect — there you may rule it out yourself.)
+human** and stop (Phase 4). (Standalone, or when the direction was machine-generated under the
+musician with no human in the loop, there is no human pick to protect — there you may rule it out
+yourself.)
 
 The engine is _structured disagreement_. Four proposers each argue a fixed corner of the
 decision space and **pull hard in their own direction** — they never compromise. They are then
@@ -234,7 +235,7 @@ concluded the *picked direction itself* is wrong or unnecessary, not just that t
 reframing), how-to-do does **not** build and does **not** silently drop it. It **stops** and surfaces
 the finding to the human — the picked direction, why it looks wrong, and the recommended
 alternative — then lets them re-pick (back to what-to-do), override ("build it anyway"), or drop it.
-This applies only to a **human-picked** direction; a standalone fork or an autopilot-generated
+This applies only to a **human-picked** direction; a standalone fork or a musician-generated
 direction (no human in the loop) how-to-do rules on itself.
 
 **For one item** (a standalone fork, or one entry of a list), in one pass:

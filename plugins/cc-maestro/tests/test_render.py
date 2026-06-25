@@ -33,7 +33,7 @@ class TestRender(unittest.TestCase):
     def test_render_table_has_headers(self):
         out = render.render_table([{"id": "a", "sessionId": "s1", "kind": "task", "tokens": 5,
                                     "last_activity": NOW, "verdict": "ok", "reason": "", "cwd": "/x",
-                                    "name": "n", "autopilot": False}])
+                                    "name": "n", "musician": False}])
         self.assertIn("VERDICT", out)
         self.assertIn("TOKENS", out)
 
