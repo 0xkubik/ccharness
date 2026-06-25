@@ -1,6 +1,6 @@
 ---
 name: crux
-description: Use when you bring a pain, doubt, or blockage that isn't yet a clean goal, direction, or fork — "the program feels slow / inefficient", "this code is fragile", "something's off here", "I'm not sure this is even a problem", "I keep going back and forth and can't tell why". crux autonomously unwinds the tangle: pins the real problem, runs a four-lens critical-thinking panel over it, and lands ONE diagnosis + angle of attack (not implementation). The deliberate, deeper cousin of slap — slap is the in-the-moment reset, crux is the sit-down. Not the direction finder (what-to-do) and not a build decision (how-to-do); it can hand its angle to either.
+description: "Use when you bring a pain, doubt, or blockage that isn't yet a clean goal, direction, or fork — \"the program feels slow / inefficient\", \"this code is fragile\", \"something's off here\", \"I'm not sure this is even a problem\", \"I keep going back and forth and can't tell why\". crux autonomously unwinds the tangle: pins the real problem, runs a four-lens critical-thinking panel over it, and lands ONE diagnosis + angle of attack (not implementation). The deliberate, deeper cousin of slap — slap is the in-the-moment reset, crux is the sit-down. Not the direction finder (what-to-do) and not a build decision (how-to-do); it can hand its angle to either."
 ---
 
 # crux — the diagnosis loop

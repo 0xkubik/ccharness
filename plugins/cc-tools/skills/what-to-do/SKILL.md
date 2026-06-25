@@ -1,6 +1,6 @@
 ---
 name: what-to-do
-description: "Use when you want to find product direction — to look at a product and surface where it could go next as a ranked menu of moves (new features, finishing half-built work, rebuilding rough parts, paying down tech debt). 
+description: "Use when you want to find product direction — to look at a product and surface where it could go next as a ranked menu of moves (new features, finishing half-built work, rebuilding rough parts, paying down tech debt)."
 ---
 
 Invoked by /what-to-do, with or without a prompt. Requires the product's North Star (set once via /find-goal) — if it's missing, what-to-do routes you there. With it present, what-to-do reads the North Star (and the roadmap, if one exists, biasing toward the current frontier — the parallel milestones open right now) and lets you check off (via a built-in choice prompt) which directions to pursue and hand that list to how-to-do. It explores and ranks; it never decides _how_ — that is how-to-do. Not for deciding a known fork (how-to-do) or building a task (do).
@@ -76,7 +76,7 @@ frontier milestone** (there may be several parallel ones). For every one that no
 
 - _Interactive run:_ offer to check it off (`[ ]` → `[x]` in `roadmap.md`). When the **last**
   unchecked milestone of the current stage gets checked, the frontier advances to the next stage.
-- _Under the musician:_ \*_auto-mark it `[x]_`\* (no human mid-loop to confirm). See the musician's
+- _Under the musician:_ **auto-mark it** `[x]` (no human mid-loop to confirm). See the musician's
   contract.
 
 ---
@@ -171,7 +171,7 @@ toward blocking a loop.)
 
 **Interactive — let the human check off the work.** Present the ranked menu tightly (one line per
 direction, top first, tagged with its move), then collect picks with the built-in
-`**AskUserQuestion`\** tool so the human *marks\* instead of typing:
+**`AskUserQuestion`** tool so the human *marks* instead of typing:
 
 - **One question per non-empty lens** (≤4 lenses → ≤4 questions, one `AskUserQuestion` call),
   `multiSelect: true`, `header` = the move (`Add` / `Finish` / `Rebuild` / `Refactor`).
@@ -192,7 +192,7 @@ what-to-do's.
 
 ## Quick reference
 
-`0` Ground — `## Product North Star` heading? no → **route to `/find-goal*`\*, stop; yes → read = goal, then read `.claude/ccharness/roadmap.md` (**frontier** = unchecked
+`0` Ground — `## Product North Star` heading? no → **route to `/find-goal`**, stop; yes → read = goal, then read `.claude/ccharness/roadmap.md` (**frontier** = unchecked
 `[ ]` of the earliest open `## Stage`; no headings = first `[ ]`) · `1` Survey — repo = where we are
 now; if roadmap, check **each frontier milestone's** `done when` (interactive: offer to check off ·
 under the musician: auto-mark) · `2` Fan-out — four lenses (ADD / FINISH / REBUILD / REFACTOR), parallel,
@@ -200,7 +200,7 @@ empty-lane valve, **fed the frontier milestones as a steer (not a gate)** · `3`
 Rank — dedupe + score + **production-caution** (in production → careful; not → carte blanche) +
 **roadmap-fit** → menu (off-roadmap never dropped) · `4` Boundary — interactive: `AskUserQuestion`
 multiSelect per lens → checked **list** → how-to-do; under the musician: emit menu as data, **no
-`AskUserQuestion`\*\*, caller auto-picks.
+`AskUserQuestion`**, caller auto-picks.
 
 **Invariant:** what-to-do diverges and ranks; it never decides _how_. A menu that pre-decides the
 approach is a bug — that's how-to-do. The human marks _what_; never block a live musician loop.
