@@ -5,9 +5,10 @@
 # TUI-only, and there is no CLI flag, file, hook field, or env var that exposes it. The ONE
 # channel that sees it is the statusLine stdin payload, which carries `rate_limits.five_hour` and
 # `rate_limits.seven_day` (used_percentage + resets_at). This script sits in `statusLine.command`,
-# tees that payload into <project>/.claude/ccharness/usage.json, then forwards it verbatim to your
-# real status line so your display is unchanged. The cc-agent musician reads that
-# file to gate expensive work on remaining headroom.
+# tees that payload into the GLOBAL ~/.claude/ccharness/usage.json (honoring $CLAUDE_CONFIG_DIR),
+# then forwards it verbatim to your real status line so your display is unchanged. The path is
+# global, not per-project, because the rate limits are account-wide: a single shared file lets a
+# cc-agent musician in ANY project read it to gate expensive work on remaining headroom.
 #
 # Install: set settings.json -> statusLine.command to this script's path. Your previous status
 # line keeps working: it runs as the downstream, taken from $CC_USAGE_DOWNSTREAM (default
@@ -31,8 +32,8 @@ except Exception:
 rl = d.get("rate_limits")
 if not rl:
     sys.exit(0)  # no usage data this render — keep the last good snapshot
-proj = (d.get("workspace") or {}).get("current_dir") or d.get("cwd") or os.getcwd()
-out_dir = os.path.join(proj, ".claude", "ccharness")
+cfg = os.environ.get("CLAUDE_CONFIG_DIR") or os.path.join(os.path.expanduser("~"), ".claude")
+out_dir = os.path.join(cfg, "ccharness")
 try:
     os.makedirs(out_dir, exist_ok=True)
     body = {
@@ -52,10 +53,8 @@ except Exception:
   fi
   if command -v jq >/dev/null 2>&1; then
     printf '%s' "$PAYLOAD" | jq -e '.rate_limits != null' >/dev/null 2>&1 || return
-    local proj od ts tmp
-    proj="$(printf '%s' "$PAYLOAD" | jq -r '(.workspace.current_dir // .cwd) // empty' 2>/dev/null)"
-    [ -n "$proj" ] || proj="$PWD"
-    od="$proj/.claude/ccharness"
+    local od ts tmp
+    od="${CLAUDE_CONFIG_DIR:-$HOME/.claude}/ccharness"
     mkdir -p "$od" 2>/dev/null || return
     ts="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
     tmp="$od/.usage.$$.json"

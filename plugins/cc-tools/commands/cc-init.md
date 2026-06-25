@@ -172,7 +172,8 @@ remaining limits and stop short of spending the last of your quota on expensive 
   change that affects every project, not just this repo.
 - It **wraps** your current status line, it does not replace it: your existing status line still
   runs (downstream), so **what you see at the bottom of the terminal stays the same.**
-- On each status-line refresh the wrapper writes `<project>/.claude/ccharness/usage.json` with your
+- On each status-line refresh the wrapper writes the global `~/.claude/ccharness/usage.json`
+  (honoring `$CLAUDE_CONFIG_DIR`; one shared file, since the limits are account-wide) with your
   **5-hour and weekly used-% and reset time**.
 - `/musician` reads that file at the start of each cycle and **won't launch an
   expensive or long background build when your remaining budget is low** — it takes a cheap step,

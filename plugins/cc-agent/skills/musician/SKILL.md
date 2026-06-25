@@ -166,7 +166,8 @@ arming, run the next cycle directly.
 ```
 0. RESUMING? If state.awaiting is set and the awaited task just completed (its notification
           re-entered you), CLEAR awaiting (atomic) and continue — the build's result is now in.
-1. READ   musician/state.json + musician/blocked.jsonl + ../usage.json (headroom).
+1. READ   musician/state.json + musician/blocked.jsonl + the GLOBAL ~/.claude/ccharness/usage.json
+          (honor $CLAUDE_CONFIG_DIR) for headroom.
           From a FRESH usage.json (<~10 min old): weekly used_% ≥ weekly_stop_pct → STOP
           (active:false, outcome:"stopped-budget", report seven_day.resets_at, END TURN). Else 5h
           remaining < headroom_floor_pct → SUSPEND (awaiting "5h reset"). Else either window below
@@ -255,8 +256,9 @@ Rules:
 
 The musician runs on the owner's **subscription** (5-hour + weekly limits), and a long build burns
 the same quota the owner needs. A running session can't read its budget directly — the only source
-is the statusLine payload, surfaced by the cc-tools usage bridge into `.claude/ccharness/usage.json`
-(`five_hour` / `seven_day`: `used_percentage` + `resets_at`). At cycle start (step 1) read it and
+is the statusLine payload, surfaced by the cc-tools usage bridge into the global
+`~/.claude/ccharness/usage.json` (honoring `$CLAUDE_CONFIG_DIR`; account-wide, so one file is shared
+across projects — `five_hour` / `seven_day`: `used_percentage` + `resets_at`). At cycle start (step 1) read it and
 compute **headroom** = the smaller of the two remaining percentages (`100 - used_percentage`). The
 two windows behave differently — check in this order:
 

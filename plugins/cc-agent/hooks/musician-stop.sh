@@ -69,7 +69,7 @@ fi
 # --- ACTIVE for this session (or present-but-unparseable) → RE-FEED. Fail closed. ---
 REFEED="$(cat <<'PROMPT'
 🎼 musician is ACTIVE — continue the bounded loop for THIS piece of work. Run exactly ONE cycle:
-1. Read .claude/ccharness/musician/state.json + blocked.jsonl + ../usage.json (headroom).
+1. Read .claude/ccharness/musician/state.json + blocked.jsonl + the GLOBAL ~/.claude/ccharness/usage.json (honor $CLAUDE_CONFIG_DIR) for headroom.
 2. BUDGET: from a fresh usage.json, weekly used_% >= weekly_stop_pct → set active:false outcome:"stopped-budget", report seven_day.resets_at, END TURN. Else 5h remaining < headroom_floor_pct → set awaiting and END TURN. Else either window below floor → no expensive/async launches this cycle.
 3. BRAIN (only while done_when == ""): think it through, sized to the input. TASK mode → triage the prompt, run the brain by necessity (crux for a fuzzy pain / North-Star fit for an idea / skip for a clear task). OPEN mode → cc-tools:what-to-do (menu as DATA, NO AskUserQuestion) → auto-pick the TOP direction. If the brain says leave-it / wrong-problem / intent-changing reframe / (open) nothing worth doing → set active:false outcome:"declined", log why, report, END TURN — do NOT build. Otherwise FORGE a falsifiable done_when and write it to state (atomic).
 4. DONE-CHECK: survey "now" and judge against state.done_when. MET → set active:false outcome:"achieved", final log line, report, END TURN.

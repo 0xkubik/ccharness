@@ -117,7 +117,8 @@ table mirrors these nine plugins. Add or drop a dependency here, and update the 
 subscription budget. A running session can't query that itself — `/usage` is TUI-only and there
 is no CLI/file/hook/env for it. The **only** channel that carries it is the statusLine stdin
 payload (`rate_limits.five_hour` / `rate_limits.seven_day`: used % + reset time). This script
-sits in `statusLine.command`, tees those numbers into `<project>/.claude/ccharness/usage.json`,
+sits in `statusLine.command`, tees those numbers into the global `~/.claude/ccharness/usage.json`
+(honoring `$CLAUDE_CONFIG_DIR`; one shared file, since the limits are account-wide),
 then forwards the payload to your real status line — so your display is unchanged.
 
 Install — point `statusLine.command` at it (wraps your existing status line):
