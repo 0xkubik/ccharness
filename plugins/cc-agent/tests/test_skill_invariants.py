@@ -68,6 +68,14 @@ class TestMusicianSkill(unittest.TestCase):
         # ... and explicitly has NO spend flag (it is bounded by design; spend is gone).
         self.assertIn("no spend flag", self.text.lower())
 
+    def test_roadmap_upkeep_route_not_goal(self):
+        # B: the musician may edit the ROUTE (mark done / add sub-step) within the current version,
+        # but the GOAL layer (North Star + version defs) is read-only; future versions are proposals.
+        self.assertIn("roadmap-proposals.md", self.text)
+        lowered = self.text.lower()
+        self.assertIn("route", lowered)       # the musician may edit the route
+        self.assertIn("read-only", lowered)   # the goal layer is read-only to it
+
     def test_no_autopilot_residue(self):
         # The whole point of the redesign: no autopilot / semipilot / milestone-walking loop left.
         lowered = self.text.lower()
