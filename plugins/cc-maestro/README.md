@@ -8,9 +8,17 @@ coding agents and musicians at once.
 ```bash
 plugins/cc-maestro/bin/ccmaestro ls            # the dashboard: tokens, last activity, watchdog verdict
 plugins/cc-maestro/bin/ccmaestro ls --json     # machine-readable (for an external agent like hermes)
+plugins/cc-maestro/bin/ccmaestro musician      # every running musician: status, goal, what it's doing
+plugins/cc-maestro/bin/ccmaestro musician <id> # one musician in full + its live action feed
 plugins/cc-maestro/bin/ccmaestro start "fix the flaky test" --repo ~/app
 plugins/cc-maestro/bin/ccmaestro logs <id> --tail 50
 ```
+
+A **musician** row in `ls` carries its run detail — status, cycle, the goal it forged
+(`done_when`), and its latest action from the live feed. `ccmaestro musician` is the dedicated view:
+what was asked, the goal, the blocked queue, and a tail of `live.log` (what it's doing right now).
+maestro reads the per-run layout (`runs/<run-id>/` via the `by-session` pointer), so it sees every
+run even when several share a repo.
 
 Symlink `bin/ccmaestro` onto your PATH to type `ccmaestro` directly. Inside a Claude
 Code session, `/maestro` runs the dashboard.

@@ -71,6 +71,27 @@ def _check(args):
     print(json.dumps(events, indent=2) if args.json else f"{len(events)} new event(s)")
     return 0
 
+def _musician(args):
+    cfg = config.load_config()
+    now = datetime.now(timezone.utc)
+    entries = registry.merge(registry.native_agents(), registry.load_meta_records())
+    summarizer = lambda sid: transcript.parse_transcript(paths.transcript_path(sid)) if sid else transcript.parse_transcript(None)
+    rows = render.build_rows(entries, now, summarizer=summarizer, config=cfg)
+    musicians = [r for r in rows if r.get("musician")]
+    if args.id:
+        musicians = [r for r in musicians
+                     if r["id"].startswith(args.id) or (r["sessionId"] or "").startswith(args.id)]
+        if not musicians:
+            print(f"no musician matching {args.id}", file=sys.stderr)
+            return 1
+    if args.json:
+        print(render.render_json(musicians))
+    elif args.id:
+        print(render.render_musician_detail(musicians[0], now))
+    else:
+        print(render.render_musician_list(musicians, now))
+    return 0
+
 def _pause(args):
     info = control.resolve(args.id)
     if not info: print(f"no agent matching {args.id}", file=sys.stderr); return 1
@@ -97,6 +118,10 @@ def build_parser():
     lg.add_argument("id")
     lg.add_argument("--tail", type=int, default=40)
     lg.set_defaults(func=_logs)
+    mu = sub.add_parser("musician", help="rich view of running musicians (status, goal, live feed)")
+    mu.add_argument("id", nargs="?", help="a musician id / sessionId prefix; omit to list all")
+    mu.add_argument("--json", action="store_true", help="machine-readable output")
+    mu.set_defaults(func=_musician)
     sp = sub.add_parser("stop", help="stop an agent (musician -> graceful cancel)")
     sp.add_argument("id")
     sp.set_defaults(func=_stop)

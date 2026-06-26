@@ -38,7 +38,8 @@ def build_rows(entries, now, *, summarizer, config):
         sid = e.get("sessionId")
         cwd = native.get("cwd") or meta.get("repo")
         summary = summarizer(sid)
-        is_mus = mus.is_musician(cwd)
+        minfo = mus.musician_info(cwd, sid)
+        is_mus = minfo is not None
         v = watchdog.verdict(summary, {**e, "is_musician": is_mus, "completed_exit": _completed_exit(meta)}, config, now)
         rows.append({
             "id": (sid or "")[:8],
@@ -51,8 +52,8 @@ def build_rows(entries, now, *, summarizer, config):
             "reason": v["reason"],
             "cwd": cwd,
             "name": meta.get("task") or native.get("name") or "",
-            "musician": is_mus,
-            "cycles": mus.cycle_count(cwd) if is_mus else None,
+            "musician": minfo,
+            "cycles": minfo["cycle"] if is_mus else None,
         })
     return rows
 
@@ -72,4 +73,48 @@ def render_table(rows, now=None):
             verdict=r["verdict"], name=(r["name"] or "")[:40]))
         if r["verdict"] != "ok" and r["reason"]:
             lines.append(f"{'':8} └─ {r['reason']}")
+        m = r.get("musician")
+        if m:
+            act = m.get("last_action") or "(starting)"
+            goal = m.get("done_when") or "(forging done-contract)"
+            lines.append(f"{'':8} ▸ cycle {m.get('cycle')} · {m.get('status')} · {act}")
+            lines.append(f"{'':8}   goal: {goal[:60]}")
+    return "\n".join(lines)
+
+
+def render_musician_list(rows, now=None):
+    if not rows:
+        return "No active musicians."
+    out = [f"MUSICIANS ({len(rows)})"]
+    for r in rows:
+        m = r["musician"]
+        out.append("{id:8} cycle {cyc} · {status} · {act}".format(
+            id=r["id"], cyc=m.get("cycle"), status=m.get("status") or "?",
+            act=(m.get("last_action") or "(starting)")))
+        out.append(f"         asked: {(m.get('input') or '(open mode)')[:72]}")
+        if m.get("done_when"):
+            out.append(f"         goal:  {m['done_when'][:72]}")
+    return "\n".join(out)
+
+
+def render_musician_detail(row, now=None):
+    m = row["musician"]
+    extra = ""
+    if m.get("ultracode"):
+        extra += ", ultracode"
+    if m.get("awaiting"):
+        extra += ", awaiting (suspended)"
+    lines = [
+        f"musician {row['id']}  ({row.get('cwd') or '?'})",
+        f"  run_id   {m.get('run_id')}",
+        f"  status   {m.get('status')}  (cycle {m.get('cycle')}, streak {m.get('no_progress_streak')}{extra})",
+        f"  entry    {m.get('entry')}",
+        f"  asked    {m.get('input') or '(open mode — found its own direction)'}",
+        f"  goal     {m.get('done_when') or '(not forged yet)'}",
+        f"  blocked  {m.get('blocked_count')} handed back",
+        f"  verdict  {row.get('verdict')}" + (f" — {row['reason']}" if row.get("reason") else ""),
+    ]
+    tail = mus.live_tail(row.get("cwd"), row.get("sessionId"), 20)
+    lines.append(f"  live feed (last {len(tail)}):" if tail else "  live feed: (none yet)")
+    lines += [f"    {t}" for t in tail]
     return "\n".join(lines)

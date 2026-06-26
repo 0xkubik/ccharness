@@ -24,7 +24,8 @@ The CLI is `ccmaestro` (binary at `plugins/cc-maestro/bin/ccmaestro`; symlink it
 
 | Command | What it does |
 |---|---|
-| `ccmaestro ls [--json]` | All agents: tokens, last activity, verdict, cwd, name |
+| `ccmaestro ls [--json]` | All agents: tokens, last activity, verdict, cwd, name (musician rows carry status / cycle / goal / latest action) |
+| `ccmaestro musician [<id>] [--json]` | Running musicians in detail: status, what was asked, the forged goal (`done_when`), blocked queue, and a tail of the live action feed (what it's doing now). Omit `<id>` to list all |
 | `ccmaestro start "<task>" [--repo P] [--model M] [--budget USD] [--name N] [--yolo]` | Launch a managed agent; prints its `id` |
 | `ccmaestro logs <id> [--tail N]` | Print an agent's recent transcript lines |
 | `ccmaestro stop <id>` | Stop an agent (a musician is cancelled gracefully, not killed) |

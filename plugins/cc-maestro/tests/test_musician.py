@@ -3,25 +3,34 @@ from pathlib import Path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from ccmaestro import musician
 
+RID = "20260626-120000-test"
+
+
 class TestMusician(unittest.TestCase):
-    def _repo(self, active=None, cycle=None):
+    def _repo(self, state=None, session=None, live=None, blocked=0):
+        """Lay a run out the new way: runs/<rid>/state.json (+ optional pointer / live feed)."""
         repo = tempfile.mkdtemp()
-        d = Path(repo) / ".claude" / "ccharness" / "musician"
-        if active is not None or cycle is not None:
-            d.mkdir(parents=True, exist_ok=True)
-            state = {}
-            if active is not None:
-                state["active"] = active
-            if cycle is not None:
-                state["cycle"] = cycle
-            (d / "state.json").write_text(json.dumps(state))
+        base = Path(repo) / ".claude" / "ccharness" / "musician"
+        if state is not None:
+            run = base / "runs" / RID
+            run.mkdir(parents=True, exist_ok=True)
+            (run / "state.json").write_text(json.dumps(state))
+            if session:
+                (base / "by-session").mkdir(parents=True, exist_ok=True)
+                (base / "by-session" / session).write_text(RID)
+            if live:
+                (run / "live.log").write_text("\n".join(live) + "\n")
+            if blocked:
+                (run / "blocked.jsonl").write_text(
+                    "\n".join(json.dumps({"direction": f"d{i}", "reason": "r"}) for i in range(blocked)) + "\n")
         return repo
 
+    # --- detection (fallback scan: no session id) ---
     def test_active_musician_detected(self):
-        self.assertTrue(musician.is_musician(self._repo(active=True)))
+        self.assertTrue(musician.is_musician(self._repo({"active": True})))
 
     def test_inactive_not_musician(self):
-        self.assertFalse(musician.is_musician(self._repo(active=False)))
+        self.assertFalse(musician.is_musician(self._repo({"active": False})))
 
     def test_plain_repo_not_musician(self):
         self.assertFalse(musician.is_musician(tempfile.mkdtemp()))
@@ -30,7 +39,41 @@ class TestMusician(unittest.TestCase):
         self.assertFalse(musician.is_musician(None))
 
     def test_cycle_count(self):
-        self.assertEqual(musician.cycle_count(self._repo(active=True, cycle=5)), 5)
+        self.assertEqual(musician.cycle_count(self._repo({"active": True, "cycle": 5})), 5)
+
+    # --- precise resolution via the by-session pointer ---
+    def test_pointer_resolution(self):
+        repo = self._repo({"active": True, "cycle": 3}, session="sess-xyz")
+        self.assertTrue(musician.is_musician(repo, "sess-xyz"))
+        self.assertEqual(musician.cycle_count(repo, "sess-xyz"), 3)
+
+    # --- rich info ---
+    def test_musician_info_rich(self):
+        repo = self._repo(
+            {"active": True, "status": "working", "run_id": RID, "cycle": 4,
+             "no_progress_streak": 1, "entry": "task", "ultracode": True,
+             "input": "fix the flaky login test", "done_when": "test passes 10x in a row"},
+            session="s1",
+            live=["12:00:01 cycle 4   $ npm test", "12:00:09 cycle 4   ▶ cc-tools:do"],
+            blocked=2)
+        info = musician.musician_info(repo, "s1")
+        self.assertEqual(info["status"], "working")
+        self.assertEqual(info["input"], "fix the flaky login test")
+        self.assertEqual(info["done_when"], "test passes 10x in a row")
+        self.assertEqual(info["cycle"], 4)
+        self.assertTrue(info["ultracode"])
+        self.assertEqual(info["blocked_count"], 2)
+        self.assertEqual(info["last_action"], "12:00:09 cycle 4   ▶ cc-tools:do")
+
+    def test_info_none_when_inactive(self):
+        self.assertIsNone(musician.musician_info(self._repo({"active": False})))
+
+    def test_live_tail(self):
+        repo = self._repo({"active": True}, session="s2",
+                          live=[f"line {i}" for i in range(30)])
+        tail = musician.live_tail(repo, "s2", n=5)
+        self.assertEqual(tail, [f"line {i}" for i in range(25, 30)])
+
 
 if __name__ == "__main__":
     unittest.main()
