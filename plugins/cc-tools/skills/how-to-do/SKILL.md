@@ -216,7 +216,7 @@ framing:             ok | reframe(<the *how* was mis-framed — restart Phase 0>
 During the build, reality is re-checked against these — so each one must be _falsifiable_: a
 condition a fresh reader could confirm true or false by looking, never a vibe. A vague kill_signal
 can't be checked and protects nothing; a sharp one ("the library buffers instead of streams")
-catches the drift the moment it surfaces. This is why Phase 4 persists them to disk.
+catches the drift the moment it surfaces. This is why Phase 4 carries them into the build hand-off.
 
 Keep `decision`'s plan sketch **thin** — _what_ approach won and _why_. The ordered build
 checklist (and any written plan) is **do's** Stage 1, not synthesis's job: how-to-do
@@ -240,24 +240,21 @@ direction (no human in the loop) how-to-do rules on itself.
 
 **For one item** (a standalone fork, or one entry of a list), in one pass:
 
-1. **Persist the decision record** to `.claude/ccharness/decisions/<slug>.md` — the synthesis
-   contract verbatim (`decision`, `robust_core`, `assumptions` + their `kill_signal`s,
-   `beaten_alternatives`). This is the durable artifact the build re-checks against; it must
-   outlive this context, because drift surfaces long after the decision scrolls out of view.
-2. Present, tightly:
+1. Present, tightly:
    - the **decision** and its one-line justification,
    - the **decision_axes** — each with _your_ ruling and why, recommendation first (you decide
      them; you do not hand the human a quiz to fill in),
    - the **assumptions** it rests on (each with its `kill_signal`).
-3. Hand the decided approach to **`cc-tools:do`** (the funnel's build stage) by
-   default, **without waiting** — and make the veto cheap and explicit, e.g.:
+2. Hand the decided approach to **`cc-tools:do`** (the funnel's build stage) by
+   default, **without waiting** — carry the synthesis contract (`decision`, `robust_core`,
+   `assumptions` + their `kill_signal`s, `beaten_alternatives`) into the hand-off so the build
+   re-checks against it as drift surfaces. Make the veto cheap and explicit, e.g.:
    _"Building this via do unless you redirect — say so to change direction, or to stop
    at the decision."_
 
 **For a list** (from what-to-do): first **order and relate** the items — rank order by default,
 but pull dependencies earlier and fold any that overlap. Then walk the list, running the
-per-item pass above for each: **one decision record, one do hand-off, one veto line —
-per item.** Heavy items (ADD/REBUILD) are decided individually; the light FINISH/REFACTOR group
+per-item pass above for each: **one do hand-off, one veto line — per item.** Heavy items (ADD/REBUILD) are decided individually; the light FINISH/REFACTOR group
 is reasoned in one pass but still **fans out to a per-item build** so each lands as its own
 commit. The cadence is **autonomous, veto-only** by default — the human curated the list by
 checking boxes, so you don't re-ask between items; you build them in rank order and they
@@ -275,7 +272,7 @@ The same veto is your stop — say so and how-to-do ends at the decision instead
 depth **seeded by move** (ADD/REBUILD grill properly · FINISH/REFACTOR light), fast path the floor ·
 `1` Compass — 4 partisan poles, parallel, low-conviction valve · `2` Grill — opposites cross-examine, harvest
 the ledger (full grill only) · `3` Synthesis — the one objective pass: robust core + live axes +
-scored decision · `4` Hand off — per item: persist record, resolve axes, flow into do (veto per item) —
+scored decision · `4` Hand off — per item: resolve axes, flow into do (veto per item) —
 **unless** synthesis flagged the human-picked direction itself as wrong (`flag_to_human`) → stop &
 surface, don't build; a **list** → order/relate, then one approach + one commit per item, autonomous
 veto-only.
