@@ -1,6 +1,26 @@
 {
-  "description": "cc-agent Stop hooks. (1) musician-stop.sh — the bounded loop: while a musician is active for this session it re-feeds one cycle per Stop, releasing when the musician self-closes (achieved/declined/gave-up/capped), suspends (awaiting), or is cancelled. (2) nonstop-stop.sh — the OPTIONAL between-pieces layer: a no-op unless nonstop is armed (/nonstop-on); when armed and the musician has CLOSED, it blocks the stop and re-launches /musician (open mode) for the next piece — the musician's own brain picks the next roadmap milestone, nonstop only re-invokes it. The two never block on the same Stop (musician blocks on active:true, nonstop on active:false).",
+  "description": "cc-agent hooks. Stop: (1) musician-stop.sh — the bounded loop: while a musician is active for this session it re-feeds one cycle per Stop, releasing when the musician self-closes (achieved/declined/gave-up/capped), suspends (awaiting), or is cancelled. (2) nonstop-stop.sh — the OPTIONAL between-pieces layer: a no-op unless nonstop is armed (/nonstop-on); when armed and the musician has CLOSED, it blocks the stop and re-launches /musician (open mode) for the next piece — the musician's own brain picks the next roadmap milestone, nonstop only re-invokes it. The two never block on the same Stop (musician blocks on active:true, nonstop on active:false). PreToolUse/PostToolUse: musician-observe.sh — a read-only witness that, while a musician is active for this session, appends one line per tool call to the run's live.log so the work is visible from outside; it never blocks or alters a tool.",
   "hooks": {
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/musician-observe.sh\" pre"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/musician-observe.sh\" post"
+          }
+        ]
+      }
+    ],
     "Stop": [
       {
         "hooks": [

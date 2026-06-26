@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+# musician-watch — follow the live action feed of the musician running in this repo.
+# Run it in a separate terminal while a musician works to see, in real time, which instruments it
+# calls and roughly what it is doing. Plain `tail -f` on the same file works too.
+set -u
+
+LOG=".claude/ccharness/musician/live.log"
+if [ ! -f "$LOG" ]; then
+  echo "No musician live feed here ($LOG)."
+  echo "Start one with /musician, then run this again."
+  exit 0
+fi
+
+echo "🎼 watching $LOG  —  Ctrl-C to stop"
+exec tail -n 40 -f "$LOG"

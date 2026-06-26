@@ -42,6 +42,7 @@ one piece of work, to its end, then stop. Want another — launch it again.
                     ultracode, awaiting, outcome, …}
     blocked.jsonl  directions handed back during this piece of work
     log.jsonl      one line per cycle
+    live.log       live action feed — one line per tool call (see "Watching a run live")
 ```
 
 `outcome` is one of `achieved` / `declined` / `gave-up` / `capped` (or `null`
@@ -61,6 +62,24 @@ A single `Stop` hook drives the loop:
 
 It fails **closed**: while a musician state file is active for this session (or present but
 unparseable), the hook re-feeds — so a real task is never accidentally dropped mid-flight.
+
+## Watching a run live
+
+A musician reasons inside its own session window, invisible from outside. A `PreToolUse` /
+`PostToolUse` hook — `musician-observe.sh` — makes the work visible **as it happens**: while a
+musician is active for this session, it appends one line per tool call to `live.log` — the
+instrument it called (`crux` / `what-to-do` / `how-to-do` / `do`), a shell command, a file edit, a
+spawned subagent — with the cycle number. It is a read-only witness: it **never blocks or alters a
+tool**, and logging is best-effort (skipped if it can't parse the input).
+
+Follow it from another terminal while the musician works:
+
+```
+bin/musician-watch        # or: tail -f .claude/ccharness/musician/live.log
+```
+
+The model's hidden chain-of-thought is not a tool call and is not captured — its spoken narration
+and every action are.
 
 ## Dependencies & supervision
 
