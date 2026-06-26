@@ -112,6 +112,16 @@ class TestMusicianSkill(unittest.TestCase):
         self.assertIn("forward intention", self.text.lower())
         self.assertIn("roadmap-proposals.md", self.text)
 
+    def test_conductor_delegates_to_subagents(self):
+        # User-reported failure: the musician did the work in its own context — edited product
+        # code inline instead of delegating. The orchestrator boundary is load-bearing: every
+        # work-unit is a dispatched subagent, and the musician never writes product code inline.
+        lowered = self.text.lower()
+        self.assertIn("conduct", lowered)
+        self.assertIn("subagent", lowered)
+        self.assertIn("work-unit", lowered)
+        self.assertIn("never write product code", lowered)
+
     def test_no_autopilot_residue(self):
         # The whole point of the redesign: no autopilot / semipilot / milestone-walking loop left.
         lowered = self.text.lower()
