@@ -52,12 +52,18 @@ class TestArmTaskMode(unittest.TestCase):
 
     def test_flags_parsed_prompt_preserved(self):
         repo = tempfile.mkdtemp()
-        out, _, _ = run_arm(repo, "make it fast --ultracode --max-cycles 5 --give-up-after 2")
+        out, _, _ = run_arm(repo, "make it fast --ultracode")
         st = state_of(repo, out["RUN_ID"])
         self.assertTrue(st["ultracode"])
-        self.assertEqual(st["max_cycles"], 5)
-        self.assertEqual(st["max_no_progress"], 2)
         self.assertEqual(st["input"], "make it fast")  # flags stripped from the prompt
+
+    def test_no_give_up_or_cap_bounds(self):
+        # The give-up / cycle-cap machinery is gone: no bounds in state, the flags are inert.
+        repo = tempfile.mkdtemp()
+        out, _, _ = run_arm(repo, "make it fast --max-cycles 5 --give-up-after 2")
+        st = state_of(repo, out["RUN_ID"])
+        for gone in ("max_cycles", "max_no_progress", "no_progress_streak"):
+            self.assertNotIn(gone, st)
 
     def test_multiline_prompt_not_truncated(self):
         # A pasted multi-line task must not lose everything after line 1 (verbatim-capture intent).
@@ -99,7 +105,7 @@ class TestArmResume(unittest.TestCase):
         first, _, _ = run_arm(repo, "long task")
         rid = first["RUN_ID"]
         # simulate a close, then a resume from a different (new) session
-        st = state_of(repo, rid); st["active"] = False; st["status"] = "gave-up"
+        st = state_of(repo, rid); st["active"] = False; st["status"] = "blocked"
         (Path(repo) / MUS / "runs" / rid / "state.json").write_text(json.dumps(st))
         out, _, _ = run_arm(repo, f"--resume {rid}", session="new-9999")
         self.assertEqual(out.get("RESUMED"), rid)

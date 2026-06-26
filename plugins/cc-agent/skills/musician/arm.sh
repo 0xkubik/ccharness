@@ -9,7 +9,7 @@
 # steps inline.
 #
 # Usage:  musician-arm.sh "<raw $ARGUMENTS>"
-#   Flags in the argument string: --ultracode  --give-up-after N  --max-cycles N  --resume <run-id>
+#   Flags in the argument string: --ultracode  --resume <run-id>
 #   Everything else = the task/problem prompt (empty -> open mode).
 # Env:    CLAUDE_CODE_SESSION_ID — the session that owns the run (required to write the pointer).
 #
@@ -29,7 +29,7 @@ STALE_MIN=30
 now_iso() { date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || echo "1970-01-01T00:00:00Z"; }
 
 # --- parse the argument string: pull known flags, the rest is the prompt ---
-ULTRA=false; MAXNP=3; MAXCYC=20; RESUME=""; PROMPT=""
+ULTRA=false; RESUME=""; PROMPT=""
 # -d '' reads the WHOLE argument (incl. any newlines) into the array — a multi-line prompt is not
 # truncated; flag detection still works word-by-word (the rejoined prompt normalizes whitespace).
 IFS=$' \t\n' read -r -d '' -a _a <<< "${1:-}" || true
@@ -37,8 +37,6 @@ _i=0; _n=${#_a[@]}
 while [ "$_i" -lt "$_n" ]; do
   case "${_a[$_i]}" in
     --ultracode)     ULTRA=true ;;
-    --give-up-after) _i=$((_i+1)); MAXNP="${_a[$_i]:-3}" ;;
-    --max-cycles)    _i=$((_i+1)); MAXCYC="${_a[$_i]:-20}" ;;
     --resume)        _i=$((_i+1)); RESUME="${_a[$_i]:-}" ;;
     *)               PROMPT="${PROMPT:+$PROMPT }${_a[$_i]}" ;;
   esac
@@ -76,11 +74,10 @@ mkdir -p "$RUN_DIR"
 tmp="$RUN_DIR/state.json.tmp.$$"
 jq -n \
   --arg run_id "$RUN_ID" --arg sid "$SID" --arg input "$PROMPT" --arg entry "$ENTRY" \
-  --argjson ultra "$ULTRA" --argjson maxnp "$MAXNP" --argjson maxcyc "$MAXCYC" \
+  --argjson ultra "$ULTRA" \
   --arg started "$(now_iso)" \
   '{active:true, status:"working", run_id:$run_id, session_id:$sid, mode:"musician",
-    entry:$entry, input:$input, done_when:"", cycle:0, no_progress_streak:0,
-    max_no_progress:$maxnp, max_cycles:$maxcyc, ultracode:$ultra,
+    entry:$entry, input:$input, done_when:"", cycle:0, ultracode:$ultra,
     started_at:$started, last_surveyed_sha:"", awaiting:null, outcome:null}' \
   > "$tmp" && mv "$tmp" "$RUN_DIR/state.json"
 

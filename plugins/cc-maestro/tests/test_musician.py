@@ -51,7 +51,7 @@ class TestMusician(unittest.TestCase):
     def test_musician_info_rich(self):
         repo = self._repo(
             {"active": True, "status": "working", "run_id": RID, "cycle": 4,
-             "no_progress_streak": 1, "entry": "task", "ultracode": True,
+             "entry": "task", "ultracode": True,
              "input": "fix the flaky login test", "done_when": "test passes 10x in a row"},
             session="s1",
             live=["12:00:01 cycle 4   $ npm test", "12:00:09 cycle 4   ▶ cc-tools:do"],

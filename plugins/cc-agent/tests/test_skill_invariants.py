@@ -16,15 +16,17 @@ class TestMusicianSkill(unittest.TestCase):
         self.assertIn("DONE", self.text)
         self.assertIn("done_when", self.text)
 
-    def test_all_four_exits(self):
-        # achieved (done), declined (smart no), gave-up/capped (tried, couldn't).
-        for token in ("achieved", "declined", "gave-up", "capped"):
+    def test_three_exits_no_giveup_or_cap(self):
+        # The doors out: achieved (done), declined (smart no BEFORE building), blocked
+        # (do tried and couldn't — business blocker or exhausted technical path).
+        for token in ("achieved", "declined", "blocked"):
             self.assertIn(token, self.text)
-        for token in ("max_cycles", "no_progress_streak"):
-            self.assertIn(token, self.text)
+        # The give-up / cycle-cap machinery was removed — it must not creep back.
+        for gone in ("gave-up", "capped", "max_cycles", "no_progress_streak"):
+            self.assertNotIn(gone, self.text)
 
     def test_decline_is_first_class(self):
-        # The load-bearing new exit: the brain can refuse BEFORE building, distinct from gave-up.
+        # The load-bearing exit: the brain can refuse BEFORE building, distinct from blocked.
         self.assertIn("declined", self.text)
         self.assertIn("decline", self.text.lower())
         # ...and it is fed by the critical-thinking instrument.

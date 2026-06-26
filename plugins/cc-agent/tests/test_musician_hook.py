@@ -63,7 +63,7 @@ class TestMusicianHook(unittest.TestCase):
         self.assertIn("block", out)
 
     def test_inactive_allows_stop(self):
-        # active:false — the musician self-closed (achieved/declined/gave-up/capped).
+        # active:false — the musician self-closed (achieved/declined/blocked).
         repo = repo_with({"active": False, "session_id": SESSION})
         rc, out = run_hook(repo, {"session_id": SESSION})
         self.assertEqual(rc, 0)

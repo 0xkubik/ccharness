@@ -1,6 +1,6 @@
 ---
 description: "Hand the project ONE thing to carry to a real finish — a task, problem, or idea. The musician thinks it through (and may DECLINE or reframe a bad idea), forges its own definition of done, builds to that done via the cc-tools funnel, then closes. With a prompt: think → build. Without one: find a direction itself via what-to-do → build. Bounded and self-closing."
-argument-hint: "[task / problem / idea — or nothing to let it find the work] [--give-up-after N] [--max-cycles N] [--ultracode]"
+argument-hint: "[task / problem / idea — or nothing to let it find the work] [--ultracode]"
 ---
 
 Invoke the `musician` skill to arm and run the BOUNDED performer loop, with this argument:
@@ -18,7 +18,8 @@ The musician is the project's brain for ONE piece of work. It plays the cc-tools
 
 It is **bounded and self-closing**: one piece of work, to its end, then stop — there is no
 never-stop loop above it. Exits: **achieved** (done), **declined** (the brain said no — a success,
-not a failure), **gave-up / capped** (tried, couldn't). Open mode
+not a failure), **blocked** (tried, couldn't build it — a business blocker or an exhausted technical
+path; no try-count, no cycle cap). Open mode
 needs the North Star — with none it routes you to **`/find-goal`**.
 
 `--ultracode` forces maximum parallelism in the build step (mandatory Workflow + parallel subagents +

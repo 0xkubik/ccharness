@@ -85,7 +85,6 @@ def musician_info(cwd, session_id=None):
         "input": st.get("input"),
         "done_when": st.get("done_when"),
         "cycle": st.get("cycle"),
-        "no_progress_streak": st.get("no_progress_streak"),
         "awaiting": st.get("awaiting"),
         "ultracode": bool(st.get("ultracode")),
         "started_at": st.get("started_at"),

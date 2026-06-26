@@ -107,7 +107,7 @@ def render_musician_detail(row, now=None):
     lines = [
         f"musician {row['id']}  ({row.get('cwd') or '?'})",
         f"  run_id   {m.get('run_id')}",
-        f"  status   {m.get('status')}  (cycle {m.get('cycle')}, streak {m.get('no_progress_streak')}{extra})",
+        f"  status   {m.get('status')}  (cycle {m.get('cycle')}{extra})",
         f"  entry    {m.get('entry')}",
         f"  asked    {m.get('input') or '(open mode — found its own direction)'}",
         f"  goal     {m.get('done_when') or '(not forged yet)'}",

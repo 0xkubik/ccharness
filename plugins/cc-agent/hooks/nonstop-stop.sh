@@ -65,7 +65,7 @@ fi
 
 # 5. Armed + musician CLOSED for this session -> BLOCK and ask the model to re-launch the musician.
 #    The musician's brain decides WHAT to do; we only re-invoke it (or stop on its "nothing left" verdict).
-REASON='🔁 nonstop is ARMED and the musician just CLOSED — do NOT stop. Read its outcome in the run state.json under .claude/ccharness/musician/runs/<run-id>/ (resolve <run-id> from .claude/ccharness/musician/by-session/$CLAUDE_CODE_SESSION_ID). If outcome is "declined" (open-mode: nothing worth doing — the roadmap frontier is exhausted), run /nonstop-off and stop. Otherwise (achieved / gave-up / capped) re-launch the musician for the next piece: invoke /musician with NO prompt (open mode) — it picks the next roadmap milestone itself via what-to-do and its git-notes awareness; you do NOT pick or plan, you only re-invoke. If /musician cannot arm (no North Star), run /nonstop-off and stop. /nonstop-off to disarm; Esc to interrupt.'
+REASON='🔁 nonstop is ARMED and the musician just CLOSED — do NOT stop. Read its outcome in the run state.json under .claude/ccharness/musician/runs/<run-id>/ (resolve <run-id> from .claude/ccharness/musician/by-session/$CLAUDE_CODE_SESSION_ID). If outcome is "declined" (open-mode: nothing worth doing — the roadmap frontier is exhausted), run /nonstop-off and stop. Otherwise (achieved / blocked) re-launch the musician for the next piece: invoke /musician with NO prompt (open mode) — it picks the next roadmap milestone itself via what-to-do and its git-notes awareness; you do NOT pick or plan, you only re-invoke. If /musician cannot arm (no North Star), run /nonstop-off and stop. /nonstop-off to disarm; Esc to interrupt.'
 
 if command -v jq >/dev/null 2>&1; then
   jq -n --arg r "$REASON" \

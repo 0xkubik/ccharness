@@ -23,9 +23,10 @@ one piece of work, to its end, then stop. Want another — launch it again.
   - **achieved** — the done-check is met.
   - **declined** — the brain ruled the work shouldn't happen (leave-it / wrong problem / an
     intent-changing reframe, or — in open mode — nothing worth doing). A smart "no" is a success,
-    not a failure; it is distinct from `gave-up`.
-  - **gave-up / capped** — *tried and couldn't*: `no_progress_streak ≥ max_no_progress` (default 3)
-    or `cycle ≥ max_cycles` (default 20).
+    not a failure; it is distinct from `blocked`.
+  - **blocked** — *tried and couldn't build it*: the `do` subagent hit a business / non-technical
+    blocker it refuses, or the technical path is exhausted (how-to-do has no new buildable approach
+    left). There is no try-count and no cycle cap — one real blocker closes the run.
 - **Open mode requires a roadmap's North Star** (it leans on `what-to-do`). None → `/find-goal` first.
 - `/musician-cancel` is the manual brake.
 - `--ultracode` forces maximum parallelism in the build (mandatory Workflow + parallel subagents +
@@ -42,8 +43,7 @@ Each run gets its OWN folder so many runs in one repo never collide:
       state.json             loop control + identity
                              {active, status, run_id, session_id, mode:"musician",
                               entry:"task"|"open", input (the original prompt, verbatim), done_when,
-                              cycle, no_progress_streak, max_no_progress, max_cycles, ultracode,
-                              awaiting, outcome, …}
+                              cycle, ultracode, awaiting, outcome, …}
       blocked.jsonl          directions handed back during this run
       log.jsonl              one line per cycle
       live.log               live action feed — one line per tool call (see "Watching a run live")
@@ -52,16 +52,16 @@ Each run gets its OWN folder so many runs in one repo never collide:
 ```
 
 `status` is the human-readable lifecycle label — `working` / `suspended` / `achieved` / `declined`
-/ `gave-up` / `capped` / `cancelled`. `outcome` carries the same terminal value (or `null` while
+/ `blocked` / `cancelled`. `outcome` carries the same terminal value (or `null` while
 running); `active` + `awaiting` are what the hooks gate on. A non-null `awaiting` object means the
-loop is **suspended** on async work or a transient outage — not done, not given up; the awaited
+loop is **suspended** on async work or a transient outage — not done, not blocked; the awaited
 task's completion notification resumes it.
 
 ## Arm & crash recovery
 
 `/musician` runs `skills/musician/arm.sh` first — the deterministic setup the skill used to
-hand-write: it parses the flags (`--ultracode` / `--give-up-after N` / `--max-cycles N` /
-`--resume <run-id>`), runs the open-mode North-Star gate, forges the `run_id`, writes `state.json` +
+hand-write: it parses the flags (`--ultracode` / `--resume <run-id>`), runs the open-mode North-Star
+gate, forges the `run_id`, writes `state.json` +
 the pointer + the record files, and **scans for crashed runs**. The brain stays in the skill; only
 the bookkeeping is in the script.
 
@@ -81,7 +81,7 @@ The hook finds THIS session's run via the `by-session/<session-id>` pointer (see
 | --- | --- |
 | this session's run active | blocks (re-feeds one cycle) |
 | active but `awaiting` set | yields (suspended — terminal frees, no turn burned) |
-| `active:false` (achieved / declined / gave-up / capped / cancelled) | yields (session ends) |
+| `active:false` (achieved / declined / blocked / cancelled) | yields (session ends) |
 | no pointer for this session | yields (the common case — most Stops have no musician) |
 
 It fails **closed** where it matters: if this session has a run pointer but its `state.json` is
