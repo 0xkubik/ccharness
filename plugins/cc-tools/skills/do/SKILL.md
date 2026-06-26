@@ -161,12 +161,10 @@ If you change anything, return to Stage 4 and re-verify.
 
 ## Stage 6 — Commit (local only)
 
-1. Make a **local commit** with `commit-commands:commit` (it crafts the message; honor the
-   repo's commit conventions).
-2. **STOP before push / PR / MR.** Do not push or open a merge request.
-3. Report the commit, then offer the next step — auto-detected from the git remote: a GitLab
-   remote → the `gitlab` MR tools; otherwise `commit-commands:commit-push-pr`. The human
-   triggers it.
+1. Make a **local commit** with `git` directly — craft a message in the repo's commit style.
+2. **STOP before push / PR.** Do not push or open a pull request.
+3. Report the commit, then offer the next step — push and open a PR (auto-detected from the git
+   remote). The human triggers it.
 
 ---
 

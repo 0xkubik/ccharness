@@ -87,7 +87,7 @@ forced to.
 | **3** | **Implement** | Its own goal-loop drives the checklist to completion; TDD where a harness exists. |
 | **4** | **Verify & debug** | Mandatory. Build/tests/lint (and `playwright` for UI), evidence before claims; `superpowers:systematic-debugging` on failures. Loops 3↔4 until green. |
 | **5** | **Review & simplify** *(optional)* | For non-trivial code: `code-review` + the `code-simplifier` agent, triaged through `superpowers:receiving-code-review`. |
-| **6** | **Commit** | A local commit via `commit-commands`. Stops before push/PR and offers the next step (GitLab MR or PR, auto-detected from the remote). |
+| **6** | **Commit** | A local `git` commit. Stops before push/PR and offers the next step (push + open a PR, auto-detected from the remote). |
 
 **The slap link:** while implementing, do keeps a per-problem strike counter. Three
 failed attempts at the same problem → it runs the **slap** protocol, picks a fresh angle
@@ -104,12 +104,13 @@ Routine, reversible calls it just makes, and keeps moving.
 
 cc-tools is glue — it routes to skills/plugins you already have installed: `superpowers`
 (brainstorming, plans, TDD, subagents, debugging), `claude-md-management`, `frontend-design`,
-`code-simplifier`, `ralph-loop`, `code-review`, and `gitlab`. Missing plugins simply mean those
-routes aren't taken. (`playwright` for UI verification now ships with Claude Code, and the commit
-step works without `commit-commands`, so `/cc-init` no longer installs either.)
+`code-simplifier`, `ralph-loop`, and `code-review`. Missing plugins simply mean those routes
+aren't taken. (`playwright` for UI verification now ships with Claude Code, and commits/PRs are
+handled with `git` directly — so `/cc-init` no longer installs `playwright`, `commit-commands`,
+or `gitlab`.)
 
 This list is the **source of truth** for what `/cc-init` installs — its dependency
-table mirrors these seven plugins. Add or drop a dependency here, and update the table in
+table mirrors these six plugins. Add or drop a dependency here, and update the table in
 `commands/cc-init.md` to match.
 
 Beyond the marketplace set, `/cc-init` also **offers** two external MCP tools it doesn't bundle —

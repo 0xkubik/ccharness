@@ -138,10 +138,10 @@ class TestCcInitWizard(unittest.TestCase):
         self.assertIn("npm install -g @colbymchenry/codegraph", self.text)
         self.assertIn('pip install "headroom-ai[all]"', self.text)
 
-    def test_playwright_and_commit_commands_dropped_from_install_set(self):
-        # playwright now ships with Claude Code; commits are handled directly — neither is installed.
-        self.assertNotIn("playwright", self.text)
-        self.assertNotIn("commit-commands", self.text)
+    def test_dropped_plugins_absent_from_install_set(self):
+        # playwright ships with Claude Code, commits/PRs use git directly, gitlab dropped — none installed.
+        for name in ("playwright", "commit-commands", "gitlab", "GitLab"):
+            self.assertNotIn(name, self.text)
 
     def test_stage2_from_plugin_root_to_project_rules(self):
         self.assertIn("CLAUDE_PLUGIN_ROOT", self.text)

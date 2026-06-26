@@ -47,7 +47,6 @@ All of these live in the official marketplace `claude-plugins-official`
 | `code-simplifier` | the simplify pass (do stage 5) |
 | `ralph-loop` | long autonomous build loops (do stage 2) |
 | `code-review` | the review pass (do stage 5) |
-| `gitlab` | GitLab MR path at push time (do stage 6) |
 
 > **Source of truth:** this table mirrors the "What it orchestrates" section of
 > `plugins/cc-tools/README.md`. If you add or drop a dependency, update **both**.
@@ -74,9 +73,9 @@ claude plugin list < /dev/null
 
 From the output determine:
 - whether the `claude-plugins-official` marketplace is already configured, and
-- which of the seven plugins above are already installed (any scope counts).
+- which of the six plugins above are already installed (any scope counts).
 
-**3. Gate + show the plan.** If nothing is missing, report "all seven dependencies already installed
+**3. Gate + show the plan.** If nothing is missing, report "all six dependencies already installed
 — nothing to do" and move straight on to the recommended external tools below (no gate needed). Otherwise print a short plan
 listing the marketplace add (only if not configured) and the **missing** plugins, noting the
 already-installed ones will be **skipped**, and state that installation is **user scope**
