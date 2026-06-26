@@ -20,6 +20,10 @@ installed this rule precisely so they never have to answer "should I commit now?
   needs to exist remotely for a PR. Use your judgment on timing.
 - **Write honest, conventional messages.** Describe what actually changed and why, in the style the
   repo already uses. Never claim work that wasn't done.
+- **Keep `.gitignore` current.** Owning the history includes owning what's tracked. When build
+  outputs, logs, local or editor config, dependency directories, or other generated junk show up in
+  the tree, add them to `.gitignore` instead of committing them or leaving them as noise — and never
+  let secrets near a commit. Match the patterns the repo already uses.
 - **The floor (still off-limits without an explicit go-ahead).** Don't rewrite or force-push shared
   history, don't delete remote branches, and don't commit secrets or generated junk. Autonomy is
   over the normal forward flow — not destructive or irreversible operations.
