@@ -129,13 +129,20 @@ class TestCcInitWizard(unittest.TestCase):
         self.assertIn("<cheatsheet>", self.text)
         self.assertIn("</cheatsheet>", self.text)
 
-    def test_cheatsheet_requires_approval_with_per_line_justification(self):
+    def test_cheatsheet_is_user_selected_paginated_with_justification(self):
         low = self.text.lower()
-        self.assertIn("never write it unprompted", low)  # no silent write
-        self.assertIn("approve as-is", low)              # the approve/edit gate
-        self.assertIn("let me edit it", low)
-        self.assertIn("justification", low)              # per-line reasoning
+        self.assertIn("multiselect", low)                       # tick lines, not a wall of text
+        self.assertIn("paginated", low)                         # AskUserQuestion page by page
+        self.assertIn("only the ticked lines are written", low)  # no silent write
+        self.assertIn("justification", low)                     # carried per option
         self.assertIn("what you saw", low)
+
+    def test_cheatsheet_excludes_project_specifics(self):
+        # Hard scope rule: only always-loaded tooling, nothing tied to this project.
+        low = self.text.lower()
+        self.assertIn("nothing project-specific", low)
+        for src in ("plugins", "skills", "agents", "mcp"):
+            self.assertIn(src, low)
 
     def test_stage1_antihang_preserved(self):
         # The </dev/null guard on `claude plugin` calls must survive the rewrite.

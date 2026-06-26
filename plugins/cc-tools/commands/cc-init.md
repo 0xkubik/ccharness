@@ -1,5 +1,5 @@
 ---
-description: "5-stage onboarding wizard for the cc-* harness, driven by AskUserQuestion. Stage 1 installs missing marketplace dependencies and offers the recommended external tools (codegraph, headroom); Stage 2 installs the harness's recommended rules into this project's .claude/rules/; Stage 3 builds the reminder cheat-sheet a UserPromptSubmit hook re-surfaces every few prompts so the project's tools and rules don't fade from attention; Stage 4 reconciles the project's prose docs against your current understanding so stale text doesn't mislead later decisions; Stage 5 offers to run /find-goal. Every stage is offered and skippable; idempotent — safe to re-run."
+description: "5-stage onboarding wizard for the cc-* harness, driven by AskUserQuestion. Stage 1 installs missing marketplace dependencies and offers the recommended external tools (codegraph, headroom); Stage 2 installs the harness's recommended rules into this project's .claude/rules/; Stage 3 builds the reminder cheat-sheet — the always-loaded plugins, skills, agents, and MCP, nothing project-specific — that a UserPromptSubmit hook re-surfaces every few prompts; Stage 4 reconciles the project's prose docs against your current understanding so stale text doesn't mislead later decisions; Stage 5 offers to run /find-goal. Every stage is offered and skippable; idempotent — safe to re-run."
 argument-hint: "(no arguments)"
 ---
 
@@ -10,8 +10,9 @@ so you choose what happens at every step:
 
 1. **Install dependencies** — the marketplace plugins the harness orchestrates.
 2. **Install rules** — the harness's recommended rule files, into this project's `.claude/rules/`.
-3. **Build the reminder cheat-sheet** — scan what's installed (MCP servers, rules, skills) and
-   write a short cheat-sheet a hook re-surfaces every few prompts so it doesn't fade from context.
+3. **Build the reminder cheat-sheet** — inventory the always-loaded tooling (plugins, skills,
+   agents, MCP — nothing project-specific) and write a short cheat-sheet a hook re-surfaces every
+   few prompts so it doesn't fade from context.
 4. **Reconcile docs with reality** — check the project's prose docs against your current
    understanding so stale text doesn't quietly steer later decisions.
 5. **Offer `/find-goal`** — set the product's North Star.
@@ -175,11 +176,17 @@ session.
 
 ## Stage 3 — Build the reminder cheat-sheet
 
-Over a long session the model's attention to the project's tools and rules fades — it drifts back
-to its habitual moves (raw `grep`/`Read` instead of an indexed code search, ignoring a project
-rule). This stage writes a short cheat-sheet that a shipped `UserPromptSubmit` hook re-surfaces
-**every third prompt**, near the end of the context where it's most visible. The hook is dumb — it
-just prints this file; all the intelligence happens here, once.
+Over a long session the model's attention to the capabilities it loaded at startup fades — it
+drifts back to its habitual moves (raw `grep`/`Read` instead of an indexed code search, forgetting
+a skill or agent it could dispatch). This stage writes a short cheat-sheet that a shipped
+`UserPromptSubmit` hook re-surfaces **every third prompt**, near the end of the context where it's
+most visible. The hook is dumb — it just prints this file; all the intelligence happens here, once.
+
+**The cheat-sheet only ever reminds of the always-loaded tooling** — the plugins, skills, agents,
+and MCP servers that come into *every* session automatically. **Nothing project-specific goes in
+it** — not the project's rules, code, conventions, or roadmap. Those already live in `CLAUDE.md` /
+`.claude/rules`; what the model forgets is the *capabilities* it has, so the sheet reminds of only
+those.
 
 **1. Gate** with `AskUserQuestion`:
 - question: "Build the reminder cheat-sheet for this project?"
@@ -187,45 +194,45 @@ just prints this file; all the intelligence happens here, once.
 
 On **Skip** → go to Stage 4. On **Stop** → end the wizard.
 
-**2. Take inventory of what's actually available here** — three sources:
-- **MCP servers** — the tools this session is connected to (cross-check with
-  `claude mcp list < /dev/null`); flag the ones worth preferring over a built-in (an indexed code
-  search over raw `grep`, a docs fetcher over memory).
-- **Rules** — `ls .claude/rules/*.md < /dev/null`; read each `# ` heading for what it governs.
-- **Skills** — the installed plugin skills worth reaching for (e.g. `/slap`, `/crux`, the funnel).
+**2. Inventory the always-loaded capabilities** — the things that come into *every* session
+automatically, NOT anything tied to this project:
+- **Plugins** — `claude plugin list < /dev/null` (the installed set).
+- **Skills** — the slash-skills this session exposes (e.g. `/crux`, `/slap`, the funnel).
+- **Agents** — the subagent types available to dispatch (e.g. `Explore`, `Plan`).
+- **MCP servers** — `claude mcp list < /dev/null`; flag the ones worth preferring over a built-in
+  (an indexed code search over raw `grep`, a docs fetcher over memory).
 
-**3. Draft the cheat-sheet** — a handful of lines, each in the shape *situation → preferred move*,
-plain and specific to THIS project. Keep it short (aim for ≤10 lines); a long sheet becomes
-wallpaper the model also learns to skip.
+**Do not** read `.claude/rules`, the codebase, or the roadmap for this — project specifics never
+belong in the cheat-sheet.
 
-**4. Enforce the width limit on the draft — strictly ≤ 80 characters per line.** Models miscount,
-so check mechanically *before* showing it and fix any offender — re-run until it prints nothing:
+**3. Turn each into a candidate line** — shape *situation → preferred move*, plain, one capability
+per line. Keep the pool tight; a long sheet becomes wallpaper the model also learns to skip.
+
+**4. Enforce the width limit — strictly ≤ 80 characters per line.** Models miscount, so check the
+candidates mechanically and fix any offender — re-run until it prints nothing:
 
 ```
-printf '%s\n' "<each drafted line>" | awk 'length > 80 {print NR": "length" chars"}'
+printf '%s\n' "<each candidate line>" | awk 'length > 80 {print NR": "length" chars"}'
 ```
 
-**5. Present the draft for approval — never write it unprompted.** Show the user the proposed
-cheat-sheet, and for **every line** give a one-line justification: *what you saw* (which MCP
-server, rule, or skill) and *why it earned a line*. If a `cheatsheet.md` already exists, show it
-alongside so they can compare. Then gate with `AskUserQuestion`:
-- question: "Use this cheat-sheet?"
-- options: **Approve as-is** / **Let me edit it**
+**5. Let the user pick the lines — `AskUserQuestion`, `multiSelect: true`, paginated.** Don't
+dump a wall of text for approval; present the candidates as **tickable options** so the user keeps
+only what they want. One option per candidate line, and its **description carries the
+justification** — *what you saw* (which plugin / skill / agent / MCP) and *why it earned a line*.
+The tool caps a question at **4 options**, so split the candidates across several `multiSelect`
+questions of ≤4 options each (up to 4 questions per call; more than that → further calls, page by
+page). **Only the ticked lines are written**; `Other` lets the user add a line you didn't list.
 
-On **Let me edit it**, take their changes in plain prose, apply them, re-run the width check from
-step 4, and present the revised draft for approval again — loop until they approve. Write nothing
-until they do.
-
-**6. Write the approved sheet** to `.claude/ccharness/cheatsheet.md` (create `.claude/ccharness/`
-if needed), in this fixed structure — the `<cheatsheet>` / `</cheatsheet>` markers frame the block
-the hook injects, one cheat-sheet line per line between them:
+**6. Write the picked lines** to `.claude/ccharness/cheatsheet.md` (create `.claude/ccharness/` if
+needed), in this fixed structure — the `<cheatsheet>` / `</cheatsheet>` markers frame the block the
+hook injects, one line per line between them:
 
 ```
 <cheatsheet>
 Search code: use the codegraph MCP, not raw grep/Read
-Edits: follow .claude/rules (no-comments, keep-files-lean)
-Lib docs: use the context7 MCP, not memory
+Lib/API docs: use the context7 MCP, not memory
 Stuck on a fix: /slap; murkier doubt: /crux
+Broad multi-file search: dispatch the Explore agent
 </cheatsheet>
 ```
 
