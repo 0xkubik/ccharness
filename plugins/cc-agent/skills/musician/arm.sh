@@ -30,7 +30,9 @@ now_iso() { date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || echo "1970-01-01T00:00:00
 
 # --- parse the argument string: pull known flags, the rest is the prompt ---
 ULTRA=false; MAXNP=3; MAXCYC=20; RESUME=""; PROMPT=""
-read -r -a _a <<< "${1:-}"
+# -d '' reads the WHOLE argument (incl. any newlines) into the array — a multi-line prompt is not
+# truncated; flag detection still works word-by-word (the rejoined prompt normalizes whitespace).
+IFS=$' \t\n' read -r -d '' -a _a <<< "${1:-}" || true
 _i=0; _n=${#_a[@]}
 while [ "$_i" -lt "$_n" ]; do
   case "${_a[$_i]}" in

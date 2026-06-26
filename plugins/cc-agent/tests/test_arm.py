@@ -59,6 +59,14 @@ class TestArmTaskMode(unittest.TestCase):
         self.assertEqual(st["max_no_progress"], 2)
         self.assertEqual(st["input"], "make it fast")  # flags stripped from the prompt
 
+    def test_multiline_prompt_not_truncated(self):
+        # A pasted multi-line task must not lose everything after line 1 (verbatim-capture intent).
+        repo = tempfile.mkdtemp()
+        out, _, _ = run_arm(repo, "fix the parser\nit breaks on tabs")
+        inp = state_of(repo, out["RUN_ID"])["input"]
+        self.assertIn("fix the parser", inp)
+        self.assertIn("it breaks on tabs", inp)  # the second line survived
+
     def test_run_ids_are_unique(self):
         repo = tempfile.mkdtemp()
         a, _, _ = run_arm(repo, "task one")
