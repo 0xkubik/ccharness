@@ -110,11 +110,19 @@ class TestCcInitWizard(unittest.TestCase):
     def test_uses_askuserquestion(self):
         self.assertIn("AskUserQuestion", self.text)
 
-    def test_four_stages_present(self):
+    def test_five_stages_present(self):
         low = self.text.lower()
-        for marker in ("## stage 1", "## stage 2", "## stage 3", "## stage 4"):
+        for marker in ("## stage 1", "## stage 2", "## stage 3", "## stage 4", "## stage 5"):
             self.assertIn(marker, low)
-        self.assertNotIn("## stage 5", low)
+        self.assertNotIn("## stage 6", low)
+
+    def test_cheatsheet_stage_builds_width_capped_sheet(self):
+        # Stage 3 generates the reminder cheat-sheet the UserPromptSubmit hook prints.
+        low = self.text.lower()
+        self.assertIn("cheat-sheet", low)
+        self.assertIn(".claude/ccharness/cheatsheet.txt", self.text)
+        self.assertIn("80 characters", low)  # the hard per-line width limit
+        self.assertIn("claude mcp list", self.text)  # inventories installed MCP servers
 
     def test_stage1_antihang_preserved(self):
         # The </dev/null guard on `claude plugin` calls must survive the rewrite.
@@ -138,10 +146,10 @@ class TestCcInitWizard(unittest.TestCase):
         self.assertNotIn("cc-usage-statusline.sh", self.text)
         self.assertNotIn("CC_USAGE_DOWNSTREAM", self.text)
 
-    def test_stage3_prose_only(self):
+    def test_doc_reconcile_prose_only(self):
         self.assertIn("Code and tests are out of scope", self.text)
 
-    def test_stage4_offers_find_goal(self):
+    def test_offers_find_goal(self):
         self.assertIn("/find-goal", self.text)
 
     def test_idempotent_documented(self):

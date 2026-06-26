@@ -1,18 +1,20 @@
 ---
-description: "4-stage onboarding wizard for the cc-* harness, driven by AskUserQuestion. Stage 1 installs missing marketplace dependencies; Stage 2 installs the harness's recommended rules into this project's .claude/rules/; Stage 3 reconciles the project's prose docs against your current understanding so stale text doesn't mislead later decisions; Stage 4 offers to run /find-goal. Every stage is offered and skippable; idempotent — safe to re-run."
+description: "5-stage onboarding wizard for the cc-* harness, driven by AskUserQuestion. Stage 1 installs missing marketplace dependencies; Stage 2 installs the harness's recommended rules into this project's .claude/rules/; Stage 3 builds the reminder cheat-sheet a UserPromptSubmit hook re-surfaces every few prompts so the project's tools and rules don't fade from attention; Stage 4 reconciles the project's prose docs against your current understanding so stale text doesn't mislead later decisions; Stage 5 offers to run /find-goal. Every stage is offered and skippable; idempotent — safe to re-run."
 argument-hint: "(no arguments)"
 ---
 
-# cc-init — set up the harness in four guided stages
+# cc-init — set up the harness in five guided stages
 
-A guided onboarding wizard. It runs four stages in order, each gated by an `AskUserQuestion` prompt
+A guided onboarding wizard. It runs five stages in order, each gated by an `AskUserQuestion` prompt
 so you choose what happens at every step:
 
 1. **Install dependencies** — the marketplace plugins the harness orchestrates.
 2. **Install rules** — the harness's recommended rule files, into this project's `.claude/rules/`.
-3. **Reconcile docs with reality** — check the project's prose docs against your current
+3. **Build the reminder cheat-sheet** — scan what's installed (MCP servers, rules, skills) and
+   write a short cheat-sheet a hook re-surfaces every few prompts so it doesn't fade from context.
+4. **Reconcile docs with reality** — check the project's prose docs against your current
    understanding so stale text doesn't quietly steer later decisions.
-4. **Offer `/find-goal`** — set the product's North Star.
+5. **Offer `/find-goal`** — set the product's North Star.
 
 ## Wizard flow
 
@@ -156,7 +158,50 @@ session.
 
 ---
 
-## Stage 3 — Reconcile docs with reality
+## Stage 3 — Build the reminder cheat-sheet
+
+Over a long session the model's attention to the project's tools and rules fades — it drifts back
+to its habitual moves (raw `grep`/`Read` instead of an indexed code search, ignoring a project
+rule). This stage writes a short cheat-sheet that a shipped `UserPromptSubmit` hook re-surfaces
+**every third prompt**, near the end of the context where it's most visible. The hook is dumb — it
+just prints this file; all the intelligence happens here, once.
+
+**1. Gate** with `AskUserQuestion`:
+- question: "Build the reminder cheat-sheet for this project?"
+- options: **Build it** / **Skip this stage** / **Stop the wizard**
+
+On **Skip** → go to Stage 4. On **Stop** → end the wizard.
+
+**2. Take inventory of what's actually available here** — three sources:
+- **MCP servers** — the tools this session is connected to (cross-check with
+  `claude mcp list < /dev/null`); flag the ones worth preferring over a built-in (an indexed code
+  search over raw `grep`, a docs fetcher over memory).
+- **Rules** — `ls .claude/rules/*.md < /dev/null`; read each `# ` heading for what it governs.
+- **Skills** — the installed plugin skills worth reaching for (e.g. `/slap`, `/crux`, the funnel).
+
+**3. Distill into a tiny cheat-sheet** — a handful of lines, each in the shape *situation →
+preferred move*, plain and specific to THIS project. Keep it short (aim for ≤10 lines); a long
+sheet becomes wallpaper the model also learns to skip.
+
+**4. Enforce the width limit — strictly ≤ 80 characters per line.** The model is unreliable at
+counting characters, so verify mechanically after drafting and fix any offender — re-run until it
+prints nothing:
+
+```
+awk 'length > 80 {print NR": "length" chars"}' .claude/ccharness/cheatsheet.txt
+```
+
+**5. Write it** to `.claude/ccharness/cheatsheet.txt` (create `.claude/ccharness/` if needed). If
+the file already exists, show the current contents and gate (**Overwrite** / **Keep current**)
+before replacing — never clobber silently.
+
+**6. Report** what you wrote and how it behaves: active from the **next** session, injected on
+every third of your prompts; to turn it off, delete or rename `.claude/ccharness/cheatsheet.txt`
+(the hook is a no-op without it).
+
+---
+
+## Stage 4 — Reconcile docs with reality
 
 Stale prose quietly steers later decisions wrong. This stage checks the project's **descriptive
 docs** against your current understanding. It reads only prose — **Code and tests are out of
@@ -170,13 +215,13 @@ git rev-list --count HEAD 2>/dev/null
 ```
 
 — or there are source files beyond `.claude/` config, or descriptive docs exist. If none of these
-hold → print "fresh project, nothing described yet — skipping" and go to Stage 4 (no gate).
+hold → print "fresh project, nothing described yet — skipping" and go to Stage 5 (no gate).
 
 **2. Gate** with `AskUserQuestion`:
 - question: "Reconcile this project's docs against your current understanding?"
 - options: **Reconcile** / **Skip this stage** / **Stop the wizard**
 
-On **Skip** → go to Stage 4. On **Stop** → end the wizard.
+On **Skip** → go to Stage 5. On **Stop** → end the wizard.
 
 **3. Read the descriptive prose only** — `README*`, `docs/**`, `CLAUDE.md`, `.claude/rules/*.md`,
 `AGENTS.md`, `CHANGELOG*`, `.claude/ccharness/roadmap.md`, and other top-level descriptive `*.md`.
@@ -195,7 +240,7 @@ Report what changed.
 
 ---
 
-## Stage 4 — Set the product's direction
+## Stage 5 — Set the product's direction
 
 **Gate** with `AskUserQuestion`:
 - question: "Run /find-goal now to set the product's North Star?"

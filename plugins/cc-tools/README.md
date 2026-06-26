@@ -26,10 +26,10 @@ Then equip it with the plugins it orchestrates (see [What it orchestrates](#what
 ```
 /cc-init
 ```
-`/cc-init` is a 4-stage setup wizard (each stage skippable, driven by your choices): it installs
+`/cc-init` is a 5-stage setup wizard (each stage skippable, driven by your choices): it installs
 missing dependencies, installs the harness's recommended rules into this project's `.claude/rules/`,
-reconciles your docs against reality, and offers to run `/find-goal`. Idempotent — re-run any time
-(e.g. on a new machine).
+builds the reminder cheat-sheet a hook re-surfaces every few prompts, reconciles your docs against
+reality, and offers to run `/find-goal`. Idempotent — re-run any time (e.g. on a new machine).
 
 Then **ground your product once** — every other command depends on it:
 ```
@@ -48,7 +48,7 @@ This captures the product's *North Star* (the goal) into `CLAUDE.md` and then of
 | **`/do <task>`** | The **strict executor.** Runs one well-scoped task through a gated `0→6` pipeline (below). Requires the *North Star* (routes to `/find-goal` if missing). Refuses fork-laden or ambiguous tasks instead of guessing — a technical fork goes back to `/how-to-do`, a non-technical (business) one it refuses outright, pure ambiguity to brainstorming; never declares done with work open; never commits unverified code. | "Take this concrete task to done." |
 | **`/slap`** | The **reset.** When a fix has gone three rounds deep in a rabbit hole, forces a step back: restate the problem, list what was tried, question assumptions, research alternatives, propose a fresh angle. | "Stop digging — rethink this." |
 | **`/crux <pain>`** | The **diagnosis loop.** Unwinds a pain, doubt, or blockage that isn't yet a goal/direction/fork — pins the real problem from your words + the repo, runs a four-lens critical-thinking panel (Jung's Sensation / Intuition / Thinking / Feeling, each committing to a falsifiable check), and converges on ONE diagnosis + angle of attack, not implementation. Autonomous, free-standing (no North Star needed); the deliberate, deeper cousin of `/slap`. | "Something's off — make sense of it." |
-| **`/cc-init`** | **Setup wizard (4 stages).** Driven by your choices, each stage skippable: (1) install missing dependencies from the official marketplace (user scope); (2) install the harness's recommended rules into this project's `.claude/rules/`; (3) reconcile the project's prose docs against your current understanding so stale text doesn't mislead later decisions; (4) offer to run `/find-goal`. Idempotent. | "Set this up on a new machine." |
+| **`/cc-init`** | **Setup wizard (5 stages).** Driven by your choices, each stage skippable: (1) install missing dependencies from the official marketplace (user scope); (2) install the harness's recommended rules into this project's `.claude/rules/`; (3) build the reminder cheat-sheet a `UserPromptSubmit` hook re-surfaces every third prompt so the project's tools and rules don't fade from attention; (4) reconcile the project's prose docs against your current understanding so stale text doesn't mislead later decisions; (5) offer to run `/find-goal`. Idempotent. | "Set this up on a new machine." |
 
 ## The funnel
 
@@ -119,4 +119,5 @@ table mirrors these nine plugins. Add or drop a dependency here, and update the 
 - `skills/do/SKILL.md` — the gated `0→6` executor (the brains).
 - `skills/slap/SKILL.md` — the reset protocol, invoked by do at three strikes (and by you via `/slap`).
 - `skills/crux/SKILL.md` · `commands/crux.md` — the diagnosis loop (pin the pain → four-lens Jungian panel → one diagnosis + angle). Free-standing side door; the deliberate cousin of slap.
-- `commands/cc-init.md` — setup wizard (deps → rules → doc reconciliation → /find-goal; self-contained, no skill).
+- `commands/cc-init.md` — setup wizard (deps → rules → reminder cheat-sheet → doc reconciliation → /find-goal; self-contained, no skill).
+- `hooks/hooks.json` · `hooks/cheatsheet-hook.sh` — the `UserPromptSubmit` reminder: re-surfaces the cheat-sheet `/cc-init` builds (`.claude/ccharness/cheatsheet.txt`) every third prompt; a no-op until that file exists.
