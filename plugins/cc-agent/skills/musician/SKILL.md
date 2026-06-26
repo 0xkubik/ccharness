@@ -111,52 +111,34 @@ drive the single-direction loop a self-written to-do list would.
 
 ## Arm (only when invoked by `/musician` — not when the hook re-feeds)
 
-When `/musician` first invokes you, before cycle 1:
+When `/musician` first invokes you, before cycle 1, run the deterministic setup helper and react to
+what it reports — it does the exact, error-prone bookkeeping so you never hand-write JSON:
 
-1. **Grounding gate (open mode only).** Open mode leans on `what-to-do`, which needs the North Star.
-   No `## Product North Star` heading in repo-root `CLAUDE.md` → do **not** arm; tell the user
-   _"No North Star yet — run `/find-goal` once to set it, then `/musician`."_ No state written; the
-   hook lets this turn end normally. (Task mode does **not** hard-gate here: a fuzzy pain can go to
-   `crux`, which is grounding-free, and the `do` build enforces its own North Star gate when it
-   reaches it.)
-2. **Parse run-mode flags from `$ARGUMENTS`.** Everything that is not a flag is the **task/problem
-   prompt** (empty → open mode). Accept `--ultracode` → `ultracode: true` (maximum parallelism in
-   the build; see **Ultracode**) and the bounds `--give-up-after N` / `--max-cycles N`. There is
-   **no spend flag** — the musician is bounded by design.
-3. **Forge a run id and write the run's state atomically.** Each `/musician` run gets its OWN
-   folder, so many runs in one repo never collide. Generate
-   `run_id = <UTC YYYYMMDD-HHMMSS>-<4 random hex>` (sortable, unique, readable), create
-   `.claude/ccharness/musician/runs/<run_id>/`, and write `state.json` there (temp file + `mv`):
-   ```json
-   {
-     "active": true,
-     "run_id": "<run_id>",
-     "session_id": "<$CLAUDE_CODE_SESSION_ID>",
-     "mode": "musician",
-     "entry": "task",
-     "input": "<the task/problem prompt you were handed, verbatim — or \"\" for open mode>",
-     "done_when": "",
-     "cycle": 0,
-     "no_progress_streak": 0,
-     "max_no_progress": 3,
-     "max_cycles": 20,
-     "ultracode": false,
-     "started_at": "<UTC now>",
-     "last_surveyed_sha": "",
-     "awaiting": null,
-     "outcome": null
-   }
-   ```
-   `entry` is `"task"` when a prompt was given, `"open"` when not. `input` is the **original prompt
-   you received, captured verbatim** — it is your record of what was asked. `done_when` stays empty
-   until the brain forges it on cycle 1. `awaiting` stays `null` except when suspended on async work
-   (see **Awaiting**). Set `ultracode:true` if `--ultracode` was passed. Then **write the
-   per-session pointer** so the hooks can find this run from the session id:
-   `.claude/ccharness/musician/by-session/<$CLAUDE_CODE_SESSION_ID>` containing just `<run_id>`.
-   Touch `<run>/blocked.jsonl` and `<run>/log.jsonl`. **`<run>` = `runs/<run_id>/` from here on.**
-4. **Read the awareness notes** — recent `git log --notes` (see **Awareness**): what past runs
+1. **Run the arm helper:** `bash "${CLAUDE_PLUGIN_ROOT}/skills/musician/arm.sh" "$ARGUMENTS"` (it
+   reads `$CLAUDE_CODE_SESSION_ID`). It parses the run-mode flags — `--ultracode` (maximum build
+   parallelism; see **Ultracode**), `--give-up-after N`, `--max-cycles N`, and `--resume <run-id>`;
+   everything else is the **task/problem prompt** (empty → open mode). There is **no spend flag** —
+   the musician is bounded by design. It forges a sortable `run_id`, creates the run folder
+   `.claude/ccharness/musician/runs/<run_id>/`, writes `state.json` (with `status:"working"`, the
+   **`input` captured verbatim**, `run_id`, `session_id`, `entry`, your bounds, empty `done_when`),
+   writes the per-session pointer `by-session/<session_id>`, lays down `heartbeat` / `log.jsonl` /
+   `blocked.jsonl`, and scans for crashed runs. **`<run>` = `runs/<run_id>/` from here on.**
+   *(If the helper can't be run, do its steps by hand — same layout, same fields.)*
+2. **React to its `KEY=VALUE` output:**
+   - `GATE=no-north-star` (open mode, no `## Product North Star` in repo-root `CLAUDE.md`) → do
+     **not** arm; tell the user _"No North Star yet — run `/find-goal` once to set it, then
+     `/musician`."_ END TURN. (Task mode does **not** hard-gate: a fuzzy pain can go to `crux`, which
+     is grounding-free, and the `do` build enforces its own North Star gate.)
+   - one or more `ORPHAN=<run-id>|<minutes>|<input>` → a past run looks **crashed mid-work** (still
+     `working`, heartbeat stale). **Surface it to the user** — _"run `<id>` (`<input>`) looks
+     stopped mid-work ~`<minutes>`m ago; resume with `/musician --resume <id>`, or leave it."_ Do
+     **not** auto-adopt it; carry on with the run the helper just made.
+   - `RESUMED=<id>` → the helper re-adopted that run (you passed `--resume`); continue ITS loop.
+   - `RESUME_MISSING=<id>` → that run id doesn't exist; tell the user and stop.
+   - otherwise use `RUN_DIR` / `RUN_ID` / `ENTRY` as your run.
+3. **Read the awareness notes** — recent `git log --notes` (see **Awareness**): what past runs
    closed, so you don't re-open it. Then **announce** the entry mode and the input (note
-   `[ultracode]` if set), and run cycle 1.
+   `[ultracode]` if set, and any surfaced orphan), and run cycle 1.
 
 When the Stop hook **re-feeds** you (the normal in-loop path): your run already exists — skip
 arming. Resolve `<run>` from the pointer (`runs/$(cat .claude/ccharness/musician/by-session/<$CLAUDE_CODE_SESSION_ID>)/`)
@@ -207,6 +189,12 @@ and run the next cycle directly.
   smart "no" is exactly what a brain is for. Distinct from `gave-up` (which means *tried, couldn't*).
 - **gave-up / capped** — *tried and couldn't*: `no_progress_streak >= max_no_progress` (default 3)
   OR `cycle >= max_cycles` (default 20). Reports the full `blocked.jsonl` queue.
+
+Keep the explicit **`status`** label in step with the lifecycle whenever you write state:
+`working` while running, `suspended` while `awaiting` is set, and the outcome name
+(`achieved` / `declined` / `gave-up` / `capped`) at close. It is the human-readable lifecycle
+shown in reports; `active` + `awaiting` remain what the hooks gate on, and `heartbeat` (touched by
+the hooks each turn) is what the next arm's scan uses to spot a crash.
 
 On every terminal exit, append one closed-fact line to git —
 `built:` / `declined:` / `dead-end:` + why (see **Awareness**) — before ending the turn.
@@ -275,9 +263,10 @@ build is carried out.
 
 ## Quick reference
 
-`Arm` open-mode grounding gate (no North Star → `/find-goal`) · parse `--ultracode` (no spend flag) ·
-forge `run_id`, write `runs/<run_id>/state.json` (`run_id`, `entry`, `input` verbatim, empty
-`done_when`) + the `by-session/<session_id>` pointer · touch `<run>` log/blocked · read awareness
+`Arm` run `arm.sh "$ARGUMENTS"` → grounding gate (open mode, no North Star → `/find-goal`), flag
+parse (`--ultracode` / bounds / `--resume`; no spend flag), `run_id` + `runs/<run_id>/state.json`
+(`status:"working"`, `input` verbatim, empty `done_when`) + `by-session` pointer + `heartbeat`, and
+the crash-orphan scan (surface `ORPHAN=…`, never auto-adopt) · then read awareness
 (`git log --notes`, closed facts only).
 `Cycle`: `1` read state + blocked · `2` **BRAIN** while `done_when==""`: think sized-to-input
 (crux / fit / skip; open → what-to-do auto-pick top) → decline/intent-reframe/nothing-worth-doing →

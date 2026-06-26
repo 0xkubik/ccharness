@@ -40,19 +40,36 @@ Each run gets its OWN folder so many runs in one repo never collide:
   musician/
     runs/<run-id>/            one folder per run  (run-id = UTC YYYYMMDD-HHMMSS-<hex>, sortable)
       state.json             loop control + identity
-                             {active, run_id, session_id, mode:"musician", entry:"task"|"open",
-                              input (the original prompt, verbatim), done_when, cycle,
-                              no_progress_streak, max_no_progress, max_cycles, ultracode,
+                             {active, status, run_id, session_id, mode:"musician",
+                              entry:"task"|"open", input (the original prompt, verbatim), done_when,
+                              cycle, no_progress_streak, max_no_progress, max_cycles, ultracode,
                               awaiting, outcome, …}
       blocked.jsonl          directions handed back during this run
       log.jsonl              one line per cycle
       live.log               live action feed — one line per tool call (see "Watching a run live")
+      heartbeat              touched by the hooks each turn/tool call (crash detection)
     by-session/<session-id>  pointer → the active run-id for that session (how the hooks find it)
 ```
 
-`outcome` is one of `achieved` / `declined` / `gave-up` / `capped` / `cancelled` (or `null`
-while running). A non-null `awaiting` object means the loop is **suspended** on async work or a
-transient outage — not done, not given up; the awaited task's completion notification resumes it.
+`status` is the human-readable lifecycle label — `working` / `suspended` / `achieved` / `declined`
+/ `gave-up` / `capped` / `cancelled`. `outcome` carries the same terminal value (or `null` while
+running); `active` + `awaiting` are what the hooks gate on. A non-null `awaiting` object means the
+loop is **suspended** on async work or a transient outage — not done, not given up; the awaited
+task's completion notification resumes it.
+
+## Arm & crash recovery
+
+`/musician` runs `skills/musician/arm.sh` first — the deterministic setup the skill used to
+hand-write: it parses the flags (`--ultracode` / `--give-up-after N` / `--max-cycles N` /
+`--resume <run-id>`), runs the open-mode North-Star gate, forges the `run_id`, writes `state.json` +
+the pointer + the record files, and **scans for crashed runs**. The brain stays in the skill; only
+the bookkeeping is in the script.
+
+A musician can't leave a task *accidentally*: while the session lives, the Stop hook re-feeds an
+unclosed run. A hard crash (terminal closed, kill, reboot) fires no Stop event — so each working run
+keeps a `heartbeat` the hooks refresh. The next `/musician` arm finds any run still `working` whose
+heartbeat went **stale** (a crash) and **surfaces it** (`ORPHAN=<id>|<mins>|<input>`); it never
+auto-adopts. Resume one deliberately with `/musician --resume <run-id>`.
 
 ## Stop hook
 

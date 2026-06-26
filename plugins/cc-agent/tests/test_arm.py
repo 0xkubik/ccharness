@@ -1,0 +1,146 @@
+import json, os, subprocess, tempfile, time, unittest
+from pathlib import Path
+
+ARM = Path(__file__).resolve().parent.parent / "skills" / "musician" / "arm.sh"
+SESSION = "aaaa-1111"
+MUS = ".claude/ccharness/musician"
+
+
+def run_arm(repo, arg_string, session=SESSION):
+    env = dict(os.environ, CLAUDE_CODE_SESSION_ID=session)
+    r = subprocess.run(["bash", str(ARM), arg_string], cwd=repo,
+                       capture_output=True, text=True, env=env)
+    out = {}
+    orphans = []
+    for line in r.stdout.splitlines():
+        if line.startswith("ORPHAN="):
+            orphans.append(line[len("ORPHAN="):])
+        elif "=" in line:
+            k, v = line.split("=", 1)
+            out[k] = v
+    return out, orphans, r
+
+
+def state_of(repo, run_id):
+    return json.loads((Path(repo) / MUS / "runs" / run_id / "state.json").read_text())
+
+
+def with_north_star(repo):
+    (Path(repo) / "CLAUDE.md").write_text("# Project\n\n## Product North Star\nBe great.\n")
+
+
+class TestArmTaskMode(unittest.TestCase):
+    def test_creates_run_and_pointer(self):
+        repo = tempfile.mkdtemp()
+        out, _, r = run_arm(repo, "fix the flaky login test")
+        self.assertEqual(r.returncode, 0)
+        self.assertEqual(out["ENTRY"], "task")
+        rid = out["RUN_ID"]
+        st = state_of(repo, rid)
+        self.assertTrue(st["active"])
+        self.assertEqual(st["status"], "working")
+        self.assertEqual(st["run_id"], rid)
+        self.assertEqual(st["session_id"], SESSION)
+        # the original prompt, captured verbatim
+        self.assertEqual(st["input"], "fix the flaky login test")
+        # pointer resolves the session to this run
+        ptr = (Path(repo) / MUS / "by-session" / SESSION).read_text()
+        self.assertEqual(ptr, rid)
+        # heartbeat + record files exist
+        for f in ("heartbeat", "log.jsonl", "blocked.jsonl"):
+            self.assertTrue((Path(repo) / MUS / "runs" / rid / f).exists())
+
+    def test_flags_parsed_prompt_preserved(self):
+        repo = tempfile.mkdtemp()
+        out, _, _ = run_arm(repo, "make it fast --ultracode --max-cycles 5 --give-up-after 2")
+        st = state_of(repo, out["RUN_ID"])
+        self.assertTrue(st["ultracode"])
+        self.assertEqual(st["max_cycles"], 5)
+        self.assertEqual(st["max_no_progress"], 2)
+        self.assertEqual(st["input"], "make it fast")  # flags stripped from the prompt
+
+    def test_run_ids_are_unique(self):
+        repo = tempfile.mkdtemp()
+        a, _, _ = run_arm(repo, "task one")
+        b, _, _ = run_arm(repo, "task two", session="bbbb-2222")
+        self.assertNotEqual(a["RUN_ID"], b["RUN_ID"])
+        # two runs, two folders, two pointers — no collision
+        self.assertTrue((Path(repo) / MUS / "runs" / a["RUN_ID"]).exists())
+        self.assertTrue((Path(repo) / MUS / "runs" / b["RUN_ID"]).exists())
+
+
+class TestArmOpenMode(unittest.TestCase):
+    def test_open_mode_needs_north_star(self):
+        repo = tempfile.mkdtemp()
+        out, _, _ = run_arm(repo, "")
+        self.assertEqual(out.get("GATE"), "no-north-star")
+        self.assertFalse((Path(repo) / MUS / "runs").exists() and
+                         any((Path(repo) / MUS / "runs").iterdir()))
+
+    def test_open_mode_with_north_star_arms(self):
+        repo = tempfile.mkdtemp()
+        with_north_star(repo)
+        out, _, _ = run_arm(repo, "")
+        self.assertEqual(out["ENTRY"], "open")
+        self.assertEqual(state_of(repo, out["RUN_ID"])["input"], "")
+
+
+class TestArmResume(unittest.TestCase):
+    def test_resume_readopts_run(self):
+        repo = tempfile.mkdtemp()
+        first, _, _ = run_arm(repo, "long task")
+        rid = first["RUN_ID"]
+        # simulate a close, then a resume from a different (new) session
+        st = state_of(repo, rid); st["active"] = False; st["status"] = "gave-up"
+        (Path(repo) / MUS / "runs" / rid / "state.json").write_text(json.dumps(st))
+        out, _, _ = run_arm(repo, f"--resume {rid}", session="new-9999")
+        self.assertEqual(out.get("RESUMED"), rid)
+        st2 = state_of(repo, rid)
+        self.assertTrue(st2["active"])
+        self.assertEqual(st2["status"], "working")
+        self.assertEqual(st2["session_id"], "new-9999")
+        self.assertEqual((Path(repo) / MUS / "by-session" / "new-9999").read_text(), rid)
+
+    def test_resume_missing(self):
+        repo = tempfile.mkdtemp()
+        out, _, _ = run_arm(repo, "--resume 20990101-000000-zzzz")
+        self.assertEqual(out.get("RESUME_MISSING"), "20990101-000000-zzzz")
+
+
+class TestArmOrphanScan(unittest.TestCase):
+    def test_stale_working_run_surfaced(self):
+        repo = tempfile.mkdtemp()
+        # a previous run left "working" with a stale heartbeat (crash)
+        orphan = Path(repo) / MUS / "runs" / "20260626-100000-dead"
+        orphan.mkdir(parents=True)
+        (orphan / "state.json").write_text(json.dumps(
+            {"active": True, "status": "working", "awaiting": None,
+             "input": "refactor the parser"}))
+        hb = orphan / "heartbeat"; hb.write_text("")
+        old = time.time() - 3600  # 60 min ago > 30 min threshold
+        os.utime(hb, (old, old))
+
+        out, orphans, _ = run_arm(repo, "a fresh task")
+        self.assertTrue(any(o.startswith("20260626-100000-dead|") for o in orphans),
+                        f"expected the stale run surfaced, got {orphans}")
+        # surface only — it was NOT auto-adopted (pointer points at the NEW run)
+        self.assertEqual((Path(repo) / MUS / "by-session" / SESSION).read_text(), out["RUN_ID"])
+
+    def test_awaiting_run_not_an_orphan(self):
+        repo = tempfile.mkdtemp()
+        # a parked (awaiting) run with a stale heartbeat is NOT crashed — must not be surfaced
+        parked = Path(repo) / MUS / "runs" / "20260626-090000-park"
+        parked.mkdir(parents=True)
+        (parked / "state.json").write_text(json.dumps(
+            {"active": True, "status": "working",
+             "awaiting": {"what": "scan", "since": "x"}, "input": "y"}))
+        hb = parked / "heartbeat"; hb.write_text("")
+        old = time.time() - 3600
+        os.utime(hb, (old, old))
+
+        _, orphans, _ = run_arm(repo, "fresh task")
+        self.assertEqual(orphans, [])
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -31,6 +31,9 @@ LIVE_LOG="$RUN_DIR/live.log"
 [ "$(jq -r '.active' "$STATE_FILE" 2>/dev/null)" = "true" ] || exit 0
 CYCLE="$(jq -r '.cycle // "?"' "$STATE_FILE" 2>/dev/null || echo '?')"
 
+# Heartbeat — every tool call keeps the working run's liveness mark fresh (see musician-stop.sh).
+: > "$RUN_DIR/heartbeat" 2>/dev/null || true
+
 # Rough human action derived from the tool and its arguments.
 case "$TOOL" in
   Skill)

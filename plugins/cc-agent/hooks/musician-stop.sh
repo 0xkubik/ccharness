@@ -70,6 +70,10 @@ if [ -z "$AWAITING" ]; then
 fi
 [ -n "$AWAITING" ] && exit 0
 
+# Heartbeat — this run is alive and working. Refreshing it each turn means a hard crash (no Stop
+# event) leaves a STALE heartbeat, which the next `/musician` arm scan reads as a crashed orphan.
+: > "$RUN_DIR/heartbeat" 2>/dev/null || true
+
 # --- ACTIVE for this session (or present-but-unparseable) → RE-FEED. Fail closed. ---
 REFEED="$(cat <<'PROMPT'
 🎼 musician is ACTIVE — continue the bounded loop for THIS piece of work. Run exactly ONE cycle:

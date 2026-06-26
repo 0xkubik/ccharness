@@ -72,6 +72,22 @@ class TestMusicianSkill(unittest.TestCase):
         self.assertIn("input", self.text)
         self.assertIn("verbatim", self.text.lower())
 
+    def test_arm_delegated_to_script(self):
+        # The deterministic bookkeeping lives in arm.sh; the skill delegates to it.
+        self.assertIn("arm.sh", self.text)
+        self.assertTrue((ROOT / "skills" / "musician" / "arm.sh").exists(), "arm.sh missing")
+
+    def test_status_and_heartbeat(self):
+        # Explicit lifecycle label + the crash-fuse heartbeat the next arm scans.
+        self.assertIn("status", self.text.lower())
+        self.assertIn("heartbeat", self.text.lower())
+
+    def test_crash_orphan_surface_only(self):
+        # Crash recovery surfaces an orphan and lets the user resume — it never auto-adopts.
+        self.assertIn("--resume", self.text)
+        self.assertIn("ORPHAN", self.text)
+        self.assertIn("auto-adopt", self.text.lower())
+
     def test_documents_ultracode_no_spend(self):
         # The musician carries --ultracode (mandatory fan-out) ...
         self.assertIn("--ultracode", self.text)
