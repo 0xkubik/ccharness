@@ -1,5 +1,5 @@
 ---
-description: "5-stage onboarding wizard for the cc-* harness, driven by AskUserQuestion. Stage 1 installs missing marketplace dependencies; Stage 2 installs the harness's recommended rules into this project's .claude/rules/; Stage 3 builds the reminder cheat-sheet a UserPromptSubmit hook re-surfaces every few prompts so the project's tools and rules don't fade from attention; Stage 4 reconciles the project's prose docs against your current understanding so stale text doesn't mislead later decisions; Stage 5 offers to run /find-goal. Every stage is offered and skippable; idempotent — safe to re-run."
+description: "5-stage onboarding wizard for the cc-* harness, driven by AskUserQuestion. Stage 1 installs missing marketplace dependencies and offers the recommended external tools (codegraph, headroom); Stage 2 installs the harness's recommended rules into this project's .claude/rules/; Stage 3 builds the reminder cheat-sheet a UserPromptSubmit hook re-surfaces every few prompts so the project's tools and rules don't fade from attention; Stage 4 reconciles the project's prose docs against your current understanding so stale text doesn't mislead later decisions; Stage 5 offers to run /find-goal. Every stage is offered and skippable; idempotent — safe to re-run."
 argument-hint: "(no arguments)"
 ---
 
@@ -44,11 +44,9 @@ All of these live in the official marketplace `claude-plugins-official`
 | `superpowers` | brainstorming, writing/executing plans, TDD, subagents, systematic-debugging, code-review review loop |
 | `claude-md-management` | North Star capture / CLAUDE.md upkeep (what-to-do) |
 | `frontend-design` | UI build route (do stage 2) |
-| `playwright` | browser-driven verification of UI (do stage 4) |
 | `code-simplifier` | the simplify pass (do stage 5) |
 | `ralph-loop` | long autonomous build loops (do stage 2) |
 | `code-review` | the review pass (do stage 5) |
-| `commit-commands` | the local commit + push/PR step (do stage 6) |
 | `gitlab` | GitLab MR path at push time (do stage 6) |
 
 > **Source of truth:** this table mirrors the "What it orchestrates" section of
@@ -76,10 +74,10 @@ claude plugin list < /dev/null
 
 From the output determine:
 - whether the `claude-plugins-official` marketplace is already configured, and
-- which of the nine plugins above are already installed (any scope counts).
+- which of the seven plugins above are already installed (any scope counts).
 
-**3. Gate + show the plan.** If nothing is missing, report "all nine dependencies already installed
-— nothing to do" and move straight on to Stage 2 (no gate needed). Otherwise print a short plan
+**3. Gate + show the plan.** If nothing is missing, report "all seven dependencies already installed
+— nothing to do" and move straight on to the recommended external tools below (no gate needed). Otherwise print a short plan
 listing the marketplace add (only if not configured) and the **missing** plugins, noting the
 already-installed ones will be **skipped**, and state that installation is **user scope**
 (`--scope user`) — it changes global Claude Code config, not just this repo. Then gate with
@@ -115,6 +113,24 @@ it as installed; collect it for the failure list instead.
 > fresh session) for the harness to pick them up.
 
 Do not claim success for any plugin whose install you did not see exit `0`.
+
+**6. Offer the recommended external tools.** Two tools the harness benefits from don't live in the
+marketplace — they install through their own tooling, not `claude plugin install`:
+
+- **codegraph** — indexed code intelligence: an MCP that searches and explores a codebase, far
+  better than raw `grep`/`Read` for "where is X / what calls Y". Repo:
+  https://github.com/colbymchenry/codegraph
+  - `npm install -g @colbymchenry/codegraph` → `codegraph install` (wires the MCP into Claude
+    Code) → `codegraph init` per project to build the index.
+- **headroom** — compresses tool outputs, logs, and files before they reach the model (60–95%
+  fewer tokens, same answers). Repo: https://github.com/headroomlabs-ai/headroom
+  - `pip install "headroom-ai[all]"` → `headroom mcp install`.
+
+Gate with `AskUserQuestion` (`multiSelect: true`): **codegraph** / **headroom** / **Skip both**.
+Install only what's picked; **capture each exit code** and report honestly (✅ installed / ❌ failed,
+with the command and output) — never claim an install you didn't see exit `0`. Both register an MCP
+server that loads on the **next** session. If the user later asks to set up or troubleshoot either
+tool, start from its repo link above.
 
 ---
 

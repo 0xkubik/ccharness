@@ -131,6 +131,18 @@ class TestCcInitWizard(unittest.TestCase):
     def test_stage1_user_scope_preserved(self):
         self.assertIn("--scope user", self.text)
 
+    def test_offers_external_codegraph_and_headroom(self):
+        # Stage 1 also offers the two non-marketplace MCP tools, with real repos + install commands.
+        self.assertIn("https://github.com/colbymchenry/codegraph", self.text)
+        self.assertIn("https://github.com/headroomlabs-ai/headroom", self.text)
+        self.assertIn("npm install -g @colbymchenry/codegraph", self.text)
+        self.assertIn('pip install "headroom-ai[all]"', self.text)
+
+    def test_playwright_and_commit_commands_dropped_from_install_set(self):
+        # playwright now ships with Claude Code; commits are handled directly — neither is installed.
+        self.assertNotIn("playwright", self.text)
+        self.assertNotIn("commit-commands", self.text)
+
     def test_stage2_from_plugin_root_to_project_rules(self):
         self.assertIn("CLAUDE_PLUGIN_ROOT", self.text)
         self.assertIn(".claude/rules/", self.text)

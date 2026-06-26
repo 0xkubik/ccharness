@@ -104,12 +104,17 @@ Routine, reversible calls it just makes, and keeps moving.
 
 cc-tools is glue — it routes to skills/plugins you already have installed: `superpowers`
 (brainstorming, plans, TDD, subagents, debugging), `claude-md-management`, `frontend-design`,
-`playwright`, `code-simplifier`, `ralph-loop`, `code-review`, `commit-commands`, and `gitlab`.
-Missing plugins simply mean those routes aren't taken.
+`code-simplifier`, `ralph-loop`, `code-review`, and `gitlab`. Missing plugins simply mean those
+routes aren't taken. (`playwright` for UI verification now ships with Claude Code, and the commit
+step works without `commit-commands`, so `/cc-init` no longer installs either.)
 
 This list is the **source of truth** for what `/cc-init` installs — its dependency
-table mirrors these nine plugins. Add or drop a dependency here, and update the table in
+table mirrors these seven plugins. Add or drop a dependency here, and update the table in
 `commands/cc-init.md` to match.
+
+Beyond the marketplace set, `/cc-init` also **offers** two external MCP tools it doesn't bundle —
+[`codegraph`](https://github.com/colbymchenry/codegraph) (indexed code intelligence) and
+[`headroom`](https://github.com/headroomlabs-ai/headroom) (token-saving output compression).
 
 ## Layout
 - `commands/find-goal.md` · `commands/what-to-do.md` · `commands/how-to-do.md` · `commands/do.md` — the entry points.
