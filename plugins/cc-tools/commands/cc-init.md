@@ -194,24 +194,43 @@ On **Skip** → go to Stage 4. On **Stop** → end the wizard.
 - **Rules** — `ls .claude/rules/*.md < /dev/null`; read each `# ` heading for what it governs.
 - **Skills** — the installed plugin skills worth reaching for (e.g. `/slap`, `/crux`, the funnel).
 
-**3. Distill into a tiny cheat-sheet** — a handful of lines, each in the shape *situation →
-preferred move*, plain and specific to THIS project. Keep it short (aim for ≤10 lines); a long
-sheet becomes wallpaper the model also learns to skip.
+**3. Draft the cheat-sheet** — a handful of lines, each in the shape *situation → preferred move*,
+plain and specific to THIS project. Keep it short (aim for ≤10 lines); a long sheet becomes
+wallpaper the model also learns to skip.
 
-**4. Enforce the width limit — strictly ≤ 80 characters per line.** The model is unreliable at
-counting characters, so verify mechanically after drafting and fix any offender — re-run until it
-prints nothing:
+**4. Enforce the width limit on the draft — strictly ≤ 80 characters per line.** Models miscount,
+so check mechanically *before* showing it and fix any offender — re-run until it prints nothing:
 
 ```
-awk 'length > 80 {print NR": "length" chars"}' .claude/ccharness/cheatsheet.txt
+printf '%s\n' "<each drafted line>" | awk 'length > 80 {print NR": "length" chars"}'
 ```
 
-**5. Write it** to `.claude/ccharness/cheatsheet.txt` (create `.claude/ccharness/` if needed). If
-the file already exists, show the current contents and gate (**Overwrite** / **Keep current**)
-before replacing — never clobber silently.
+**5. Present the draft for approval — never write it unprompted.** Show the user the proposed
+cheat-sheet, and for **every line** give a one-line justification: *what you saw* (which MCP
+server, rule, or skill) and *why it earned a line*. If a `cheatsheet.md` already exists, show it
+alongside so they can compare. Then gate with `AskUserQuestion`:
+- question: "Use this cheat-sheet?"
+- options: **Approve as-is** / **Let me edit it**
 
-**6. Report** what you wrote and how it behaves: active from the **next** session, injected on
-every third of your prompts; to turn it off, delete or rename `.claude/ccharness/cheatsheet.txt`
+On **Let me edit it**, take their changes in plain prose, apply them, re-run the width check from
+step 4, and present the revised draft for approval again — loop until they approve. Write nothing
+until they do.
+
+**6. Write the approved sheet** to `.claude/ccharness/cheatsheet.md` (create `.claude/ccharness/`
+if needed), in this fixed structure — the `<cheatsheet>` / `</cheatsheet>` markers frame the block
+the hook injects, one cheat-sheet line per line between them:
+
+```
+<cheatsheet>
+Search code: use the codegraph MCP, not raw grep/Read
+Edits: follow .claude/rules (no-comments, keep-files-lean)
+Lib docs: use the context7 MCP, not memory
+Stuck on a fix: /slap; murkier doubt: /crux
+</cheatsheet>
+```
+
+**7. Report** what you wrote and how it behaves: active from the **next** session, injected on
+every third of your prompts; to turn it off, delete or rename `.claude/ccharness/cheatsheet.md`
 (the hook is a no-op without it).
 
 ---

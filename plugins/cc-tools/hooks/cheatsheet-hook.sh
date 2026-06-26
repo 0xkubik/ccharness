@@ -12,7 +12,7 @@
 # carry a "promptSource" key; tool results do not — so that key is the exact prompt count.
 set -euo pipefail
 
-SHEET=".claude/ccharness/cheatsheet.txt"
+SHEET=".claude/ccharness/cheatsheet.md"
 EVERY=3
 
 # A UserPromptSubmit hook must always exit 0 (non-zero surfaces an error every prompt; exit 2
@@ -38,7 +38,6 @@ fi
 N="$(grep -c '"promptSource":' "$TPATH" 2>/dev/null)" || N=0
 
 if [ "$N" -gt 0 ] && [ $((N % EVERY)) -eq 0 ]; then
-  printf '[cc-tools reminder — tools & rules you have on hand in this project]\n'
   cat "$SHEET"
 fi
 exit 0

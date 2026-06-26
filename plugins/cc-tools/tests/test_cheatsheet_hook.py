@@ -10,9 +10,14 @@ ROOT = Path(__file__).resolve().parent.parent
 HOOKS_JSON = ROOT / "hooks" / "hooks.json"
 HOOK = ROOT / "hooks" / "cheatsheet-hook.sh"
 
-SHEET_REL = ".claude/ccharness/cheatsheet.txt"
-SHEET_BODY = "Search code: prefer the indexed MCP search over raw grep\nEdits: follow .claude/rules\n"
-MARKER = "cc-tools reminder"
+SHEET_REL = ".claude/ccharness/cheatsheet.md"
+SHEET_BODY = (
+    "<cheatsheet>\n"
+    "Search code: prefer the indexed MCP search over raw grep\n"
+    "Edits: follow .claude/rules\n"
+    "</cheatsheet>\n"
+)
+MARKER = "<cheatsheet>"
 
 
 def _transcript(path: Path, prompts: int, tool_results: int = 0):

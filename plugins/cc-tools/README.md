@@ -126,4 +126,4 @@ Beyond the marketplace set, `/cc-init` also **offers** two external MCP tools it
 - `skills/slap/SKILL.md` — the reset protocol, invoked by do at three strikes (and by you via `/slap`).
 - `skills/crux/SKILL.md` · `commands/crux.md` — the diagnosis loop (pin the pain → four-lens Jungian panel → one diagnosis + angle). Free-standing side door; the deliberate cousin of slap.
 - `commands/cc-init.md` — setup wizard (deps → rules → reminder cheat-sheet → doc reconciliation → /find-goal; self-contained, no skill).
-- `hooks/hooks.json` · `hooks/cheatsheet-hook.sh` — the `UserPromptSubmit` reminder: re-surfaces the cheat-sheet `/cc-init` builds (`.claude/ccharness/cheatsheet.txt`) every third prompt; a no-op until that file exists.
+- `hooks/hooks.json` · `hooks/cheatsheet-hook.sh` — the `UserPromptSubmit` reminder: re-surfaces the cheat-sheet `/cc-init` builds (`.claude/ccharness/cheatsheet.md`, wrapped in `<cheatsheet>`…`</cheatsheet>`) every third prompt; a no-op until that file exists.

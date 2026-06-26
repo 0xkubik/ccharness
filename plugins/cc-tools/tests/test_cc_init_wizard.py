@@ -120,9 +120,22 @@ class TestCcInitWizard(unittest.TestCase):
         # Stage 3 generates the reminder cheat-sheet the UserPromptSubmit hook prints.
         low = self.text.lower()
         self.assertIn("cheat-sheet", low)
-        self.assertIn(".claude/ccharness/cheatsheet.txt", self.text)
+        self.assertIn(".claude/ccharness/cheatsheet.md", self.text)
         self.assertIn("80 characters", low)  # the hard per-line width limit
         self.assertIn("claude mcp list", self.text)  # inventories installed MCP servers
+
+    def test_cheatsheet_has_fixed_marker_structure(self):
+        # cheatsheet.md is wrapped in begin/end markers that frame the injected block.
+        self.assertIn("<cheatsheet>", self.text)
+        self.assertIn("</cheatsheet>", self.text)
+
+    def test_cheatsheet_requires_approval_with_per_line_justification(self):
+        low = self.text.lower()
+        self.assertIn("never write it unprompted", low)  # no silent write
+        self.assertIn("approve as-is", low)              # the approve/edit gate
+        self.assertIn("let me edit it", low)
+        self.assertIn("justification", low)              # per-line reasoning
+        self.assertIn("what you saw", low)
 
     def test_stage1_antihang_preserved(self):
         # The </dev/null guard on `claude plugin` calls must survive the rewrite.

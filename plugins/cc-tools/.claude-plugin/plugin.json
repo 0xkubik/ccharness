@@ -1,6 +1,6 @@
 {
   "name": "cc-tools",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "description": "cc-tools — the tools layer of the cc-* harness: single-purpose product skills. /find-goal captures the product's North Star and charts a roadmap; /what-to-do ranks where a product could go next; /how-to-do thinks one fork through to ONE decision; /do drives one task to done via a gated 0→6 pipeline; /slap resets a stuck fix. Driven by cc-agent (the musician) and supervised by cc-maestro.",
   "author": {
     "name": "kubik",
