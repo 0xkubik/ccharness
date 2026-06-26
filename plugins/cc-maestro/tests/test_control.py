@@ -58,16 +58,27 @@ class TestControl(unittest.TestCase):
         def boom(p, s): raise ProcessLookupError()
         self.assertFalse(self.control.send_signal(5, signal.SIGTERM, sender=boom))
 
-    def test_stop_musician_removes_state(self):
+    def test_stop_musician_cancels_run(self):
+        # New per-run layout: cancel marks runs/<rid>/state.json closed and drops the
+        # by-session pointer (mirrors /musician-cancel) — never the old single state.json.
         repo = tempfile.mkdtemp()
-        mus_dir = Path(repo) / ".claude" / "ccharness" / "musician"; mus_dir.mkdir(parents=True)
-        state = mus_dir / "state.json"; state.write_text(json.dumps({"active": True}))
-        info = {"is_musician": True, "cwd": repo, "pid": 123}
+        rid = "20260626-120000-aaaa"
+        base = Path(repo) / ".claude" / "ccharness" / "musician"
+        run = base / "runs" / rid; run.mkdir(parents=True)
+        state = run / "state.json"; state.write_text(json.dumps({"active": True, "cycle": 3}))
+        (base / "by-session").mkdir(parents=True)
+        ptr = base / "by-session" / "sid-musi"; ptr.write_text(rid)
+        info = {"is_musician": True, "cwd": repo, "sessionId": "sid-musi", "pid": 123}
         sent = []
         result, _ = self.control.stop_agent(info, sender=lambda p, s: sent.append((p, s)))
         self.assertEqual(result, "musician-cancelled")
-        self.assertFalse(state.exists())     # musician state removed
-        self.assertEqual(sent, [])           # process NOT signalled
+        st = json.loads(state.read_text())
+        self.assertFalse(st["active"])           # run marked closed -> hook releases
+        self.assertEqual(st["status"], "cancelled")
+        self.assertEqual(st["outcome"], "cancelled")
+        self.assertFalse(ptr.exists())           # pointer dropped -> clean re-arm
+        self.assertTrue(run.exists())            # run folder kept as the record
+        self.assertEqual(sent, [])               # process NOT signalled
 
     def test_stop_normal_signals_group(self):
         import signal as sig

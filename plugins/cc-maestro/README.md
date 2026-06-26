@@ -51,14 +51,15 @@ agents `start` will launch. A finished one-shot now shows `done` (clean) or `cra
 
 ## Usage-limits bridge (optional)
 
-`bin/cc-usage-statusline.sh` lets the cc-agent musician see your remaining subscription
-budget so it won't spend the last of your quota on an expensive build. A running session can't
-query that itself — `/usage` is TUI-only and there is no CLI/file/hook/env for it. The **only**
-channel that carries it is the statusLine stdin payload (`rate_limits.five_hour` /
-`rate_limits.seven_day`: used % + reset time). This script sits in `statusLine.command`, tees
-those numbers into the global `~/.claude/ccharness/usage.json` (honoring `$CLAUDE_CONFIG_DIR`;
-one shared file, since the limits are account-wide), then forwards the payload to your real
-status line — so your display is unchanged.
+`bin/cc-usage-statusline.sh` captures your remaining **subscription** budget into a file
+budget-aware control can read. Budget is a **cc-maestro-layer** concern now, not an individual
+agent's — the cc-agent musician is budget-blind by design, so this is the data source for the
+conductor to gate the fleet on remaining headroom. A running session can't query its own limits —
+`/usage` is TUI-only and there is no CLI/file/hook/env for it. The **only** channel that carries
+it is the statusLine stdin payload (`rate_limits.five_hour` / `rate_limits.seven_day`: used % +
+reset time). This script sits in `statusLine.command`, tees those numbers into the global
+`~/.claude/ccharness/usage.json` (honoring `$CLAUDE_CONFIG_DIR`; one shared file, since the limits
+are account-wide), then forwards the payload to your real status line — so your display is unchanged.
 
 Install — point `statusLine.command` at it (wraps your existing status line):
 
@@ -71,8 +72,8 @@ Install — point `statusLine.command` at it (wraps your existing status line):
 Your previous status line keeps rendering: it runs downstream from `$CC_USAGE_DOWNSTREAM`
 (default `ccstatusline` if on PATH; set to `""` to render nothing). Best-effort and fail-open —
 a capture failure never breaks your status line. Caveats: only interactive sessions render a
-status line (headless `claude -p` does not, so the musician falls back to a token estimate there);
-`rate_limits` is Pro/Max-only and absent until the session's first API response.
+status line (headless `claude -p` does not, so it writes no usage there); `rate_limits` is
+Pro/Max-only and absent until the session's first API response.
 
 ## Status
 

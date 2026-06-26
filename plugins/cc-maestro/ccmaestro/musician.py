@@ -1,4 +1,4 @@
-import json
+import json, os
 from pathlib import Path
 
 
@@ -98,3 +98,31 @@ def live_tail(cwd, session_id=None, n=20):
     """The last n lines of the run's live action feed — what the musician is doing now."""
     rd = _resolve_run_dir(cwd, session_id)
     return _tail(rd / "live.log", n) if rd else []
+
+
+def cancel_run(cwd, session_id=None):
+    """Cancel this session's active musician run the way /musician-cancel does: mark its
+    state.json active:false / status:cancelled / outcome:cancelled and drop the by-session
+    pointer so the Stop hook stops re-feeding. The run folder stays as the durable record.
+    Returns the run dir on success, or None if there was no active run to cancel."""
+    rd = _resolve_run_dir(cwd, session_id)
+    if not rd:
+        return None
+    st_path = rd / "state.json"
+    try:
+        st = json.loads(st_path.read_text())
+    except (json.JSONDecodeError, OSError):
+        st = {}
+    st.update(active=False, status="cancelled", outcome="cancelled")
+    tmp = st_path.with_name(st_path.name + ".tmp")
+    try:
+        tmp.write_text(json.dumps(st, indent=2))
+        os.replace(tmp, st_path)
+    except OSError:
+        return None
+    if session_id:
+        try:
+            (_musician_dir(cwd) / "by-session" / session_id).unlink()
+        except OSError:
+            pass
+    return rd

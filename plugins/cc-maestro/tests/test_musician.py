@@ -74,6 +74,22 @@ class TestMusician(unittest.TestCase):
         tail = musician.live_tail(repo, "s2", n=5)
         self.assertEqual(tail, [f"line {i}" for i in range(25, 30)])
 
+    # --- cancel (mirrors /musician-cancel) ---
+    def test_cancel_run_marks_cancelled_and_drops_pointer(self):
+        repo = self._repo({"active": True, "cycle": 2}, session="s-cancel")
+        rd = musician.cancel_run(repo, "s-cancel")
+        self.assertIsNotNone(rd)
+        base = Path(repo) / ".claude" / "ccharness" / "musician"
+        st = json.loads((base / "runs" / RID / "state.json").read_text())
+        self.assertFalse(st["active"])                                  # hook releases
+        self.assertEqual(st["status"], "cancelled")
+        self.assertEqual(st["outcome"], "cancelled")
+        self.assertFalse((base / "by-session" / "s-cancel").exists())   # pointer dropped
+        self.assertTrue((base / "runs" / RID).exists())                 # record kept
+
+    def test_cancel_run_none_when_no_run(self):
+        self.assertIsNone(musician.cancel_run(tempfile.mkdtemp()))
+
 
 if __name__ == "__main__":
     unittest.main()

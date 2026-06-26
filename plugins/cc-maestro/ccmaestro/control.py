@@ -1,5 +1,4 @@
 import os, signal
-from pathlib import Path
 from . import registry, musician as mus
 
 def resolve(ident, *, native_runner=None):
@@ -31,16 +30,13 @@ def send_signal(pid, sig, sender=os.killpg):
 
 def stop_agent(info, *, sender=os.killpg):
     if info.get("is_musician"):
-        # The musician is a single bounded, self-closing loop — graceful cancel just
-        # removes its own state file so the Stop hook stops re-feeding it.
-        f = Path(info["cwd"]) / ".claude" / "ccharness" / "musician" / "state.json"
-        try:
-            f.unlink()
-        except FileNotFoundError:
-            return ("musician-cancelled", "state already gone")
-        except OSError as e:
-            return ("not-found", str(e))
-        return ("musician-cancelled", str(f))
+        # The musician is a single bounded, self-closing loop — graceful cancel mirrors
+        # /musician-cancel: mark this session's run cancelled and drop its by-session pointer
+        # so the Stop hook stops re-feeding (the run folder stays as the record). No signal.
+        rd = mus.cancel_run(info.get("cwd"), info.get("sessionId"))
+        if rd is None:
+            return ("musician-cancelled", "no active run")
+        return ("musician-cancelled", str(rd))
     pid = info.get("pid")
     if not pid:
         return ("no-pid", "no recorded pid")
