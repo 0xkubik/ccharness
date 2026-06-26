@@ -111,30 +111,6 @@ This list is the **source of truth** for what `/cc-init` installs — its depend
 table mirrors these nine plugins. Add or drop a dependency here, and update the table in
 `commands/cc-init.md` to match.
 
-## Usage-limits bridge (optional)
-
-`bin/cc-usage-statusline.sh` lets the cc-agent musician see your remaining
-subscription budget. A running session can't query that itself — `/usage` is TUI-only and there
-is no CLI/file/hook/env for it. The **only** channel that carries it is the statusLine stdin
-payload (`rate_limits.five_hour` / `rate_limits.seven_day`: used % + reset time). This script
-sits in `statusLine.command`, tees those numbers into the global `~/.claude/ccharness/usage.json`
-(honoring `$CLAUDE_CONFIG_DIR`; one shared file, since the limits are account-wide),
-then forwards the payload to your real status line — so your display is unchanged.
-
-Install — point `statusLine.command` at it (wraps your existing status line):
-
-```jsonc
-// ~/.claude/settings.json
-"statusLine": { "type": "command",
-  "command": "/abs/path/to/cc-tools/bin/cc-usage-statusline.sh" }
-```
-
-Your previous status line keeps rendering: it runs downstream from `$CC_USAGE_DOWNSTREAM`
-(default `ccstatusline` if on PATH; set to `""` to render nothing). Best-effort and fail-open —
-a capture failure never breaks your status line. Caveats: only interactive sessions render a
-status line (headless `claude -p` does not, so the musician falls back to a token estimate there);
-`rate_limits` is Pro/Max-only and absent until the session's first API response.
-
 ## Layout
 - `commands/find-goal.md` · `commands/what-to-do.md` · `commands/how-to-do.md` · `commands/do.md` — the entry points.
 - `skills/find-goal/SKILL.md` — the grounding loop (goal-setting → North Star capture, then the sequenced roadmap). The front door every other skill routes to when ungrounded.
@@ -144,4 +120,3 @@ status line (headless `claude -p` does not, so the musician falls back to a toke
 - `skills/slap/SKILL.md` — the reset protocol, invoked by do at three strikes (and by you via `/slap`).
 - `skills/crux/SKILL.md` · `commands/crux.md` — the diagnosis loop (pin the pain → four-lens Jungian panel → one diagnosis + angle). Free-standing side door; the deliberate cousin of slap.
 - `commands/cc-init.md` — setup wizard (deps → rules → doc reconciliation → /find-goal; self-contained, no skill).
-- `bin/cc-usage-statusline.sh` — optional statusLine wrapper that exposes subscription usage limits to the musician (see above).

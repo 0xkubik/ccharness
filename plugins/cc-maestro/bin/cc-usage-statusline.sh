@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# cc-tools usage bridge — a statusLine wrapper that captures Claude Code's usage limits.
+# cc-maestro usage bridge — a statusLine wrapper that captures Claude Code's usage limits.
 #
 # A running Claude Code session cannot query its own remaining subscription budget: /usage is
 # TUI-only, and there is no CLI flag, file, hook field, or env var that exposes it. The ONE
@@ -40,7 +40,7 @@ try:
         "captured_at": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "five_hour": rl.get("five_hour"),
         "seven_day": rl.get("seven_day"),
-        "source": "cc-tools/usage-statusline",
+        "source": "cc-maestro/usage-statusline",
     }
     fd, tmp = tempfile.mkstemp(dir=out_dir, prefix=".usage.", suffix=".json")
     with os.fdopen(fd, "w") as f:
@@ -59,7 +59,7 @@ except Exception:
     ts="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
     tmp="$od/.usage.$$.json"
     printf '%s' "$PAYLOAD" | jq -c --arg ts "$ts" \
-      '{captured_at:$ts, five_hour:.rate_limits.five_hour, seven_day:.rate_limits.seven_day, source:"cc-tools/usage-statusline"}' \
+      '{captured_at:$ts, five_hour:.rate_limits.five_hour, seven_day:.rate_limits.seven_day, source:"cc-maestro/usage-statusline"}' \
       > "$tmp" 2>/dev/null && mv "$tmp" "$od/usage.json" 2>/dev/null
     return
   fi

@@ -110,10 +110,11 @@ class TestCcInitWizard(unittest.TestCase):
     def test_uses_askuserquestion(self):
         self.assertIn("AskUserQuestion", self.text)
 
-    def test_five_stages_present(self):
+    def test_four_stages_present(self):
         low = self.text.lower()
-        for marker in ("stage 1", "stage 2", "stage 3", "stage 4", "stage 5"):
+        for marker in ("## stage 1", "## stage 2", "## stage 3", "## stage 4"):
             self.assertIn(marker, low)
+        self.assertNotIn("## stage 5", low)
 
     def test_stage1_antihang_preserved(self):
         # The </dev/null guard on `claude plugin` calls must survive the rewrite.
@@ -132,17 +133,15 @@ class TestCcInitWizard(unittest.TestCase):
         self.assertGreater(len(list(RULES_DIR.glob("*.md"))), 4)
         self.assertIn("4 options", self.text.lower())
 
-    def test_stage3_usage_bridge_wraps_and_is_reversible(self):
-        # Stage 3 installs the usage bridge: must invoke the wrapper, preserve the existing
-        # status line (display unchanged), and tell the user it is reversible.
-        self.assertIn("cc-usage-statusline.sh", self.text)
-        self.assertIn("CC_USAGE_DOWNSTREAM", self.text)
-        self.assertIn("reversible", self.text.lower())
+    def test_no_usage_bridge_stage(self):
+        # The usage bridge moved to cc-maestro: cc-init must not reference it any more.
+        self.assertNotIn("cc-usage-statusline.sh", self.text)
+        self.assertNotIn("CC_USAGE_DOWNSTREAM", self.text)
 
-    def test_stage4_prose_only(self):
+    def test_stage3_prose_only(self):
         self.assertIn("Code and tests are out of scope", self.text)
 
-    def test_stage5_offers_find_goal(self):
+    def test_stage4_offers_find_goal(self):
         self.assertIn("/find-goal", self.text)
 
     def test_idempotent_documented(self):

@@ -1,4 +1,4 @@
-"""Tests for the cc-tools usage bridge (bin/cc-usage-statusline.sh).
+"""Tests for the cc-maestro usage bridge (bin/cc-usage-statusline.sh).
 
 The bridge is a statusLine wrapper: it tees Claude Code's rate_limits payload into the global
 ~/.claude/ccharness/usage.json (honoring $CLAUDE_CONFIG_DIR) and forwards the payload to the
@@ -90,7 +90,7 @@ class TestUsageBridge(unittest.TestCase):
         run(payload(self.proj), env_extra={"CC_USAGE_DOWNSTREAM": ""}, path=path)
         data = json.loads(usage_path(self.cfg).read_text())
         self.assertEqual(data["five_hour"]["used_percentage"], 42)
-        self.assertEqual(data["source"], "cc-tools/usage-statusline")
+        self.assertEqual(data["source"], "cc-maestro/usage-statusline")
 
 
 if __name__ == "__main__":

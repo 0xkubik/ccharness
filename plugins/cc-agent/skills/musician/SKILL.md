@@ -256,7 +256,7 @@ Rules:
 
 The musician runs on the owner's **subscription** (5-hour + weekly limits), and a long build burns
 the same quota the owner needs. A running session can't read its budget directly — the only source
-is the statusLine payload, surfaced by the cc-tools usage bridge into the global
+is the statusLine payload, surfaced by the usage bridge into the global
 `~/.claude/ccharness/usage.json` (honoring `$CLAUDE_CONFIG_DIR`; account-wide, so one file is shared
 across projects — `five_hour` / `seven_day`: `used_percentage` + `resets_at`). At cycle start (step 1) read it and
 compute **headroom** = the smaller of the two remaining percentages (`100 - used_percentage`). The

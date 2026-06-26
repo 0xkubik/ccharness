@@ -1,20 +1,18 @@
 ---
-description: "5-stage onboarding wizard for the cc-* harness, driven by AskUserQuestion. Stage 1 installs missing marketplace dependencies; Stage 2 installs the harness's recommended rules into this project's .claude/rules/; Stage 3 connects the usage-limits bridge so the musician can see your subscription budget; Stage 4 reconciles the project's prose docs against your current understanding so stale text doesn't mislead later decisions; Stage 5 offers to run /find-goal. Every stage is offered and skippable; idempotent — safe to re-run."
+description: "4-stage onboarding wizard for the cc-* harness, driven by AskUserQuestion. Stage 1 installs missing marketplace dependencies; Stage 2 installs the harness's recommended rules into this project's .claude/rules/; Stage 3 reconciles the project's prose docs against your current understanding so stale text doesn't mislead later decisions; Stage 4 offers to run /find-goal. Every stage is offered and skippable; idempotent — safe to re-run."
 argument-hint: "(no arguments)"
 ---
 
-# cc-init — set up the harness in five guided stages
+# cc-init — set up the harness in four guided stages
 
-A guided onboarding wizard. It runs five stages in order, each gated by an `AskUserQuestion` prompt
+A guided onboarding wizard. It runs four stages in order, each gated by an `AskUserQuestion` prompt
 so you choose what happens at every step:
 
 1. **Install dependencies** — the marketplace plugins the harness orchestrates.
 2. **Install rules** — the harness's recommended rule files, into this project's `.claude/rules/`.
-3. **Connect usage limits** — wrap your status line so `/musician` can read your
-   remaining subscription budget and avoid burning it on expensive work.
-4. **Reconcile docs with reality** — check the project's prose docs against your current
+3. **Reconcile docs with reality** — check the project's prose docs against your current
    understanding so stale text doesn't quietly steer later decisions.
-5. **Offer `/find-goal`** — set the product's North Star.
+4. **Offer `/find-goal`** — set the product's North Star.
 
 ## Wizard flow
 
@@ -158,66 +156,7 @@ session.
 
 ---
 
-## Stage 3 — Connect usage limits (let the musician see your budget)
-
-`/musician` runs on your Claude **subscription**, and a long build (a scan, a fuzz
-run) burns the same 5-hour + weekly quota you use yourself. A running session **cannot read its own
-remaining budget** — the only place Claude Code exposes it is the **statusLine** payload. This stage
-installs a tiny wrapper (`bin/cc-usage-statusline.sh`) as your statusLine so the musician can see your
-remaining limits and stop short of spending the last of your quota on expensive work.
-
-**1. Explain what will change — print this to the user, in plain words, BEFORE the gate:**
-
-- It edits your **global** `~/.claude/settings.json` (`statusLine.command`) — a once-per-machine
-  change that affects every project, not just this repo.
-- It **wraps** your current status line, it does not replace it: your existing status line still
-  runs (downstream), so **what you see at the bottom of the terminal stays the same.**
-- On each status-line refresh the wrapper writes the global `~/.claude/ccharness/usage.json`
-  (honoring `$CLAUDE_CONFIG_DIR`; one shared file, since the limits are account-wide) with your
-  **5-hour and weekly used-% and reset time**.
-- `/musician` reads that file at the start of each cycle and **won't launch an
-  expensive or long background build when your remaining budget is low** — it takes a cheap step,
-  waits for the reset, or stops, instead of stranding you with no quota.
-- **Caveats:** real numbers appear only on **Pro/Max** plans and only in **interactive** sessions
-  (a headless `claude -p` run renders no status line, so the musician falls back to a rough token
-  estimate there). The wrapper is **best-effort and fail-open** — a hiccup never breaks or blanks
-  your status line.
-- **Fully reversible:** set `statusLine.command` back to its previous value (this stage records it
-  for you) and the wrapper is gone.
-
-**2. Detect current state.** Read `~/.claude/settings.json` (it may not exist yet):
-- If `statusLine.command` already runs `cc-usage-statusline.sh` → already connected. Report
-  "usage bridge already connected — nothing to do" and go to Stage 4 (no gate).
-- Otherwise note the **current** `statusLine.command` verbatim (may be absent) — you will preserve
-  it as the downstream so the display is unchanged.
-
-**3. Gate** with `AskUserQuestion`:
-- question: "Connect the usage-limits bridge to your status line? (edits global settings; your display is unchanged)"
-- options: **Connect** / **Skip this stage** / **Stop the wizard**
-
-On **Skip** → go to Stage 4. On **Stop** → end the wizard.
-
-**4. Install (on "Connect").**
-- Resolve the wrapper's absolute path: `${CLAUDE_PLUGIN_ROOT}/bin/cc-usage-statusline.sh`.
-- In `~/.claude/settings.json` (create it as `{}` if missing), set `statusLine.type: "command"` and
-  `statusLine.command` to invoke the wrapper via `bash <abs path>` — **merge**, keeping any existing
-  `padding` / `refreshInterval`.
-- **Preserve the display exactly:** if there was a previous `statusLine.command` (and it wasn't
-  already this wrapper), keep it rendering by passing it as the wrapper's downstream — prefix the
-  new command inline: `CC_USAGE_DOWNSTREAM='<previous command verbatim>' bash <abs path>`. If there
-  was no previous status line, use a bare `bash <abs path>` — the wrapper then defaults to
-  `ccstatusline` if present, else renders nothing.
-- Validate the file still parses as JSON after the edit (a broken `settings.json` silently disables
-  ALL settings in it).
-
-**5. Report.** State what changed, the **previous** `statusLine.command` value (so the user can
-revert), and that it takes effect on the **next status-line refresh** (usually immediately; a fresh
-session guarantees it). Remind them the musician only acts on real numbers on **Pro/Max + interactive**
-sessions.
-
----
-
-## Stage 4 — Reconcile docs with reality
+## Stage 3 — Reconcile docs with reality
 
 Stale prose quietly steers later decisions wrong. This stage checks the project's **descriptive
 docs** against your current understanding. It reads only prose — **Code and tests are out of
@@ -231,13 +170,13 @@ git rev-list --count HEAD 2>/dev/null
 ```
 
 — or there are source files beyond `.claude/` config, or descriptive docs exist. If none of these
-hold → print "fresh project, nothing described yet — skipping" and go to Stage 5 (no gate).
+hold → print "fresh project, nothing described yet — skipping" and go to Stage 4 (no gate).
 
 **2. Gate** with `AskUserQuestion`:
 - question: "Reconcile this project's docs against your current understanding?"
 - options: **Reconcile** / **Skip this stage** / **Stop the wizard**
 
-On **Skip** → go to Stage 5. On **Stop** → end the wizard.
+On **Skip** → go to Stage 4. On **Stop** → end the wizard.
 
 **3. Read the descriptive prose only** — `README*`, `docs/**`, `CLAUDE.md`, `.claude/rules/*.md`,
 `AGENTS.md`, `CHANGELOG*`, `.claude/ccharness/roadmap.md`, and other top-level descriptive `*.md`.
@@ -256,7 +195,7 @@ Report what changed.
 
 ---
 
-## Stage 5 — Set the product's direction
+## Stage 4 — Set the product's direction
 
 **Gate** with `AskUserQuestion`:
 - question: "Run /find-goal now to set the product's North Star?"

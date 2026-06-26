@@ -1,6 +1,6 @@
 {
   "name": "cc-agent",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "cc-agent — the self-driving agent layer: /musician is the project's brain for ONE piece of work. Hand it a task/problem/idea (it thinks first and may DECLINE or reframe a bad one) or run it with no prompt (it finds a direction itself via what-to-do). It plays the cc-tools instruments (crux → what-to-do → how-to-do → do), forges its own definition of done, drives to that done, then closes. Bounded and self-closing — no never-stop loop, no spend mode. One Stop hook re-feeds the loop. Depends on cc-tools.",
   "author": {
     "name": "kubik",
