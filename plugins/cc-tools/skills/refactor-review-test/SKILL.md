@@ -70,6 +70,7 @@ digraph order {
 
 ## Phase 1 — Refactor (behavior-preserving)
 
+- Look at whole codebase tree and decide if you need to do any structural work.
 - Clean it up with the **`/simplify`** command and the **`code-simplifier`** agent: clarity,
   structure, dead code, naming, nesting.
 - You **MAY do justified structural work** — split or move functions, move files, reshape the
