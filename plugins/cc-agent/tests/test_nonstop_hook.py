@@ -69,7 +69,7 @@ class TestNonstopHook(unittest.TestCase):
         self.assertEqual(out.strip(), "")
 
     def test_armed_musician_awaiting_noop(self):
-        # Suspended (awaiting set, active still true) -> nonstop must NOT block (no quota burn on suspend).
+        # Suspended (awaiting set, active still true) -> nonstop must NOT block (no wasted turn on suspend).
         rc, out = run_hook(repo_with(ns=armed(),
                                      mus={"active": True, "session_id": SESSION,
                                           "awaiting": {"what": "scan", "since": "2026-06-25T00:00:00Z"}}),

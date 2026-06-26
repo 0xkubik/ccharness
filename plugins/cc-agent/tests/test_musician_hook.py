@@ -46,7 +46,7 @@ class TestMusicianHook(unittest.TestCase):
         self.assertIn("block", out)
 
     def test_inactive_allows_stop(self):
-        # active:false — the musician self-closed (achieved/declined/gave-up/capped/stopped-budget).
+        # active:false — the musician self-closed (achieved/declined/gave-up/capped).
         repo = repo_with({"active": False, "session_id": SESSION})
         rc, out = run_hook(repo, {"session_id": SESSION})
         self.assertEqual(rc, 0)
@@ -86,7 +86,7 @@ class TestMusicianHook(unittest.TestCase):
 
     def test_awaiting_releases_stop(self):
         # An active loop SUSPENDED on async work (awaiting set) must RELEASE, not re-feed —
-        # so the terminal yields and no idle cycle burns quota.
+        # so the terminal yields and no idle cycle is wasted.
         repo = repo_with({"active": True, "session_id": SESSION, "cycle": 2, "entry": "task",
                           "awaiting": {"what": "scan task xyz", "since": "2026-06-25T13:38:00Z"}})
         rc, out = run_hook(repo, {"session_id": SESSION})

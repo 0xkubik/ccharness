@@ -97,8 +97,7 @@ drive the single-direction loop a self-written to-do list would.
 
 - **Write at close — one past-tense line, only on a real outcome.** `achieved` → `built:`,
   `declined` → `declined:`, `gave-up`/`capped` → `dead-end:`. Append it to `HEAD`'s note:
-  `git notes append -m "<built|declined|dead-end>: <what> — <why>"`. `stopped-budget` writes
-  **nothing** — that's a budget event, not a fact about the work. Notes ride the commit SHA, so they
+  `git notes append -m "<built|declined|dead-end>: <what> — <why>"`. Notes ride the commit SHA, so they
   live with the local history (squashing those commits away drops them) — fine for this local awareness.
 - **Read at arm — as a "don't repeat" filter, nothing more.** A fresh run glances at the recent
   `git log --notes` to see what's already closed. It tells you what NOT to redo; it does **not** tell
@@ -123,8 +122,7 @@ When `/musician` first invokes you, before cycle 1:
 2. **Parse run-mode flags from `$ARGUMENTS`.** Everything that is not a flag is the **task/problem
    prompt** (empty → open mode). Accept `--ultracode` → `ultracode: true` (maximum parallelism in
    the build; see **Ultracode**) and the bounds `--give-up-after N` / `--max-cycles N`. There is
-   **no spend flag** — the musician is bounded by design; "burn the whole budget" is not a musician
-   policy.
+   **no spend flag** — the musician is bounded by design.
 3. **Write `musician/state.json` atomically** (temp file + `mv`). Create `.claude/ccharness/musician/`
    if missing:
    ```json
@@ -143,16 +141,12 @@ When `/musician` first invokes you, before cycle 1:
      "started_at": "<UTC now>",
      "last_surveyed_sha": "",
      "awaiting": null,
-     "headroom_floor_pct": 15,
-     "weekly_stop_pct": 98,
      "outcome": null
    }
    ```
    `entry` is `"task"` when a prompt was given, `"open"` when not. `done_when` stays empty until the
    brain forges it on cycle 1. `awaiting` stays `null` except when suspended on async work (see
-   **Awaiting**). `headroom_floor_pct` is the remaining-budget % below which you stop launching
-   expensive work; `weekly_stop_pct` is the weekly **used** % at/above which the loop stops (see
-   **Headroom**). Set `ultracode:true` if `--ultracode` was passed. Touch `musician/blocked.jsonl`
+   **Awaiting**). Set `ultracode:true` if `--ultracode` was passed. Touch `musician/blocked.jsonl`
    and `musician/log.jsonl` if missing.
 4. **Read the awareness notes** — recent `git log --notes` (see **Awareness**): what past runs
    closed, so you don't re-open it. Then **announce** the entry mode and the input (note
@@ -166,13 +160,7 @@ arming, run the next cycle directly.
 ```
 0. RESUMING? If state.awaiting is set and the awaited task just completed (its notification
           re-entered you), CLEAR awaiting (atomic) and continue — the build's result is now in.
-1. READ   musician/state.json + musician/blocked.jsonl + the GLOBAL ~/.claude/ccharness/usage.json
-          (honor $CLAUDE_CONFIG_DIR) for headroom.
-          From a FRESH usage.json (<~10 min old): weekly used_% ≥ weekly_stop_pct → STOP
-          (active:false, outcome:"stopped-budget", report seven_day.resets_at, END TURN). Else 5h
-          remaining < headroom_floor_pct → SUSPEND (awaiting "5h reset"). Else either window below
-          floor → "low headroom" gate ON (no expensive/async launches). Stale/absent → stay
-          conservative. (See Headroom.)
+1. READ   musician/state.json + musician/blocked.jsonl.
 2. BRAIN  (only while done_when == ""): think it through, sized to the input.
           TASK mode → triage the prompt → run the brain by necessity (crux for a fuzzy pain / fit
             check for an idea / skip for a clear task).
@@ -188,8 +176,6 @@ arming, run the next cycle directly.
 5. DECIDE cc-tools:how-to-do on the task/picked direction → one buildable approach (the *how*).
           If how-to-do rules the pick itself wrong/unnecessary → treat as a decline (step 2's exit).
 6. BUILD  cc-tools:do → verify → LOCAL commit (no push).
-          LOW HEADROOM (step 1 gate ON)? do NOT launch an expensive/long-async build — prefer a
-            cheap step, or suspend (awaiting) until reset, or report and stop.
           ASYNC build (launched a long background task that can't finish in-turn, and no parallel
             in-turn work is worth doing) → set awaiting:{what, since} (atomic), log "suspended",
             END TURN. NOT a cycle, NOT a streak tick. (Hook releases on awaiting; the task's
@@ -213,11 +199,8 @@ arming, run the next cycle directly.
   smart "no" is exactly what a brain is for. Distinct from `gave-up` (which means *tried, couldn't*).
 - **gave-up / capped** — *tried and couldn't*: `no_progress_streak >= max_no_progress` (default 3)
   OR `cycle >= max_cycles` (default 20). Reports the full `blocked.jsonl` queue.
-- **stopped-budget** — the weekly limit is at/over `weekly_stop_pct` (default 98% used). Reports
-  `seven_day.resets_at`. Not a failure and not worth parking — re-run `/musician` after the weekly
-  resets. (The 5-hour limit does NOT exit this way — it **suspends**; see Headroom.)
 
-On every terminal exit **except `stopped-budget`**, append one closed-fact line to git —
+On every terminal exit, append one closed-fact line to git —
 `built:` / `declined:` / `dead-end:` + why (see **Awareness**) — before ending the turn.
 
 Setting `active:false` is the only thing that releases the Stop hook on a terminal exit. There is
@@ -230,15 +213,15 @@ not done and has not given up, it is parked on async work or a transient outage.
 A `do` build can launch work that does NOT finish inside the turn (a scan, a fuzz campaign, an
 external run). The cycle is "one iteration per turn," but that work is asynchronous — so **do not
 spin status-check cycles waiting for it.** That busy-wait is the failure mode: the Stop hook
-re-feeds every turn, each re-feed is a full model turn on the subscription, and dozens of "still
-running" cycles burn quota and march the cycle cap for nothing — while also keeping the terminal
+re-feeds every turn, each re-feed is a full model turn, and dozens of "still
+running" cycles waste turns and march the cycle cap for nothing — while also keeping the terminal
 blocked so `/musician-cancel` can't get in.
 
 Instead, **suspend**: when the build is async and there's no independent in-turn work worth doing in
 parallel, write `awaiting` to state (atomic): `{"what": "<task ids / what you launched>", "since":
 "<UTC now>"}`, log a `"suspended"` line, **END THE TURN.** The Stop hook sees `awaiting` and
 **releases** (it does not re-feed): the session goes idle, the terminal yields (cancel works), no
-quota is spent waiting. When the awaited task completes, **its own completion notification re-enters
+turn is spent waiting. When the awaited task completes, **its own completion notification re-enters
 you**; at step 0 you clear `awaiting` and judge the result.
 
 Rules:
@@ -251,32 +234,6 @@ Rules:
 - **A transient EXTERNAL block is a suspension, not a give-up.** An API 5xx/outage, a rate limit, a
   network failure — none mean "no path exists." Suspend, do NOT streak++. Reserve `no_progress_streak`
   for a genuine handback or (open mode) an empty `what-to-do` result.
-
-## Headroom — spend the budget, don't exhaust it
-
-The musician runs on the owner's **subscription** (5-hour + weekly limits), and a long build burns
-the same quota the owner needs. A running session can't read its budget directly — the only source
-is the statusLine payload, surfaced by the usage bridge into the global
-`~/.claude/ccharness/usage.json` (honoring `$CLAUDE_CONFIG_DIR`; account-wide, so one file is shared
-across projects — `five_hour` / `seven_day`: `used_percentage` + `resets_at`). At cycle start (step 1) read it and
-compute **headroom** = the smaller of the two remaining percentages (`100 - used_percentage`). The
-two windows behave differently — check in this order:
-
-- **Weekly near exhaustion → STOP** (terminal). `seven_day.used_percentage ≥ weekly_stop_pct`
-  (default 98): the weekly budget is essentially gone and won't refill for days. Set `active:false`,
-  `outcome:"stopped-budget"`, report `seven_day.resets_at`, END TURN.
-- **5-hour window low → SUSPEND** (non-terminal). `100 - five_hour.used_percentage` below
-  `headroom_floor_pct`: it refills soon, so wait. Set `awaiting` (`"5h limit low — waiting for reset
-  at <five_hour.resets_at>"`), log "suspended", END TURN. Auto-resumes when the window refills.
-- **Weekly low but below the stop line → soft gate.** Weekly remaining below `headroom_floor_pct`
-  (used between floor and `weekly_stop_pct`): do **not** launch an expensive/long-async build. Take
-  a cheap step that advances done; if the only work is expensive, **stop** and report.
-- **Healthy** (both windows ≥ `headroom_floor_pct` remaining): operate normally.
-- **Unknown** (usage.json absent or stale — headless `claude -p`, or pre-first-response): stay
-  conservative; heed any system "approaching limit" warning; don't kick off unbounded expensive
-  async on a blind budget.
-
-Always note the headroom (or "unknown") in the cycle log line.
 
 ## Ultracode mode (`--ultracode`)
 
@@ -297,7 +254,7 @@ build is carried out.
 | "I just built something — skip the done-check, build more." | The done-check **leads every cycle** after vetting. The work may already be done. |
 | "The done_when is hard to judge — keep building to be safe." | Soft judgment over an observable outcome is the job. If it's unobservable, you forged a bad done-contract — fix that, don't loop forever. |
 | "I'll ask the user whether we're done / whether to build (`AskUserQuestion`)." | **Forbidden inside the loop.** The Stop hook re-feeds you on a turn boundary; the judgment is yours. |
-| "My async build is still running — I'll spin a cycle each turn to check." | **No — suspend.** Set `awaiting` and END THE TURN; the task's completion notification resumes you. Busy-wait burns quota and blocks `/musician-cancel`. |
+| "My async build is still running — I'll spin a cycle each turn to check." | **No — suspend.** Set `awaiting` and END THE TURN; the task's completion notification resumes you. Busy-wait wastes turns and blocks `/musician-cancel`. |
 | "The API is 529-ing, so I'm stuck — streak++ toward give-up." | A transient outage is NOT a no-progress tick. Suspend; don't streak++. |
 
 ## Red flags — you are about to make the wrong call
@@ -313,14 +270,13 @@ build is carried out.
 `Arm` open-mode grounding gate (no North Star → `/find-goal`) · parse `--ultracode` (no spend flag) ·
 write `musician/state.json` (`entry`, `input`, empty `done_when`) · touch log/blocked · read
 awareness (`git log --notes`, closed facts only).
-`Cycle`: `1` read state + usage (**budget**: weekly ≥`weekly_stop_pct` → STOP; 5h <floor → SUSPEND;
-else <floor → no expensive launch) · `2` **BRAIN** while `done_when==""`: think sized-to-input
+`Cycle`: `1` read state + blocked · `2` **BRAIN** while `done_when==""`: think sized-to-input
 (crux / fit / skip; open → what-to-do auto-pick top) → decline/intent-reframe/nothing-worth-doing →
 **close `declined`** → else forge `done_when` · `3` **DONE?** survey vs `done_when` → MET → close
 `achieved` · `4` **GIVE-UP?** streak/cap → close `gave-up`/`capped` · `5` how-to-do → buildable
 approach · `6` do → local commit (async → `awaiting`; handback/slap-twice → blocked + no-progress) ·
 `7` progress? streak=0/++ · `8` log + bump cycle (atomic) · `9` end turn → hook re-feeds.
-On any close except `stopped-budget`: `git notes append` one closed fact (`built`/`declined`/`dead-end`
+On any close: `git notes append` one closed fact (`built`/`declined`/`dead-end`
 + why) — never a forward intent.
 
 **Invariant:** the brain leads and may say no (`declined`); you forge your own `done_when`; the

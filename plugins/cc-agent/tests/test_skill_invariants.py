@@ -17,8 +17,8 @@ class TestMusicianSkill(unittest.TestCase):
         self.assertIn("done_when", self.text)
 
     def test_all_four_exits(self):
-        # achieved (done), declined (smart no), gave-up/capped (tried, couldn't), stopped-budget.
-        for token in ("achieved", "declined", "gave-up", "capped", "stopped-budget"):
+        # achieved (done), declined (smart no), gave-up/capped (tried, couldn't).
+        for token in ("achieved", "declined", "gave-up", "capped"):
             self.assertIn(token, self.text)
         for token in ("max_cycles", "no_progress_streak"):
             self.assertIn(token, self.text)

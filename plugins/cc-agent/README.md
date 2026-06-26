@@ -26,8 +26,6 @@ one piece of work, to its end, then stop. Want another — launch it again.
     not a failure; it is distinct from `gave-up`.
   - **gave-up / capped** — *tried and couldn't*: `no_progress_streak ≥ max_no_progress` (default 3)
     or `cycle ≥ max_cycles` (default 20).
-  - **stopped-budget** — the weekly subscription limit is essentially gone (the 5-hour limit instead
-    **suspends** and auto-resumes).
 - **Open mode requires a roadmap's North Star** (it leans on `what-to-do`). None → `/find-goal` first.
 - `/musician-cancel` is the manual brake.
 - `--ultracode` forces maximum parallelism in the build (mandatory Workflow + parallel subagents +
@@ -41,12 +39,12 @@ one piece of work, to its end, then stop. Want another — launch it again.
     state.json     loop control for the one piece of work in flight
                    {active, session_id, mode:"musician", entry:"task"|"open", input,
                     done_when, cycle, no_progress_streak, max_no_progress, max_cycles,
-                    ultracode, awaiting, headroom_floor_pct, weekly_stop_pct, outcome, …}
+                    ultracode, awaiting, outcome, …}
     blocked.jsonl  directions handed back during this piece of work
     log.jsonl      one line per cycle
 ```
 
-`outcome` is one of `achieved` / `declined` / `gave-up` / `capped` / `stopped-budget` (or `null`
+`outcome` is one of `achieved` / `declined` / `gave-up` / `capped` (or `null`
 while running). A non-null `awaiting` object means the loop is **suspended** on async work or a
 transient outage — not done, not given up; the awaited task's completion notification resumes it.
 
@@ -57,8 +55,8 @@ A single `Stop` hook drives the loop:
 | Situation | `musician-stop.sh` |
 | --- | --- |
 | musician active for this session | blocks (re-feeds one cycle) |
-| active but `awaiting` set | yields (suspended — terminal frees, no quota burned) |
-| `active:false` (achieved / declined / gave-up / capped / stopped-budget / cancelled) | yields (session ends) |
+| active but `awaiting` set | yields (suspended — terminal frees, no turn burned) |
+| `active:false` (achieved / declined / gave-up / capped / cancelled) | yields (session ends) |
 | no state / a different session owns it | yields |
 
 It fails **closed**: while a musician state file is active for this session (or present but

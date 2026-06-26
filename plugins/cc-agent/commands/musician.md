@@ -18,7 +18,7 @@ The musician is the project's brain for ONE piece of work. It plays the cc-tools
 
 It is **bounded and self-closing**: one piece of work, to its end, then stop — there is no
 never-stop loop above it. Exits: **achieved** (done), **declined** (the brain said no — a success,
-not a failure), **gave-up / capped** (tried, couldn't), **stopped-budget** (weekly limit). Open mode
+not a failure), **gave-up / capped** (tried, couldn't). Open mode
 needs the North Star — with none it routes you to **`/find-goal`**.
 
 `--ultracode` forces maximum parallelism in the build step (mandatory Workflow + parallel subagents +
