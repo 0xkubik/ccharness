@@ -16,6 +16,10 @@ the request — not a rewrite, not a "cleanup", not a restructure.
   formatting untouched outside the lines you were asked to change. Leave the rest byte-for-byte.
 - **No unsolicited additions.** Don't add sections, examples, caveats, or boilerplate that weren't
   asked for or don't serve the file's purpose.
+- **Write the new state, not the story of the change.** Leave the file reading as if it had always
+  been this way. Don't narrate the transition — no "previously X, now Y", "was … now …", "changed
+  from …", "updated to …". Just write the resulting content and describe it on its own terms, as far
+  as the file needs.
 - **WHY is context for the one edit, not a brief to expand.** When someone explains why they're
   making a change, use it to get that single edit right — not as license to write or rewrite more.
 - **If a bigger rewrite really seems warranted, STOP and propose it separately** — say what and why,
