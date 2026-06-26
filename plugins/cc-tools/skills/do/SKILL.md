@@ -6,15 +6,17 @@ description: "Use when handing a concrete, well-scoped coding task to be taken a
 # do — the strict executor
 
 You are running the **do** pipeline: take ONE concrete task from understood →
-built → verified → committed, and stop with nothing half-done. It is the foot of the funnel
-(what-to-do → how-to-do → do) and also runs standalone on any concrete task. **You own
-execution; the human owns direction.** Drive the seven stages below in order. Do not skip a
-stage. Do not declare done while the Stage-1 checklist has open items.
+built → smoke-checked, then **hand it off to `refactor-review-test`** — stopping with nothing
+half-done. It is the foot of the build funnel (what-to-do → how-to-do → do → refactor-review-test)
+and also runs standalone on any concrete task. **You own execution; the human owns direction.**
+Drive the stages below in order. Do not skip a stage. Do not declare done while the Stage-1
+checklist has open items. **You do not verify-to-green, review, simplify, or commit — that is
+`refactor-review-test`'s pass, and `do` always hands off to it.**
 
 **Core invariants — non-negotiable:**
 - **Refuse, don't guess** (Stage 0 — and the fork-test stays armed all the way through Stage 3). A technical fork goes to how-to-do; a business / non-technical one it refuses outright; a vague task goes to brainstorming — never a guessed default.
-- **Verify before you claim** (Stage 4). Evidence, not assertion.
-- **Never commit unverified code** (Stage 6 only runs after Stage 4 is green).
+- **Smoke-check before you hand off** (Stage 4). Prove it *runs* — compile / boot / a smoke test — evidence, not assertion. The full verify is `refactor-review-test`'s, not yours.
+- **You never commit.** `do` hands off un-committed code; `refactor-review-test` owns the verified local commit.
 - **3 strikes on one problem → reset, don't keep patching** (slap) — then pick the fresh approach yourself; **implementation never hands back to the human.**
 
 ---
@@ -124,7 +126,7 @@ lighter; reserve Workflows for genuine scale.
 parallelize) **and** it decomposes into a clean, repeatable iteration step the same loop can
 grind to completion. ralph-loop is a session-level while-true on a fixed prompt, so make each
 iteration **verify its own step**; once the loop finishes, return here for the whole-result
-Stage 4 verify and Stage 6 commit.
+Stage 4 smoke-check and the hand-off to `refactor-review-test`.
 
 ---
 
@@ -136,44 +138,36 @@ where the strike counter and the still-armed fork-test live — see Escalation.
 
 ---
 
-## Stage 4 — Verify & debug (mandatory)
+## Stage 4 — Smoke-check (does it run?)
 
-Prove it works — never assert it. Run the build, the tests, and the linters; for UI, drive it
-through `playwright` and observe the actual result. Use `superpowers:verification-before-completion`:
-show the evidence, don't claim. On any failure, switch to `superpowers:systematic-debugging` —
-fix the root cause, not the symptom. Loop Stage 3 ↔ 4 until green.
-
----
-
-## Stage 5 — Review & simplify (optional)
-
-Run this **only if the task produced non-trivial code.** Skip it for docs-only, config-only, or
-trivial changes — and say why you skipped. When it applies:
-
-1. `code-review:code-review` on the diff — correctness.
-2. The `code-simplifier` agent on the changed code — clarity and maintainability.
-3. Triage the findings through `superpowers:receiving-code-review` — verify before applying;
-   don't agree performatively.
-
-If you change anything, return to Stage 4 and re-verify.
+Prove the change **runs** — never assert it. Compile / boot it and run a smoke check (or the
+quick happy-path test); for UI, load it and see it render. This is the *does-it-even-run* gate
+before hand-off — **not** the full verify-to-green, the coverage pass, or review. Those belong to
+`refactor-review-test`. If the smoke check fails, fix it here (Stage 3 ↔ 4, root cause via
+`superpowers:systematic-debugging`) until the change runs; then hand off.
 
 ---
 
-## Stage 6 — Commit (local only)
+## Stage 5 — Hand off to refactor-review-test
 
-1. Make a **local commit** with `git` directly — craft a message in the repo's commit style.
-2. **STOP before push / PR.** Do not push or open a pull request.
-3. Report the commit, then offer the next step — push and open a PR (auto-detected from the git
-   remote). The human triggers it.
+The change runs. **Now hand it off — `do` always ends here.** Invoke
+**`cc-tools:refactor-review-test`** on the change you just built; it owns the rest — the full
+verify, the behavior-preserving refactor, `/code-review` + `/simplify`, the full test coverage,
+and the verified local commit. You do **not** review, simplify, test-to-green, or commit yourself;
+handing off un-committed code is the design, not a gap.
+
+Under the musician this hand-off is transparent: the `do → refactor-review-test` chain runs inside
+your dispatch and the commit/sha comes back from its end.
 
 ---
 
 ## Escalation — route upward, never to the human
 
 Past the Stage-0 gate you own the build to its end, and **implementation never escalates to the
-human.** The only human touchpoints are the Stage-0 gate (before the build) and the optional
-push offer (after Stage 6) — never the middle. Two things still route *upward to the right
-machinery*, and neither is the user: a **decision** goes to how-to-do, a **stuck fix** goes to slap.
+human.** The only human touchpoint is the Stage-0 gate (before the build) — past it, `do` runs
+straight through to the hand-off (the push offer now lives with `refactor-review-test`, which
+commits). Two things still route *upward to the right machinery*, and neither is the user: a
+**decision** goes to how-to-do, a **stuck fix** goes to slap.
 
 ### A serious technical fork surfaces mid-build → `how-to-do`
 
@@ -212,8 +206,8 @@ and deciding the next move yourself. Keep driving until the work is done and ver
 
 Grounding — no `## Product North Star` → **route to `/find-goal`**, stop · `0` Gate — technical fork → how-to-do, business → refuse,
 vague → brainstorming · `1` Scope — checklist + size · `2` Tools — route & announce · `3` Build —
-goal-loop to done · `4` Verify — evidence, debug to green · `5` Review+simplify — only if
-non-trivial · `6` Commit — local only, then offer push.
+goal-loop to done · `4` Smoke-check — does it run? · `5` Hand off → **refactor-review-test** (it owns
+verify, review/simplify, full tests, and the commit). `do` never commits.
 
 Mid-build, a serious technical fork (material · no clear winner · costly to reverse) → **how-to-do**; routine/reversible calls you make yourself.
 Strike 3 on one problem → **slap**, then pick the fresh approach yourself. Implementation never hands back to the human — re-decide as needed.

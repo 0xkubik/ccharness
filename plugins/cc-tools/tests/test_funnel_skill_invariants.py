@@ -4,6 +4,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 FIND_GOAL = ROOT / "skills" / "find-goal" / "SKILL.md"
 WHAT_TO_DO = ROOT / "skills" / "what-to-do" / "SKILL.md"
+RRT = ROOT / "skills" / "refactor-review-test" / "SKILL.md"
 
 
 class TestFindGoalSkill(unittest.TestCase):
@@ -54,6 +55,46 @@ class TestWhatToDoSkill(unittest.TestCase):
 
     def test_qualified_handoff(self):
         self.assertIn("cc-tools:how-to-do", self.text)
+
+
+class TestRefactorReviewTestSkill(unittest.TestCase):
+    def setUp(self):
+        self.text = RRT.read_text() if RRT.exists() else ""
+        self.lower = self.text.lower()
+
+    def test_exists(self):
+        self.assertTrue(RRT.exists(), "refactor-review-test SKILL.md missing")
+
+    def test_never_to_a_human(self):
+        # The load-bearing discipline: it fixes everything itself and never escalates to a human.
+        self.assertIn("never to a human", self.lower)
+
+    def test_apply_not_report(self):
+        # It APPLIES fixes; a findings list handed up is a failure (unlike /code-review, which reports).
+        self.assertIn("apply, don't report", self.lower)
+
+    def test_behavior_preserving_refactor(self):
+        self.assertIn("behavior-preserving", self.lower)
+
+    def test_bounded_to_the_change(self):
+        self.assertIn("bounded to the change", self.lower)
+
+    def test_order_net_refactor_review_test(self):
+        # Net first, then refactor → review → test; full coverage comes last (write tests once).
+        for token in ("safety net", "refactor", "review", "full coverage"):
+            self.assertIn(token, self.lower)
+
+    def test_uses_named_marketplace_tools(self):
+        for token in ("/code-review", "/simplify", "code-simplifier"):
+            self.assertIn(token, self.text)
+
+    def test_behavior_fork_to_conductor_not_human(self):
+        # The one thing it never decides silently goes to the conductor (musician), not a human.
+        self.assertIn("conductor", self.lower)
+
+    def test_owns_the_local_commit(self):
+        # The verified local commit moved out of do into this skill.
+        self.assertIn("local commit", self.lower)
 
 
 if __name__ == "__main__":

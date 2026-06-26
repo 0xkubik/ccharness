@@ -60,6 +60,10 @@ class TestMusicianSkill(unittest.TestCase):
         for name in ("cc-tools:what-to-do", "cc-tools:how-to-do", "cc-tools:do"):
             self.assertIn(name, self.text)
 
+    def test_refactor_review_test_instrument(self):
+        # do always chains to refactor-review-test; the musician can also dispatch it directly.
+        self.assertIn("cc-tools:refactor-review-test", self.text)
+
     def test_musician_state_path(self):
         self.assertIn(".claude/ccharness/musician/", self.text)
 

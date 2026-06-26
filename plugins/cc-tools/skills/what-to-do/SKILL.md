@@ -9,7 +9,7 @@ You are running **what-to-do**: look at a product and produce a ranked menu of d
 take next. **You do the exploring; the human picks; you never decide.** what-to-do is the mouth of the
 funnel — it generates the agenda the other tools act on.
 The funnel:
-find-goal grounds the goal → what-to-do fans out a menu (nothing chosen) → how-to-do decides _how_ (one way) → do builds one task to done (committed).
+find-goal grounds the goal → what-to-do fans out a menu (nothing chosen) → how-to-do decides _how_ (one way) → do builds one task and smoke-checks it → refactor-review-test hardens it (refactor · review · full tests) and commits.
 
 Its whole job is to fight the **fortune-cookie failure** — ungrounded "add SSO, add analytics, add
 dark mode" lists that fit any product — by anchoring every move to the **North Star** and asking one

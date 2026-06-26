@@ -2,7 +2,7 @@
 
 The self-driving agent layer of the cc-* harness. One loop — the **musician**: the project's brain
 for ONE piece of work. It plays the cc-tools instruments (`crux` → `what-to-do` → `how-to-do` →
-`do`), thinks before it builds, forges its own definition of done, drives to that done, then
+`do` → `refactor-review-test`), thinks before it builds, forges its own definition of done, drives to that done, then
 **closes**. Bounded and self-closing — there is no never-stop loop above it.
 
 ## `/musician` — the bounded performer
@@ -93,7 +93,7 @@ session with no pointer simply yields.
 A musician reasons inside its own session window, invisible from outside. A `PreToolUse` /
 `PostToolUse` hook — `musician-observe.sh` — makes the work visible **as it happens**: while a
 musician is active for this session, it appends one line per tool call to `live.log` — the
-instrument it called (`crux` / `what-to-do` / `how-to-do` / `do`), a shell command, a file edit, a
+instrument it called (`crux` / `what-to-do` / `how-to-do` / `do` / `refactor-review-test`), a shell command, a file edit, a
 spawned subagent — with the cycle number. It is a read-only witness: it **never blocks or alters a
 tool**, and logging is best-effort (skipped if it can't parse the input).
 
@@ -109,6 +109,6 @@ and every action are.
 ## Dependencies & supervision
 
 - Depends on **cc-tools** (invokes `cc-tools:crux`, `cc-tools:what-to-do`, `cc-tools:how-to-do`,
-  `cc-tools:do`, `cc-tools:slap`).
+  `cc-tools:do`, `cc-tools:refactor-review-test`, `cc-tools:slap`).
 - Supervised by **cc-maestro**: a `musician` state file signals an autonomous, bounded agent with a
   terminal outcome — cc-maestro watches its progress and can cancel it gracefully.

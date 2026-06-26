@@ -1,5 +1,5 @@
 ---
-description: "Hand one concrete, well-scoped task to the strict executor — it drives the task from understood → built → verified → committed through a gated 0→6 pipeline, refusing fork-laden tasks instead of guessing."
+description: "Hand one concrete, well-scoped task to the strict executor — it drives the task from understood → built → smoke-checked through a gated pipeline, then hands off to refactor-review-test (which verifies, refactors, reviews, tests, and commits), refusing fork-laden tasks instead of guessing."
 argument-hint: "<task>"
 ---
 

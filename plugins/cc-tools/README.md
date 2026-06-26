@@ -45,7 +45,8 @@ This captures the product's *North Star* (the goal) into `CLAUDE.md` and then of
 | **`/find-goal`** | The **grounding loop** — the front door. Captures the product's *North Star* (goal-setting: vision · core problem · level) into `CLAUDE.md`, then **offers** to chart the *roadmap* — a *layered* route of lightweight milestones (`done when …` + theme): ordered **stages**, with **parallel milestones inside each** (`order → split stages; independent → same stage`), saved to `.claude/ccharness/roadmap.md`. Run once up front; re-run any time to revise — goal or roadmap, no flag. Every other command routes here when no North Star exists. | "Set the goal and plan the project far ahead." |
 | **`/what-to-do [theme]`** | The **direction loop.** Surveys a product and emits a **ranked menu** of where it could go next — across four moves: **add** (new features), **finish** (half-built work), **rebuild** (redo better), **refactor** (tech debt) — each scored against the product's goal, and **biased toward the roadmap's current frontier** (the parallel milestones open now) if one exists. Requires the *North Star* — no North Star → routes you to `/find-goal`. Runs with or without a prompt. Decides nothing — you pick. | "Where should this product go next?" |
 | **`/how-to-do <decision>`** | The **decision loop.** Works out HOW to build a picked direction (or resolves a standalone technical fork) — four opposed proposers (MVP / Final / Conventional / Contrarian) argue different ways to build it → cross-examination → synthesis into ONE buildable approach. It decides the *how*, not *whether* (the pick is what-to-do's); a pick that looks wrong it flags rather than overrides. Depth scales to stakes. | "How to build it — and why?" |
-| **`/do <task>`** | The **strict executor.** Runs one well-scoped task through a gated `0→6` pipeline (below). Requires the *North Star* (routes to `/find-goal` if missing). Refuses fork-laden or ambiguous tasks instead of guessing — a technical fork goes back to `/how-to-do`, a non-technical (business) one it refuses outright, pure ambiguity to brainstorming; never declares done with work open; never commits unverified code. | "Take this concrete task to done." |
+| **`/do <task>`** | The **strict executor.** Runs one well-scoped task through a gated pipeline (below) to a **smoke-checked** finish, then **hands off to `/refactor-review-test`**. Requires the *North Star* (routes to `/find-goal` if missing). Refuses fork-laden or ambiguous tasks instead of guessing — a technical fork goes back to `/how-to-do`, a non-technical (business) one it refuses outright, pure ambiguity to brainstorming; never declares done with work open; **never commits** (that's refactor-review-test's). | "Build this concrete task." |
+| **`/refactor-review-test [target]`** | The **autonomous hardener** — the tail of the funnel. Takes the change `/do` just built (or existing code) and carries it to a *solid* finish: safety-net tests → behavior-preserving refactor (`/simplify` + `code-simplifier`) → review (`/code-review`) with fixes **applied, not reported** → full test coverage → verified **local commit**. Fully autonomous — it **never hands work back to a human**; a genuine behavior/product fork it flags to the conductor, never asks. `/do` always hands off here; also runs standalone. | "Harden this to done." |
 | **`/slap`** | The **reset.** When a fix has gone three rounds deep in a rabbit hole, forces a step back: restate the problem, list what was tried, question assumptions, research alternatives, propose a fresh angle. | "Stop digging — rethink this." |
 | **`/crux <pain>`** | The **diagnosis loop.** Unwinds a pain, doubt, or blockage that isn't yet a goal/direction/fork — pins the real problem from your words + the repo, runs a four-lens critical-thinking panel (Jung's Sensation / Intuition / Thinking / Feeling, each committing to a falsifiable check), and converges on ONE diagnosis + angle of attack, not implementation. Autonomous, free-standing (no North Star needed); the deliberate, deeper cousin of `/slap`. | "Something's off — make sense of it." |
 | **`/cc-init`** | **Setup wizard (5 stages).** Driven by your choices, each stage skippable: (1) install missing dependencies from the official marketplace (user scope); (2) install the harness's recommended rules into this project's `.claude/rules/`; (3) build the reminder cheat-sheet a `UserPromptSubmit` hook re-surfaces every third prompt so the project's tools and rules don't fade from attention; (4) reconcile the project's prose docs against your current understanding so stale text doesn't mislead later decisions; (5) offer to run `/find-goal`. Idempotent. | "Set this up on a new machine." |
@@ -69,8 +70,12 @@ each owning a different kind of thinking:
   flows that straight into `/do`. It doesn't re-pick the direction (that was what-to-do's
   job) — it decides the *how*; and if the pick itself looks wrong, it flags you rather than silently
   overriding. You can redirect, but you don't have to re-approve.
-- **`/do`** *builds* — it takes the decided, well-scoped task (handed down by how-to-do,
-  or given directly) and drives it to a verified local commit.
+- **`/do`** *builds* — it takes the decided, well-scoped task (handed down by how-to-do, or given
+  directly), builds it and smoke-checks that it runs, then **hands off to `/refactor-review-test`**.
+- **`/refactor-review-test`** *hardens* — it takes that working change and carries it to a solid
+  finish: safety-net tests → behavior-preserving refactor → review-with-fixes → full coverage →
+  verified local commit. Fully autonomous — it never hands work back to a human; the commit lives
+  here, not in `/do`.
 
 You act at just a few boundaries: set the **North Star** (once, via `/find-goal`) and shape the
 **roadmap**, **pick a direction** (the one required choice each cycle), and **trigger the push** at
@@ -85,9 +90,8 @@ forced to.
 | **1** | **Scope** | An ordered checklist of deliverables + a size estimate (large → a written plan via `superpowers:writing-plans`). |
 | **2** | **Select tools** | Routes to the right machinery — `frontend-design`, `superpowers` TDD/subagents/plans, `playwright`, `ralph-loop`, or its own goal-loop — and announces the choice. |
 | **3** | **Implement** | Its own goal-loop drives the checklist to completion; TDD where a harness exists. |
-| **4** | **Verify & debug** | Mandatory. Build/tests/lint (and `playwright` for UI), evidence before claims; `superpowers:systematic-debugging` on failures. Loops 3↔4 until green. |
-| **5** | **Review & simplify** *(optional)* | For non-trivial code: `code-review` + the `code-simplifier` agent, triaged through `superpowers:receiving-code-review`. |
-| **6** | **Commit** | A local `git` commit. Stops before push/PR and offers the next step (push + open a PR, auto-detected from the remote). |
+| **4** | **Smoke-check** | Proves the change *runs* — compile / boot / a smoke test (does-it-even-run), **not** the full verify. Fixes here (3↔4) until it runs. |
+| **5** | **Hand off** | Always invokes **`/refactor-review-test`**, which owns the full verify, refactor, review, full tests, and the local commit. `/do` itself never commits. |
 
 **The slap link:** while implementing, do keeps a per-problem strike counter. Three
 failed attempts at the same problem → it runs the **slap** protocol, picks a fresh angle
@@ -118,11 +122,12 @@ Beyond the marketplace set, `/cc-init` also **offers** two external MCP tools it
 [`headroom`](https://github.com/headroomlabs-ai/headroom) (token-saving output compression).
 
 ## Layout
-- `commands/find-goal.md` · `commands/what-to-do.md` · `commands/how-to-do.md` · `commands/do.md` — the entry points.
+- `commands/find-goal.md` · `commands/what-to-do.md` · `commands/how-to-do.md` · `commands/do.md` · `commands/refactor-review-test.md` — the entry points.
 - `skills/find-goal/SKILL.md` — the grounding loop (goal-setting → North Star capture, then the sequenced roadmap). The front door every other skill routes to when ungrounded.
 - `skills/what-to-do/SKILL.md` — the direction loop (diverge → ranked menu, biased toward the roadmap's current frontier).
 - `skills/how-to-do/SKILL.md` — the decision loop (four proposers → synthesis).
-- `skills/do/SKILL.md` — the gated `0→6` executor (the brains).
+- `skills/do/SKILL.md` — the gated executor: builds + smoke-checks, then hands off (the brains).
+- `skills/refactor-review-test/SKILL.md` — the autonomous hardener (safety-net → refactor → review → full tests → commit); `/do`'s always-on tail, also standalone.
 - `skills/slap/SKILL.md` — the reset protocol, invoked by do at three strikes (and by you via `/slap`).
 - `skills/crux/SKILL.md` · `commands/crux.md` — the diagnosis loop (pin the pain → four-lens Jungian panel → one diagnosis + angle). Free-standing side door; the deliberate cousin of slap.
 - `commands/cc-init.md` — setup wizard (deps → rules → reminder cheat-sheet → doc reconciliation → /find-goal; self-contained, no skill).

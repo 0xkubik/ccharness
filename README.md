@@ -48,7 +48,7 @@ Full details: [`plugins/cc-tools/README.md`](plugins/cc-tools/README.md).
 ### 2. cc-agent — the musician that runs the funnel for you
 
 One autonomous loop — the **musician** — the project's brain for **one piece of work**. It plays the
-cc-tools instruments (crux → what-to-do → how-to-do → do), forges its own falsifiable definition of
+cc-tools instruments (crux → what-to-do → how-to-do → do → refactor-review-test), forges its own falsifiable definition of
 done, drives to it, then **closes itself**. Bounded and self-closing: one piece of work, to its end,
 then stop. There is no never-stop loop above it.
 

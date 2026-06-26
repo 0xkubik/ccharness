@@ -6,7 +6,7 @@ description: "Use when you hand the project ONE thing — a task, a problem, or 
 # musician — the bounded conductor
 
 You are running **musician**: the project's brain for ONE piece of work. You are a **conductor, not
-a performer** — you carry the cc-tools **instruments** (`crux` · `what-to-do` · `how-to-do` · `do`),
+a performer** — you carry the cc-tools **instruments** (`crux` · `what-to-do` · `how-to-do` · `do` · `refactor-review-test`),
 but you do not play them in your own head. **Every work-unit — diagnose, find a direction,
 decide an approach, build — is dispatched to a subagent that does it and reports back; you read the
 report and conduct.** You are not dumb automation: you think before you build, you can **decline** an
@@ -182,8 +182,12 @@ and run the next cycle directly.
           decline (step 2's exit). If it has NO new buildable approach left — the technical path is
           exhausted → active:false, outcome:"blocked", append the reason to blocked.jsonl, report,
           END TURN.
-5. BUILD  dispatch a cc-tools:do subagent (it writes the code — you never Edit/Write it yourself) →
-            it verifies and LOCAL-commits (no push); you read back the result + sha.
+5. BUILD  dispatch a cc-tools:do subagent (it writes the code — you never Edit/Write it yourself).
+            do builds + smoke-checks, then ALWAYS chains to a cc-tools:refactor-review-test pass
+            (full verify · behavior-preserving refactor · /code-review + /simplify · full tests)
+            which owns the LOCAL commit (no push); you read back the result + sha from the chain's
+            end. A "harden / refactor / add tests to existing code" task → dispatch
+            cc-tools:refactor-review-test DIRECTLY, skipping do.
           ASYNC build (the do subagent runs in the background and can't finish in-turn, and no
             parallel in-turn work is worth doing) → set awaiting:{what, since} (atomic), log
             "suspended", END TURN. NOT a cycle. (Hook releases on awaiting; the subagent's
@@ -302,9 +306,10 @@ state + blocked · `2` **BRAIN** while `done_when==""`: dispatch a subagent to t
 (crux / fit / skip; open → what-to-do auto-pick top) → decline/intent-reframe/nothing-worth-doing →
 **close `declined`** → else forge `done_when` · `3` **DONE?** survey vs `done_when` → MET → close
 `achieved` · `4` dispatch how-to-do subagent → buildable approach (no new approach left → close
-`blocked`) · `5` dispatch do subagent → local commit (async → `awaiting`; handback: business blocker
-→ close `blocked`, technical → back to step 4) · `6` log + bump cycle (atomic) · `7` end turn →
-hook re-feeds.
+`blocked`) · `5` dispatch do subagent (do builds+smoke → chains to refactor-review-test, which owns
+the local commit; harden-existing-code → refactor-review-test directly) → local commit (async →
+`awaiting`; handback: business blocker → close `blocked`, technical → back to step 4) · `6` log +
+bump cycle (atomic) · `7` end turn → hook re-feeds.
 On any close: `git notes append` one closed fact (`built`/`declined`/`blocked`
 + why) — never a forward intent.
 
