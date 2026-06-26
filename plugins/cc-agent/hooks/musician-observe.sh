@@ -1,35 +1,34 @@
 #!/usr/bin/env bash
 # musician — observe hook (PreToolUse / PostToolUse). A read-only witness: while a musician is
-# ACTIVE for THIS session, it appends one human-readable line per tool call to the run's live log,
+# ACTIVE for THIS session, it appends one human-readable line per tool call to that run's live.log,
 # so the work is visible from outside the agent's own window (which instrument it called, and
 # roughly what it is doing). It is NOT part of the loop's control — it NEVER blocks or alters a
 # tool: it always exits 0 and writes nothing to stdout. Logging is best-effort; if it can't parse
 # the input it stays silent rather than interfere.
 #
+# Each run lives in runs/<run-id>/; we resolve THIS session's run from the session_id on stdin via
+# the per-session pointer (see musician-resolve.sh) and write into that run's folder.
+#
 # Arg 1: "pre" (about to run a tool) | "post" (a tool just finished).
 set -u
 
 MODE="${1:-pre}"
-STATE_FILE=".claude/ccharness/musician/state.json"
-LIVE_LOG=".claude/ccharness/musician/live.log"
-
+source "${BASH_SOURCE[0]%/*}/musician-resolve.sh"
 HOOK_INPUT="$(cat 2>/dev/null || true)"
-[ -f "$STATE_FILE" ] || exit 0
 
-# Witness only when a musician is ACTIVE and owned by THIS session. Parsing needs jq; without it,
-# logging is simply skipped (it is observability, never a safety gate — the Stop hook is the gate).
+# Parsing the tool args needs jq; without it, observability is simply skipped (never a safety gate).
 command -v jq >/dev/null 2>&1 || exit 0
 
 TOOL="$(printf '%s' "$HOOK_INPUT" | jq -r '.tool_name // ""' 2>/dev/null || true)"
 [ -n "$TOOL" ] || exit 0
+
+SID="$(mus_session_from_stdin "$HOOK_INPUT")"
+RUN_DIR="$(mus_run_dir "$SID")"
+[ -n "$RUN_DIR" ] || exit 0
+STATE_FILE="$RUN_DIR/state.json"
+LIVE_LOG="$RUN_DIR/live.log"
+
 [ "$(jq -r '.active' "$STATE_FILE" 2>/dev/null)" = "true" ] || exit 0
-
-HOOK_SESSION="$(printf '%s' "$HOOK_INPUT" | jq -r '.session_id // ""' 2>/dev/null || true)"
-STATE_SESSION="$(jq -r '.session_id // ""' "$STATE_FILE" 2>/dev/null || true)"
-if [ -n "$STATE_SESSION" ] && [ -n "$HOOK_SESSION" ] && [ "$STATE_SESSION" != "$HOOK_SESSION" ]; then
-  exit 0
-fi
-
 CYCLE="$(jq -r '.cycle // "?"' "$STATE_FILE" 2>/dev/null || echo '?')"
 
 # Rough human action derived from the tool and its arguments.

@@ -4,14 +4,20 @@ from pathlib import Path
 HOOK = Path(__file__).resolve().parent.parent / "hooks" / "musician-observe.sh"
 SESSION = "11111111-1111-1111-1111-111111111111"
 OTHER = "22222222-2222-2222-2222-222222222222"
+RUN_ID = "20260626-120000-aaaa"
 
 
-def repo_with(state=None):
+def repo_with(state=None, run_id=RUN_ID):
+    """Lay out a run: runs/<run-id>/state.json + a by-session/<session_id> pointer."""
     repo = tempfile.mkdtemp()
     if state is not None:
-        d = Path(repo) / ".claude" / "ccharness" / "musician"
-        d.mkdir(parents=True, exist_ok=True)
-        (d / "state.json").write_text(json.dumps(state))
+        base = Path(repo) / ".claude" / "ccharness" / "musician"
+        (base / "runs" / run_id).mkdir(parents=True, exist_ok=True)
+        (base / "runs" / run_id / "state.json").write_text(json.dumps(state))
+        sid = state.get("session_id")
+        if sid:
+            (base / "by-session").mkdir(parents=True, exist_ok=True)
+            (base / "by-session" / sid).write_text(run_id)
     return repo
 
 
@@ -21,8 +27,8 @@ def run_observe(repo, stdin_obj, mode="pre"):
     return r.returncode, r.stdout
 
 
-def live_log(repo):
-    p = Path(repo) / ".claude" / "ccharness" / "musician" / "live.log"
+def live_log(repo, run_id=RUN_ID):
+    p = Path(repo) / ".claude" / "ccharness" / "musician" / "runs" / run_id / "live.log"
     return p.read_text() if p.exists() else ""
 
 

@@ -123,15 +123,18 @@ When `/musician` first invokes you, before cycle 1:
    prompt** (empty → open mode). Accept `--ultracode` → `ultracode: true` (maximum parallelism in
    the build; see **Ultracode**) and the bounds `--give-up-after N` / `--max-cycles N`. There is
    **no spend flag** — the musician is bounded by design.
-3. **Write `musician/state.json` atomically** (temp file + `mv`). Create `.claude/ccharness/musician/`
-   if missing:
+3. **Forge a run id and write the run's state atomically.** Each `/musician` run gets its OWN
+   folder, so many runs in one repo never collide. Generate
+   `run_id = <UTC YYYYMMDD-HHMMSS>-<4 random hex>` (sortable, unique, readable), create
+   `.claude/ccharness/musician/runs/<run_id>/`, and write `state.json` there (temp file + `mv`):
    ```json
    {
      "active": true,
+     "run_id": "<run_id>",
      "session_id": "<$CLAUDE_CODE_SESSION_ID>",
      "mode": "musician",
      "entry": "task",
-     "input": "<the task/problem prompt verbatim, or \"\" for open mode>",
+     "input": "<the task/problem prompt you were handed, verbatim — or \"\" for open mode>",
      "done_when": "",
      "cycle": 0,
      "no_progress_streak": 0,
@@ -144,23 +147,28 @@ When `/musician` first invokes you, before cycle 1:
      "outcome": null
    }
    ```
-   `entry` is `"task"` when a prompt was given, `"open"` when not. `done_when` stays empty until the
-   brain forges it on cycle 1. `awaiting` stays `null` except when suspended on async work (see
-   **Awaiting**). Set `ultracode:true` if `--ultracode` was passed. Touch `musician/blocked.jsonl`
-   and `musician/log.jsonl` if missing.
+   `entry` is `"task"` when a prompt was given, `"open"` when not. `input` is the **original prompt
+   you received, captured verbatim** — it is your record of what was asked. `done_when` stays empty
+   until the brain forges it on cycle 1. `awaiting` stays `null` except when suspended on async work
+   (see **Awaiting**). Set `ultracode:true` if `--ultracode` was passed. Then **write the
+   per-session pointer** so the hooks can find this run from the session id:
+   `.claude/ccharness/musician/by-session/<$CLAUDE_CODE_SESSION_ID>` containing just `<run_id>`.
+   Touch `<run>/blocked.jsonl` and `<run>/log.jsonl`. **`<run>` = `runs/<run_id>/` from here on.**
 4. **Read the awareness notes** — recent `git log --notes` (see **Awareness**): what past runs
    closed, so you don't re-open it. Then **announce** the entry mode and the input (note
    `[ultracode]` if set), and run cycle 1.
 
-When the Stop hook **re-feeds** you (the normal in-loop path): `state.json` already exists — skip
-arming, run the next cycle directly.
+When the Stop hook **re-feeds** you (the normal in-loop path): your run already exists — skip
+arming. Resolve `<run>` from the pointer (`runs/$(cat .claude/ccharness/musician/by-session/<$CLAUDE_CODE_SESSION_ID>)/`)
+and run the next cycle directly.
 
 ## One cycle (think first, then done-check leads)
 
 ```
 0. RESUMING? If state.awaiting is set and the awaited task just completed (its notification
           re-entered you), CLEAR awaiting (atomic) and continue — the build's result is now in.
-1. READ   musician/state.json + musician/blocked.jsonl.
+1. READ   <run>/state.json + <run>/blocked.jsonl  (<run> = runs/<run_id>/, found via the
+          by-session pointer).
 2. BRAIN  (only while done_when == ""): think it through, sized to the input.
           TASK mode → triage the prompt → run the brain by necessity (crux for a fuzzy pain / fit
             check for an idea / skip for a clear task).
@@ -185,7 +193,7 @@ arming, run the next cycle directly.
           EXTERNAL transient block (API 5xx/outage, rate-limit, network) → suspend like async (set
             awaiting / log "blocked-external"), END TURN, do NOT streak++.
 7. PROGRESS?  committed work that moves done_when closer → streak = 0; otherwise → streak++.
-8. LOG    log.jsonl line {cycle, picked, outcome, moved_goal, streak, sha?, ts}; bump cycle (atomic).
+8. LOG    <run>/log.jsonl line {cycle, picked, outcome, moved_goal, streak, sha?, ts}; bump cycle (atomic).
 9. END TURN → the musician hook re-feeds (unless awaiting was set in 6 — then it released).
 ```
 
@@ -268,8 +276,9 @@ build is carried out.
 ## Quick reference
 
 `Arm` open-mode grounding gate (no North Star → `/find-goal`) · parse `--ultracode` (no spend flag) ·
-write `musician/state.json` (`entry`, `input`, empty `done_when`) · touch log/blocked · read
-awareness (`git log --notes`, closed facts only).
+forge `run_id`, write `runs/<run_id>/state.json` (`run_id`, `entry`, `input` verbatim, empty
+`done_when`) + the `by-session/<session_id>` pointer · touch `<run>` log/blocked · read awareness
+(`git log --notes`, closed facts only).
 `Cycle`: `1` read state + blocked · `2` **BRAIN** while `done_when==""`: think sized-to-input
 (crux / fit / skip; open → what-to-do auto-pick top) → decline/intent-reframe/nothing-worth-doing →
 **close `declined`** → else forge `done_when` · `3` **DONE?** survey vs `done_when` → MET → close

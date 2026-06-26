@@ -61,6 +61,17 @@ class TestMusicianSkill(unittest.TestCase):
     def test_musician_state_path(self):
         self.assertIn(".claude/ccharness/musician/", self.text)
 
+    def test_per_run_folders_and_pointer(self):
+        # Each run is isolated in its own folder, resolved via a per-session pointer.
+        self.assertIn("run_id", self.text)
+        self.assertIn("runs/", self.text)
+        self.assertIn("by-session", self.text)
+
+    def test_captures_input_prompt_verbatim(self):
+        # The original prompt the musician was handed is recorded verbatim in the run.
+        self.assertIn("input", self.text)
+        self.assertIn("verbatim", self.text.lower())
+
     def test_documents_ultracode_no_spend(self):
         # The musician carries --ultracode (mandatory fan-out) ...
         self.assertIn("--ultracode", self.text)

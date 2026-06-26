@@ -21,19 +21,19 @@
 # lives in the musician, not here.
 set -u
 
+source "${BASH_SOURCE[0]%/*}/musician-resolve.sh"
 NS_STATE=".claude/ccharness/nonstop/state.json"
-MUS_STATE=".claude/ccharness/musician/state.json"
 HOOK_INPUT="$(cat 2>/dev/null || true)"
 
 # 1. nonstop not armed -> no-op.
 [ -f "$NS_STATE" ] || exit 0
 
-NS_ON=""; NS_SESSION=""; HOOK_SESSION=""; MUS_ACTIVE=""
+NS_ON=""; NS_SESSION=""; MUS_ACTIVE=""
 if command -v jq >/dev/null 2>&1; then
   NS_ON="$(jq -r '.on // false'         "$NS_STATE"  2>/dev/null || true)"
   NS_SESSION="$(jq -r '.session_id // ""' "$NS_STATE" 2>/dev/null || true)"
-  HOOK_SESSION="$(printf '%s' "$HOOK_INPUT" | jq -r '.session_id // ""' 2>/dev/null || true)"
 fi
+HOOK_SESSION="$(mus_session_from_stdin "$HOOK_INPUT")"
 # jq-free fallback for the armed flag (jq absent, coreutils present).
 if [ -z "$NS_ON" ] && command -v grep >/dev/null 2>&1; then
   grep -Eq '"on"[[:space:]]*:[[:space:]]*true' "$NS_STATE" && NS_ON=true
@@ -46,7 +46,10 @@ if [ -n "$NS_SESSION" ] && [ -n "$HOOK_SESSION" ] && [ "$NS_SESSION" != "$HOOK_S
   exit 0
 fi
 
-# 3. No musician to advance from (never launched, or /musician-cancel removed the state) -> no-op.
+# 3. No musician run for this session (never launched, or /musician-cancel cleared the pointer) -> no-op.
+MUS_DIR="$(mus_run_dir "$HOOK_SESSION")"
+[ -n "$MUS_DIR" ] || exit 0
+MUS_STATE="$MUS_DIR/state.json"
 [ -f "$MUS_STATE" ] || exit 0
 
 # 4. Musician still working (active:true, incl. awaiting/suspended) -> its own hook drives; stay silent.
@@ -62,7 +65,7 @@ fi
 
 # 5. Armed + musician CLOSED for this session -> BLOCK and ask the model to re-launch the musician.
 #    The musician's brain decides WHAT to do; we only re-invoke it (or stop on its "nothing left" verdict).
-REASON='🔁 nonstop is ARMED and the musician just CLOSED — do NOT stop. Read its outcome in .claude/ccharness/musician/state.json. If outcome is "declined" (open-mode: nothing worth doing — the roadmap frontier is exhausted), run /nonstop-off and stop. Otherwise (achieved / gave-up / capped) re-launch the musician for the next piece: invoke /musician with NO prompt (open mode) — it picks the next roadmap milestone itself via what-to-do and its git-notes awareness; you do NOT pick or plan, you only re-invoke. If /musician cannot arm (no North Star), run /nonstop-off and stop. /nonstop-off to disarm; Esc to interrupt.'
+REASON='🔁 nonstop is ARMED and the musician just CLOSED — do NOT stop. Read its outcome in the run state.json under .claude/ccharness/musician/runs/<run-id>/ (resolve <run-id> from .claude/ccharness/musician/by-session/$CLAUDE_CODE_SESSION_ID). If outcome is "declined" (open-mode: nothing worth doing — the roadmap frontier is exhausted), run /nonstop-off and stop. Otherwise (achieved / gave-up / capped) re-launch the musician for the next piece: invoke /musician with NO prompt (open mode) — it picks the next roadmap milestone itself via what-to-do and its git-notes awareness; you do NOT pick or plan, you only re-invoke. If /musician cannot arm (no North Star), run /nonstop-off and stop. /nonstop-off to disarm; Esc to interrupt.'
 
 if command -v jq >/dev/null 2>&1; then
   jq -n --arg r "$REASON" \

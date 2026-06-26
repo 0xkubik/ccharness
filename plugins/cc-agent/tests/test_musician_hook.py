@@ -4,6 +4,7 @@ from pathlib import Path
 HOOK = Path(__file__).resolve().parent.parent / "hooks" / "musician-stop.sh"
 SESSION = "11111111-1111-1111-1111-111111111111"
 OTHER = "22222222-2222-2222-2222-222222222222"
+RUN_ID = "20260626-120000-aaaa"
 
 
 def nojq_env():
@@ -22,12 +23,28 @@ def run_hook(repo, stdin_obj):
     return r.returncode, r.stdout
 
 
-def repo_with(state=None):
+def repo_with(state=None, run_id=RUN_ID):
+    """Lay out a run the new way: runs/<run-id>/state.json + a by-session/<session_id> pointer."""
     repo = tempfile.mkdtemp()
     if state is not None:
-        d = Path(repo) / ".claude" / "ccharness" / "musician"
-        d.mkdir(parents=True, exist_ok=True)
-        (d / "state.json").write_text(json.dumps(state))
+        base = Path(repo) / ".claude" / "ccharness" / "musician"
+        run = base / "runs" / run_id
+        run.mkdir(parents=True, exist_ok=True)
+        (run / "state.json").write_text(json.dumps(state))
+        sid = state.get("session_id")
+        if sid:
+            (base / "by-session").mkdir(parents=True, exist_ok=True)
+            (base / "by-session" / sid).write_text(run_id)
+    return repo
+
+
+def repo_dangling_pointer(session=SESSION, run_id=RUN_ID):
+    """A pointer exists (a run is owed) but its state.json is missing — the fail-closed case."""
+    repo = tempfile.mkdtemp()
+    base = Path(repo) / ".claude" / "ccharness" / "musician"
+    (base / "runs" / run_id).mkdir(parents=True, exist_ok=True)
+    (base / "by-session").mkdir(parents=True, exist_ok=True)
+    (base / "by-session" / session).write_text(run_id)
     return repo
 
 
@@ -53,10 +70,37 @@ class TestMusicianHook(unittest.TestCase):
         self.assertEqual(out.strip(), "")
 
     def test_different_session_allows_stop(self):
+        # A different session has no pointer of its own → the common multi-run path: release.
         repo = repo_with({"active": True, "session_id": SESSION})
         rc, out = run_hook(repo, {"session_id": OTHER})
         self.assertEqual(rc, 0)
         self.assertEqual(out.strip(), "")
+
+    def test_dangling_pointer_blocks(self):
+        # Fail-closed INVERSION: a pointer names a run that is owed, but its state.json is gone.
+        # Never silently drop a live task to an unreadable state — re-feed.
+        repo = repo_dangling_pointer()
+        rc, out = run_hook(repo, {"session_id": SESSION})
+        self.assertEqual(rc, 0)
+        self.assertIn("block", out)
+
+    def test_two_runs_isolated(self):
+        # Two runs in one repo, each in its own folder with its own pointer. A Stop from each
+        # session resolves ITS run only: the active one re-feeds, the closed one releases.
+        repo = repo_with({"active": True, "session_id": SESSION, "cycle": 1, "entry": "task"},
+                         run_id="20260626-120000-aaaa")
+        # add a second, closed run owned by OTHER
+        base = Path(repo) / ".claude" / "ccharness" / "musician"
+        run2 = base / "runs" / "20260626-130000-bbbb"
+        run2.mkdir(parents=True, exist_ok=True)
+        (run2 / "state.json").write_text(json.dumps(
+            {"active": False, "session_id": OTHER, "cycle": 4}))
+        (base / "by-session" / OTHER).write_text("20260626-130000-bbbb")
+
+        rc_a, out_a = run_hook(repo, {"session_id": SESSION})
+        rc_b, out_b = run_hook(repo, {"session_id": OTHER})
+        self.assertIn("block", out_a)          # SESSION's run is active → re-feed
+        self.assertEqual(out_b.strip(), "")    # OTHER's run is closed → release
 
     def test_jq_unavailable_still_blocks(self):
         # With jq off PATH the hook must STILL block (fail closed) via the printf fallback.

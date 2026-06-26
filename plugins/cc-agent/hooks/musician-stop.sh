@@ -1,62 +1,63 @@
 #!/usr/bin/env bash
 # musician — Stop hook (the bounded performer's "hard muscle").
 #
-# While the musician state file is ACTIVE for THIS session, re-feed the musician
-# prompt on every Stop so the loop runs one cycle per turn. The musician ENDS ON
-# ITS OWN: the model flips active:false when the work is achieved, declined, given
-# up, capped, and THEN this hook (Exit #2) allows the stop. This
-# hook only prevents an accidental mid-task stop. There is no second hook and no
-# meta-loop — the musician is the only cc-agent loop.
+# While THIS session's musician run is ACTIVE, re-feed the musician prompt on every Stop so the
+# loop runs one cycle per turn. The musician ENDS ON ITS OWN: the model flips active:false when the
+# work is achieved, declined, given up, or capped, and THEN this hook allows the stop. This hook
+# only prevents an accidental mid-task stop.
 #
-# Fail CLOSED while active. Allow-the-stop paths (exit 0, no stdout):
-#   1. no state file
-#   2. state.active == false        (achieved / declined / gave-up / capped / cancelled)
-#   3. a DIFFERENT session owns it
-#   4. state.awaiting is set         (suspended on async work / transient outage)
+# Each run lives in its own folder runs/<run-id>/; a per-session pointer by-session/<session_id>
+# names it. We resolve THIS session's run from the session_id on stdin (see musician-resolve.sh).
+#
+# Fail-closed semantics, inverted for the multi-run world:
+#   no pointer for this session  -> RELEASE (the common case — most Stops have no musician at all)
+#   active == false              -> RELEASE (achieved / declined / gave-up / capped / cancelled)
+#   awaiting set                 -> RELEASE (suspended on async work / transient outage)
+#   pointer exists but state      -> RE-FEED (never drop a live task to an unreadable state)
+#     unreadable, or active:true
 set -u
 
-STATE_FILE=".claude/ccharness/musician/state.json"
-HOOK_INPUT="$(cat 2>/dev/null || true)"
+source "${BASH_SOURCE[0]%/*}/musician-resolve.sh"
+# Slurp stdin with a bash builtin (not `cat`) so resolution survives even a bare PATH.
+IFS= read -rd '' HOOK_INPUT || true
 
-[ -f "$STATE_FILE" ] || exit 0
+SID="$(mus_session_from_stdin "$HOOK_INPUT")"
+RUN_DIR="$(mus_run_dir "$SID")"
+# No active run for this session → let the turn end.
+[ -n "$RUN_DIR" ] || exit 0
+STATE_FILE="$RUN_DIR/state.json"
 
-HOOK_SESSION=""; STATE_SESSION=""; STATE_ACTIVE=""; CYCLE="?"; ENTRY="?"
-# If stdin or jq is absent, HOOK_SESSION/STATE_* stay empty → the active==false
-# and different-session guards below are skipped → we fall through and RE-FEED (fail closed).
+# Slurp once for the pure-bash (no jq/grep/cat) fallback path.
+STATE_RAW=""; [ -f "$STATE_FILE" ] && STATE_RAW="$(<"$STATE_FILE")"
+
+STATE_ACTIVE=""; CYCLE="?"; ENTRY="?"
 if command -v jq >/dev/null 2>&1; then
-  HOOK_SESSION="$(printf '%s' "$HOOK_INPUT" | jq -r '.session_id // ""' 2>/dev/null || true)"
-  STATE_SESSION="$(jq -r '.session_id // ""'   "$STATE_FILE" 2>/dev/null || true)"
-  STATE_ACTIVE="$(jq -r '.active'              "$STATE_FILE" 2>/dev/null || true)"
-  CYCLE="$(jq -r '.cycle // "?"'               "$STATE_FILE" 2>/dev/null || echo '?')"
-  ENTRY="$(jq -r '.entry // "?"'               "$STATE_FILE" 2>/dev/null || echo '?')"
+  STATE_ACTIVE="$(jq -r '.active'        "$STATE_FILE" 2>/dev/null || true)"
+  CYCLE="$(jq -r '.cycle // "?"'         "$STATE_FILE" 2>/dev/null || echo '?')"
+  ENTRY="$(jq -r '.entry // "?"'         "$STATE_FILE" 2>/dev/null || echo '?')"
 fi
-
-# jq-free fallback for the critical active flag (jq absent, coreutils present):
-# without this the achieved/declined/gave-up release (active:false) is invisible and the loop can't self-stop.
 if [ -z "$STATE_ACTIVE" ] && command -v grep >/dev/null 2>&1; then
   grep -Eq '"active"[[:space:]]*:[[:space:]]*false' "$STATE_FILE" && STATE_ACTIVE=false
 fi
+if [ -z "$STATE_ACTIVE" ]; then
+  case "$STATE_RAW" in *'"active": false'*|*'"active":false'*) STATE_ACTIVE=false;; esac
+fi
 
-# ultracode flag — grep-detected (jq-independent). Forces max parallelism in the build step.
-# (There is no spend flag — the musician is bounded by design.)
+# ultracode flag → mandatory max parallelism in the build step.
 ULTRA=""
 if command -v grep >/dev/null 2>&1; then
   grep -Eq '"ultracode"[[:space:]]*:[[:space:]]*true' "$STATE_FILE" && ULTRA=1
 fi
-
-# Exit #2 — work finished (achieved / declined / gave-up / capped) or cancelled.
-[ "$STATE_ACTIVE" = "false" ] && exit 0
-
-# Exit #3 — a different session owns the loop.
-if [ -n "$STATE_SESSION" ] && [ -n "$HOOK_SESSION" ] && [ "$STATE_SESSION" != "$HOOK_SESSION" ]; then
-  exit 0
+if [ -z "$ULTRA" ]; then
+  case "$STATE_RAW" in *'"ultracode": true'*|*'"ultracode":true'*) ULTRA=1;; esac
 fi
 
-# Exit #4 — the loop is SUSPENDED on a long-running async build or a transient external outage.
-# RELEASE the turn so the terminal yields to the user (/musician-cancel works again) and no idle
-# re-feed wastes a turn. The awaited task's OWN completion notification re-enters the
-# agent, which clears `awaiting` and resumes. `awaiting` is a non-null object the agent sets;
-# null/absent → normal loop. Only the agent sets/clears it, so a stale marker is cleared on resume.
+# RELEASE — work finished (achieved / declined / gave-up / capped) or cancelled.
+[ "$STATE_ACTIVE" = "false" ] && exit 0
+
+# RELEASE — SUSPENDED on async work or a transient external outage. The terminal yields
+# (/musician-cancel works again) and no idle re-feed wastes a turn; the awaited task's own
+# completion notification re-enters the agent, which clears `awaiting` and resumes.
 AWAITING=""
 if command -v jq >/dev/null 2>&1; then
   AWAITING="$(jq -r 'if (.awaiting // null) == null then "" else "1" end' "$STATE_FILE" 2>/dev/null || true)"
@@ -64,12 +65,15 @@ fi
 if [ -z "$AWAITING" ] && command -v grep >/dev/null 2>&1; then
   grep -Eq '"awaiting"[[:space:]]*:[[:space:]]*\{' "$STATE_FILE" && AWAITING=1
 fi
+if [ -z "$AWAITING" ]; then
+  case "$STATE_RAW" in *'"awaiting": {'*|*'"awaiting":{'*) AWAITING=1;; esac
+fi
 [ -n "$AWAITING" ] && exit 0
 
 # --- ACTIVE for this session (or present-but-unparseable) → RE-FEED. Fail closed. ---
 REFEED="$(cat <<'PROMPT'
 🎼 musician is ACTIVE — continue the bounded loop for THIS piece of work. Run exactly ONE cycle:
-1. Read .claude/ccharness/musician/state.json + blocked.jsonl.
+1. Read the run state.json + blocked.jsonl in .claude/ccharness/musician/runs/<run-id>/ (resolve <run-id> from .claude/ccharness/musician/by-session/$CLAUDE_CODE_SESSION_ID).
 2. BRAIN (only while done_when == ""): think it through, sized to the input. TASK mode → triage the prompt, run the brain by necessity (crux for a fuzzy pain / North-Star fit for an idea / skip for a clear task). OPEN mode → cc-tools:what-to-do (menu as DATA, NO AskUserQuestion) → auto-pick the TOP direction. If the brain says leave-it / wrong-problem / intent-changing reframe / (open) nothing worth doing → set active:false outcome:"declined", log why, report, END TURN — do NOT build. Otherwise FORGE a falsifiable done_when and write it to state (atomic).
 3. DONE-CHECK: survey "now" and judge against state.done_when. MET → set active:false outcome:"achieved", final log line, report, END TURN.
 4. GIVE-UP CHECK: no_progress_streak >= max_no_progress OR cycle >= max_cycles → set active:false outcome:"gave-up"|"capped", report the blocked queue, END TURN.
@@ -81,7 +85,7 @@ PROMPT
 
 if [ -n "$ULTRA" ]; then
   REFEED="$REFEED
-ULTRACODE (mandatory this run): push parallelism to the max in step 6's build — author a Workflow and/or dispatch parallel subagents rather than working inline, isolate parallel file-mutating work in git worktrees, and verify findings adversarially. These tools are always permitted; --ultracode makes them required, not optional."
+ULTRACODE (mandatory this run): push parallelism to the max in step 5's build — author a Workflow and/or dispatch parallel subagents rather than working inline, isolate parallel file-mutating work in git worktrees, and verify findings adversarially. These tools are always permitted; --ultracode makes them required, not optional."
 fi
 
 if command -v jq >/dev/null 2>&1; then
@@ -90,7 +94,7 @@ if command -v jq >/dev/null 2>&1; then
     --arg m "🎼 musician (${ENTRY}) cycle ${CYCLE}$([ -n "$ULTRA" ] && printf ' [ultracode]') -> continuing (brain → done-check; /musician-cancel to stop)" \
     '{decision:"block", reason:$r, systemMessage:$m}'
 else
-  FALLBACK_REASON='musician is active — run one bounded cycle: read .claude/ccharness/musician/state.json, run the BRAIN while done_when is empty (it may DECLINE before building), then DONE-check, then give-up check, then one build step (how-to-do -> do -> local commit); flip active:false on achieved/declined/gave-up/capped; on close git notes append one closed fact (built/declined/dead-end + why), never a forward intent. /musician-cancel to stop.'
+  FALLBACK_REASON='musician is active — run one bounded cycle: read your run state.json under .claude/ccharness/musician/runs/<run-id>/ (resolve via by-session/$CLAUDE_CODE_SESSION_ID), run the BRAIN while done_when is empty (it may DECLINE before building), then DONE-check, then give-up check, then one build step (how-to-do -> do -> local commit); flip active:false on achieved/declined/gave-up/capped; on close git notes append one closed fact (built/declined/dead-end + why), never a forward intent. /musician-cancel to stop.'
   [ -n "$ULTRA" ] && FALLBACK_REASON="$FALLBACK_REASON ULTRACODE: fan out via Workflow + parallel subagents + git worktrees (mandatory)."
   printf '%s' "{\"decision\":\"block\",\"reason\":\"$FALLBACK_REASON\"}"
 fi

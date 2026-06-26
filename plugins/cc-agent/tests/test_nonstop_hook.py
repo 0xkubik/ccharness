@@ -9,6 +9,7 @@ CMD_ON = ROOT / "commands" / "nonstop-on.md"
 CMD_OFF = ROOT / "commands" / "nonstop-off.md"
 SESSION = "11111111-1111-1111-1111-111111111111"
 OTHER = "22222222-2222-2222-2222-222222222222"
+RUN_ID = "20260626-120000-aaaa"
 
 
 def nojq_env():
@@ -36,8 +37,13 @@ def repo_with(ns=None, mus=None):
         (base / "nonstop").mkdir(parents=True, exist_ok=True)
         (base / "nonstop" / "state.json").write_text(json.dumps(ns))
     if mus is not None:
-        (base / "musician").mkdir(parents=True, exist_ok=True)
-        (base / "musician" / "state.json").write_text(json.dumps(mus))
+        run = base / "musician" / "runs" / RUN_ID
+        run.mkdir(parents=True, exist_ok=True)
+        (run / "state.json").write_text(json.dumps(mus))
+        sid = mus.get("session_id")
+        if sid:
+            (base / "musician" / "by-session").mkdir(parents=True, exist_ok=True)
+            (base / "musician" / "by-session" / sid).write_text(RUN_ID)
     return repo
 
 

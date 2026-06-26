@@ -33,19 +33,24 @@ one piece of work, to its end, then stop. Want another — launch it again.
 
 ## State directory
 
+Each run gets its OWN folder so many runs in one repo never collide:
+
 ```
 .claude/ccharness/
   musician/
-    state.json     loop control for the one piece of work in flight
-                   {active, session_id, mode:"musician", entry:"task"|"open", input,
-                    done_when, cycle, no_progress_streak, max_no_progress, max_cycles,
-                    ultracode, awaiting, outcome, …}
-    blocked.jsonl  directions handed back during this piece of work
-    log.jsonl      one line per cycle
-    live.log       live action feed — one line per tool call (see "Watching a run live")
+    runs/<run-id>/            one folder per run  (run-id = UTC YYYYMMDD-HHMMSS-<hex>, sortable)
+      state.json             loop control + identity
+                             {active, run_id, session_id, mode:"musician", entry:"task"|"open",
+                              input (the original prompt, verbatim), done_when, cycle,
+                              no_progress_streak, max_no_progress, max_cycles, ultracode,
+                              awaiting, outcome, …}
+      blocked.jsonl          directions handed back during this run
+      log.jsonl              one line per cycle
+      live.log               live action feed — one line per tool call (see "Watching a run live")
+    by-session/<session-id>  pointer → the active run-id for that session (how the hooks find it)
 ```
 
-`outcome` is one of `achieved` / `declined` / `gave-up` / `capped` (or `null`
+`outcome` is one of `achieved` / `declined` / `gave-up` / `capped` / `cancelled` (or `null`
 while running). A non-null `awaiting` object means the loop is **suspended** on async work or a
 transient outage — not done, not given up; the awaited task's completion notification resumes it.
 
@@ -53,15 +58,18 @@ transient outage — not done, not given up; the awaited task's completion notif
 
 A single `Stop` hook drives the loop:
 
+The hook finds THIS session's run via the `by-session/<session-id>` pointer (see `musician-resolve.sh`):
+
 | Situation | `musician-stop.sh` |
 | --- | --- |
-| musician active for this session | blocks (re-feeds one cycle) |
+| this session's run active | blocks (re-feeds one cycle) |
 | active but `awaiting` set | yields (suspended — terminal frees, no turn burned) |
 | `active:false` (achieved / declined / gave-up / capped / cancelled) | yields (session ends) |
-| no state / a different session owns it | yields |
+| no pointer for this session | yields (the common case — most Stops have no musician) |
 
-It fails **closed**: while a musician state file is active for this session (or present but
-unparseable), the hook re-feeds — so a real task is never accidentally dropped mid-flight.
+It fails **closed** where it matters: if this session has a run pointer but its `state.json` is
+unreadable, the hook re-feeds — a live task is never dropped to a parse failure. A Stop from a
+session with no pointer simply yields.
 
 ## Watching a run live
 
@@ -72,10 +80,10 @@ instrument it called (`crux` / `what-to-do` / `how-to-do` / `do`), a shell comma
 spawned subagent — with the cycle number. It is a read-only witness: it **never blocks or alters a
 tool**, and logging is best-effort (skipped if it can't parse the input).
 
-Follow it from another terminal while the musician works:
+Follow it from another terminal while the musician works (`musician-watch` tails the newest run):
 
 ```
-bin/musician-watch        # or: tail -f .claude/ccharness/musician/live.log
+bin/musician-watch        # or: tail -f .claude/ccharness/musician/runs/<run-id>/live.log
 ```
 
 The model's hidden chain-of-thought is not a tool call and is not captured — its spoken narration
