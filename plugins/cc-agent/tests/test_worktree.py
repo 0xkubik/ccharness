@@ -1,4 +1,4 @@
-import json, subprocess, tempfile, unittest
+import subprocess, tempfile, unittest
 from pathlib import Path
 
 WT = Path(__file__).resolve().parent.parent / "skills" / "musician" / "worktree.sh"
@@ -42,29 +42,21 @@ def build_worktree(repo, name="agent-x"):
 
 
 class TestPrepare(unittest.TestCase):
-    def test_sets_gitignore_and_baseref(self):
+    def test_sets_gitignore_no_settings(self):
+        # prepare gitignores the worktree dir but does NOT touch any settings file — the build's base
+        # is forced per-dispatch by a reset (not a settings.baseRef that might not be read this run).
         repo = make_repo()
         out, _ = run_wt(repo, "prepare")
         self.assertEqual(out.get("PREPARED"), "1")
         self.assertIn(".claude/worktrees/", (Path(repo) / ".gitignore").read_text())
-        s = json.loads((Path(repo) / ".claude" / "settings.local.json").read_text())
-        self.assertEqual(s["worktree"]["baseRef"], "head")
+        self.assertFalse((Path(repo) / ".claude" / "settings.local.json").exists())
+        self.assertFalse((Path(repo) / ".claude" / "settings.json").exists())
 
     def test_idempotent(self):
         repo = make_repo()
         run_wt(repo, "prepare")
         run_wt(repo, "prepare")
         self.assertEqual((Path(repo) / ".gitignore").read_text().count(".claude/worktrees/"), 1)
-
-    def test_merges_existing_settings(self):
-        repo = make_repo()
-        d = Path(repo) / ".claude"
-        d.mkdir(exist_ok=True)
-        (d / "settings.local.json").write_text(json.dumps({"permissions": {"allow": ["x"]}}))
-        run_wt(repo, "prepare")
-        s = json.loads((d / "settings.local.json").read_text())
-        self.assertEqual(s["worktree"]["baseRef"], "head")
-        self.assertEqual(s["permissions"]["allow"], ["x"])  # untouched
 
     def test_flags_uncommitted_north_star(self):
         # A build worktree is cut from committed HEAD — an uncommitted North Star would be absent.
@@ -84,18 +76,23 @@ class TestIntegrate(unittest.TestCase):
         self.assertFalse((Path(repo) / path).exists())                  # worktree gone
         self.assertNotIn(branch, git(repo, "branch").stdout)            # branch gone
 
-    def test_conflict_keeps_worktree_and_aborts(self):
+    def test_stale_base_is_not_merged_and_worktree_kept(self):
+        # If the build branch is NOT a fast-forward of the current HEAD (its base is stale — the
+        # per-dispatch reset was skipped, or HEAD moved), integrate must REFUSE: keep the worktree,
+        # report STALE, and never silently merge stale work onto the branch.
         repo = make_repo()
         path, branch = build_worktree(repo)
-        # move the current branch so the build's added line conflicts (non-ff, overlapping)
-        (Path(repo) / "app.txt").write_text("base\nMAIN-EDIT\n")
+        # advance the current branch so the build branch is behind -> no fast-forward
+        (Path(repo) / "other.txt").write_text("main moved on\n")
         git(repo, "add", "-A")
-        git(repo, "commit", "-qm", "main edit")
+        git(repo, "commit", "-qm", "main moved")
+        head_before = git(repo, "rev-parse", "HEAD").stdout.strip()
         out, _ = run_wt(repo, "integrate", path, branch)
-        self.assertIn("CONFLICT", out)
-        self.assertTrue((Path(repo) / path).exists())          # kept for inspection
+        self.assertIn("STALE", out)
+        self.assertTrue((Path(repo) / path).exists())          # kept for inspection / rebuild
         self.assertIn(branch, git(repo, "branch").stdout)      # branch kept
-        self.assertFalse((Path(repo) / ".git" / "MERGE_HEAD").exists())  # merge aborted cleanly
+        self.assertFalse((Path(repo) / ".git" / "MERGE_HEAD").exists())  # no half-merge left
+        self.assertEqual(git(repo, "rev-parse", "HEAD").stdout.strip(), head_before)  # branch untouched
 
 
 class TestDiscard(unittest.TestCase):

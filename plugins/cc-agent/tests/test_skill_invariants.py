@@ -138,8 +138,10 @@ class TestMusicianSkill(unittest.TestCase):
         self.assertIn("discard", lowered)
         # The helper path is recorded in state so re-fed turns (no plugin-root env) can find it.
         self.assertIn("worktree_helper", self.text)
-        # baseRef:head so build worktrees branch from local HEAD, not stale origin.
-        self.assertIn("baseRef", self.text)
+        # The build is forced onto the current HEAD per-dispatch (reset), and integrate is ff-only
+        # so a stale build can't land silently.
+        self.assertIn("reset --hard", self.text)
+        self.assertIn("STALE", self.text)
 
     def test_no_autopilot_residue(self):
         # The whole point of the redesign: no autopilot / semipilot / milestone-walking loop left.

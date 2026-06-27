@@ -101,17 +101,22 @@ worktree" instruction leaks back to the main tree — a dispatched agent starts 
 `skills/musician/worktree.sh` owns the deterministic git bookkeeping (so it isn't hand-typed across
 re-fed turns):
 
-- `prepare` (once, at arm) — gitignore `.claude/worktrees/`, set `worktree.baseRef:"head"` (in the
-  personal `settings.local.json`) so build worktrees branch from your **local HEAD** (not stale
-  origin), and flag an uncommitted North Star (`GROUNDING_DIRTY=1`) that would be absent in the
-  worktree.
+- `prepare` (once, at arm) — gitignore `.claude/worktrees/` and flag an uncommitted North Star
+  (`GROUNDING_DIRTY=1`) that would be absent in the worktree.
+- `integrate <path> <branch>` — **fast-forward-only**, the load-bearing guarantee. The build was
+  reset onto your current HEAD, so its branch fast-forwards cleanly onto your branch; the worktree +
+  branch are then removed. If it is NOT a fast-forward (`STALE`), the build wasn't on your HEAD —
+  stale work is **refused, never merged in silently**, and the worktree is kept.
+- `discard <path> <branch>` — an abandoned build (handback / dead approach), or a `STALE` one being
+  rebuilt: drop the worktree, keeping nothing.
 
-A worktree is cut from committed HEAD, so the build sees **committed state only** — uncommitted
-working-tree changes are not visible to it (the musician builds from your last commit).
-- `integrate <path> <branch>` — the build committed: fast-forward (or merge) it onto your branch and
-  remove the worktree + branch. A true `CONFLICT` keeps the worktree and is surfaced, never guessed.
-- `discard <path> <branch>` — an abandoned build (handback / dead approach): drop the worktree,
-  keeping nothing.
+The harness cuts the worktree from a base you don't control (it can be a stale `origin`), so the
+conductor doesn't trust it: it captures `BASE = git rev-parse HEAD` and tells the build subagent to
+`git reset --hard BASE` as its first action. That — plus the ff-only integrate that refuses anything
+not on `BASE` — is what makes "the build always starts from your latest commit" reliable without
+depending on any settings file. A second consecutive `STALE` is treated as an infra failure and
+closes `blocked`. The build sees **committed state only** — uncommitted working-tree changes are not
+visible to it (the musician builds from your last commit).
 
 Isolation is **per build dispatch**, so a multi-step piece cuts a fresh worktree each build and
 integrates as it goes; a single-build piece is exactly "cut a worktree → build → integrate →

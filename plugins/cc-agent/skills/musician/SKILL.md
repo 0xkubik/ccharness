@@ -155,8 +155,8 @@ what it reports — it does the exact, error-prone bookkeeping so you never hand
 4. **Prep build isolation:** run the worktree helper (its absolute path is recorded in state as
    `worktree_helper`, so the in-loop calls find it on re-fed turns too):
    `HELPER="$(jq -r .worktree_helper <run>/state.json)"; bash "$HELPER" prepare`. It gitignores
-   `.claude/worktrees/` and sets `worktree.baseRef:"head"` so build worktrees branch from your local
-   HEAD (see **Build in an isolated worktree**). If it reports `GROUNDING_DIRTY=1`, commit the
+   `.claude/worktrees/` (the build worktree's base is forced per-dispatch by a reset, not a settings
+   flag — see **Build in an isolated worktree**). If it reports `GROUNDING_DIRTY=1`, commit the
    grounding (CLAUDE.md / roadmap) before the first build, or the build worktree won't carry the
    North Star. Then **announce** the entry mode and the input (note `[ultracode]` if set, and any
    surfaced orphan), and run cycle 1.
@@ -189,17 +189,20 @@ and run the next cycle directly.
           decline (step 2's exit). If it has NO new buildable approach left — the technical path is
           exhausted → active:false, outcome:"blocked", append the reason to blocked.jsonl, report,
           END TURN.
-5. BUILD  dispatch a cc-tools:do subagent WITH worktree isolation (Agent `isolation:"worktree"` —
-            see **Build in an isolated worktree**); it writes the code (you never Edit/Write it
-            yourself), builds + smoke-checks, then ALWAYS chains to a cc-tools:refactor-review-test
-            pass (full verify · behavior-preserving refactor · /code-review + /simplify · full tests)
-            which owns the LOCAL commit (no push) — all INSIDE the worktree. Capture the dispatch's
-            worktreePath + worktreeBranch. A "harden / refactor / add tests to existing code" task →
-            dispatch cc-tools:refactor-review-test DIRECTLY (still isolated), skipping do.
-          INTEGRATE: build committed → `worktree.sh integrate <worktreePath> <worktreeBranch>` lands
-            it on your branch and removes the worktree (`INTEGRATED=<sha>`; `CONFLICT=<branch>` →
-            surface it, the worktree is kept). Build produced no commit (handback / dead approach) →
-            `worktree.sh discard <worktreePath> <worktreeBranch>`.
+5. BUILD  capture BASE = `git rev-parse HEAD`, then dispatch a cc-tools:do subagent WITH worktree
+            isolation (Agent `isolation:"worktree"` — see **Build in an isolated worktree**),
+            instructing it to FIRST run `git reset --hard <BASE>` so it builds on your current HEAD.
+            It writes the code (you never Edit/Write it yourself), builds + smoke-checks, then ALWAYS
+            chains to a cc-tools:refactor-review-test pass (full verify · behavior-preserving refactor
+            · /code-review + /simplify · full tests) which owns the LOCAL commit (no push) — all
+            INSIDE the worktree. Capture worktreePath + worktreeBranch. A "harden / refactor / add
+            tests to existing code" task → dispatch cc-tools:refactor-review-test DIRECTLY (still
+            isolated, still reset to BASE), skipping do.
+          INTEGRATE (ff-only): build committed → `worktree.sh integrate <worktreePath> <worktreeBranch>`
+            fast-forwards it onto your branch and removes the worktree (`INTEGRATED=<sha>`;
+            `STALE=<branch>` → build wasn't on your HEAD, worktree kept → `discard` + rebuild, and a
+            SECOND consecutive STALE → close `blocked`). Build produced no commit (handback / dead
+            approach) → `worktree.sh discard <worktreePath> <worktreeBranch>`.
           ASYNC build (the do subagent runs in the background and can't finish in-turn, and no
             parallel in-turn work is worth doing) → set awaiting:{what, since} (atomic), log
             "suspended", END TURN. NOT a cycle. (Hook releases on awaiting; the subagent's
@@ -231,14 +234,24 @@ is the one hard rule for step 5.
 - **You stay in main.** Never enter the worktree yourself: your run `state.json`, the hooks, and the
   by-session pointer all resolve from the main tree (they'd be lost in a worktree). Only the build
   subagent lives in the worktree; you conduct from main and integrate its result.
+- **Force the build onto your current HEAD — don't trust the worktree's base.** The harness cuts the
+  isolation worktree from a base you don't control (it can be a stale `origin`, not your latest local
+  commit). So make the build start from your real HEAD yourself: capture `BASE` = the main repo's
+  current HEAD (`git rev-parse HEAD`) right before dispatching, and instruct the build subagent that
+  its **very first action**, before any `do`/`refactor-review-test` work, is `git reset --hard <BASE>`.
+  That guarantees the build sees your latest committed code.
 - **Call the helper by its recorded path.** Every `worktree.sh` call uses the absolute path in
   `<run>/state.json`'s `worktree_helper` (`HELPER="$(jq -r .worktree_helper <run>/state.json)"`),
   because re-fed turns don't have `${CLAUDE_PLUGIN_ROOT}` set.
-- **Integrate when the build commits.** `refactor-review-test` makes the local commit INSIDE the
-  worktree; then land it: `bash "$HELPER" integrate <worktreePath> <worktreeBranch>` fast-forwards it
-  onto your branch and removes the worktree + branch. `INTEGRATED=<sha>` → the work is on your
-  branch. `CONFLICT=<branch>` → the build branched from a base that moved and can't auto-land; the
-  worktree is KEPT — surface it (treat like a blocker), never guess the merge.
+- **Integrate is fast-forward-only — that's the hard guarantee.** `refactor-review-test` makes the
+  local commit INSIDE the worktree; then land it: `bash "$HELPER" integrate <worktreePath> <worktreeBranch>`.
+  Because the build was reset onto your HEAD, its branch is HEAD + the new commits and
+  **fast-forwards** cleanly → `INTEGRATED=<sha>`, worktree + branch removed. `STALE=<branch>` → the
+  build was NOT on your current HEAD (the reset was skipped, or HEAD moved): the worktree is KEPT and
+  **stale work is never merged in silently.** On `STALE`, `discard` it and rebuild this cycle; a
+  **second consecutive `STALE`** is an infra failure, not a build problem → close `blocked`
+  ("build isolation can't align to HEAD"). This bound is about the reset misfiring, not a retry-count
+  on the work itself.
 - **Discard an abandoned build.** A build that produced NO commit (a handback, or a dead approach) →
   `bash "$HELPER" discard <worktreePath> <worktreeBranch>` drops the worktree, keeping nothing.
 - **Per build, not one for the whole run.** Containment is per-dispatch, so a multi-cycle piece cuts a
@@ -351,17 +364,18 @@ wide* the build fans out.
 parse (`--ultracode` / `--resume`; no spend flag, no caps), `run_id` + `runs/<run_id>/state.json`
 (`status:"working"`, `input` verbatim, empty `done_when`) + `by-session` pointer + `heartbeat`, and
 the crash-orphan scan (surface `ORPHAN=…`, never auto-adopt) · then read awareness
-(`git log --notes`, closed facts only) · `worktree.sh prepare` (gitignore `.claude/worktrees/`,
-`baseRef:"head"`; `GROUNDING_DIRTY=1` → commit grounding first).
+(`git log --notes`, closed facts only) · `worktree.sh prepare` (gitignore `.claude/worktrees/`;
+`GROUNDING_DIRTY=1` → commit grounding first).
 `Cycle` (every work-unit is a dispatched subagent — you conduct, never do the work inline): `1` read
 state + blocked · `2` **BRAIN** while `done_when==""`: dispatch a subagent to think, sized-to-input
 (crux / fit / skip; open → what-to-do auto-pick top) → decline/intent-reframe/nothing-worth-doing →
 **close `declined`** → else forge `done_when` · `3` **DONE?** survey vs `done_when` → MET → close
 `achieved` · `4` dispatch how-to-do subagent → buildable approach (no new approach left → close
-`blocked`) · `5` dispatch do subagent **`isolation:"worktree"`** (do builds+smoke → chains to
-refactor-review-test, which owns the local commit INSIDE the worktree; harden-existing-code →
-refactor-review-test directly) → `worktree.sh integrate <worktreePath> <worktreeBranch>` lands it on
-your branch + removes the worktree (no commit → `discard`; `CONFLICT` → surface) (async →
+`blocked`) · `5` capture BASE=`git rev-parse HEAD`, dispatch do subagent **`isolation:"worktree"`**
+told to FIRST `git reset --hard <BASE>` (do builds+smoke → chains to refactor-review-test, which owns
+the local commit INSIDE the worktree; harden-existing-code → refactor-review-test directly) →
+`worktree.sh integrate <worktreePath> <worktreeBranch>` **ff-only** lands it on your branch + removes
+the worktree (no commit → `discard`; `STALE` → discard + rebuild, 2nd consecutive STALE → `blocked`) (async →
 `awaiting`; handback: business blocker → close `blocked`, technical → back to step 4) · `6` log +
 bump cycle (atomic) · `7` end turn → hook re-feeds.
 On any close: `git notes append` one closed fact (`built`/`declined`/`blocked`

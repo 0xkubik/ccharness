@@ -28,27 +28,9 @@ ensure_gitignore() {
   fi
 }
 
-ensure_baseref() {
-  # Build worktrees must branch from the LOCAL HEAD (the musician commits locally, never pushes, so
-  # local is routinely ahead of origin). Without this the default ("fresh") branches from origin and
-  # the build runs against stale code. Written to the PERSONAL settings.local.json (gitignored, takes
-  # precedence over project settings) so it's durable for this user without being imposed on the team.
-  command -v jq >/dev/null 2>&1 || { printf 'BASEREF=no-jq\n'; return; }
-  local s=".claude/settings.local.json" tmp
-  mkdir -p .claude 2>/dev/null || true
-  if [ -f "$s" ]; then
-    [ "$(jq -r '.worktree.baseRef // ""' "$s" 2>/dev/null)" = "head" ] && return
-    tmp="$s.tmp.$$"
-    jq '.worktree.baseRef="head"' "$s" > "$tmp" 2>/dev/null && mv "$tmp" "$s" && printf 'BASEREF=set\n'
-  else
-    jq -n '{worktree:{baseRef:"head"}}' > "$s" && printf 'BASEREF=created\n'
-  fi
-}
-
 case "$cmd" in
   prepare)
     ensure_gitignore
-    ensure_baseref
     # A build worktree is cut from committed HEAD — an uncommitted North Star (e.g. /find-goal was
     # just run) would be ABSENT in the worktree and fail do's grounding gate. Surface it so the
     # conductor commits the grounding before building.
@@ -62,16 +44,12 @@ case "$cmd" in
   integrate)
     wt="${2:-}"; br="${3:-}"
     if [ -z "$wt" ] || [ -z "$br" ]; then printf 'ERROR=integrate-needs-path-and-branch\n'; exit 0; fi
-    # Land the build commits on the current branch. baseRef=head means the build branched from this
-    # HEAD, so a fast-forward is the clean path; fall back to a real merge if HEAD moved; on a true
-    # conflict, abort and KEEP the worktree so the work is never lost — the conductor surfaces it.
-    if git merge --ff-only "$br" 2>/dev/null; then
-      :
-    elif git merge --no-edit "$br" 2>/dev/null; then
-      :
-    else
-      git merge --abort 2>/dev/null || true
-      printf 'CONFLICT=%s\nWORKTREE_KEPT=%s\n' "$br" "$wt"
+    # ff-only is the load-bearing guarantee. The build reset its worktree to the current HEAD before
+    # building, so its branch is HEAD + the new commits and fast-forwards cleanly. If ff FAILS, the
+    # build was NOT on the current HEAD (its reset was skipped, or HEAD moved under a concurrent run)
+    # — STALE work must NOT be merged in silently. Keep the worktree and report; the caller rebuilds.
+    if ! git merge --ff-only "$br" 2>/dev/null; then
+      printf 'STALE=%s\nWORKTREE_KEPT=%s\n' "$br" "$wt"
       exit 0
     fi
     sha="$(git rev-parse --short HEAD 2>/dev/null || echo '')"
