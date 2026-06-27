@@ -42,6 +42,7 @@ class TestDistributableRules(unittest.TestCase):
         "manage-git-history.md",
         "weigh-by-importance.md",
         "stay-in-scope.md",
+        "keep-the-tree-clean.md",
     )
 
     def rule_files(self):
@@ -98,6 +99,12 @@ class TestDistributableRules(unittest.TestCase):
         self.assertIn("scope", low)
         self.assertIn("exactly what was asked", low)  # the boundary: only the request
         self.assertIn("future", low)  # don't build ahead for imagined needs (YAGNI)
+
+    def test_keep_tree_clean_places_bounds_and_routes_forks(self):
+        low = (RULES_DIR / "keep-the-tree-clean.md").read_text().lower()
+        self.assertIn("where it belongs", low)  # place each change by the layout
+        self.assertIn("bound it to this change", low)  # not a repo-wide reorg
+        self.assertIn("structural fork", low)  # a real layout fork is decided, not guessed
 
 
 class TestCcInitWizard(unittest.TestCase):
