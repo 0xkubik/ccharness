@@ -7,7 +7,7 @@ it belongs, and keep the structure clean as you go.
 
 - **Read the layout before you place a change.** Look at the folder tree and how the code is
   organised — module boundaries, naming, where similar things already live — and fit the change
-  *into* that structure. Which module does it extend? What should it be named? Where do new files
+  _into_ that structure. Which module does it extend? What should it be named? Where do new files
   go? Decide by the existing conventions, not by what's nearest to hand.
 - **Group what belongs together.** Don't scatter related modules across the root, and don't leave
   one concern split over unrelated places. When a lone file at the root gains a sibling, give the
@@ -15,9 +15,10 @@ it belongs, and keep the structure clean as you go.
 - **Make the small structural move the change warrants.** If placing the change well means moving or
   grouping a file or two, do it as part of the change — a tidy tree is part of doing the work, not a
   separate chore. Keep the move safe: the code still runs and does the same thing afterwards.
-- **Bound it to this change — don't reorganise the repo.** The licence is to place *your* change
+- **Bound it to this change — don't reorganise the repo.** The licence is to place _your_ change
   well, not to reshape structure that has nothing to do with it. A repo-wide reshuffle is its own
-  task; flag it and propose it separately.
+  task; flag it and propose it separately. But if you see that repo need a huge restructuring, flag
+  it and propose it separately.
 - **A real structural fork is a decision, not a guess.** When there are materially different ways to
   lay it out, no clear winner, and the move would be costly to undo, that's a fork — surface it and
   let it be decided, don't silently pick one.
