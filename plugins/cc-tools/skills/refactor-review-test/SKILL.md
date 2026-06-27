@@ -59,6 +59,11 @@ digraph order {
 
 - **Pin the remit:** identify exactly what changed (the diff `/do` produced). That is what you
   harden — nothing wider unless a later phase earns it.
+- **Map the whole layout:** print the full folder tree (`tree`, or `git ls-files` / `find` if it's
+  absent) and read how the code is organised — module boundaries, where the changed code sits, the
+  naming and file conventions. Phase 1 refactors against this map: it shows whether the change is
+  *well-placed* or wants to move, split, or regroup. Seeing the whole tree is to place **this**
+  change well — not a licence to refactor the repo.
 - **Get the existing tests green** (whatever is already there, including anything `/do` wrote
   with TDD). A red baseline is a Phase-4 problem you fix *now*, before touching anything.
 - **Write tests on the CORE LOGIC of the change** to pin its *current* behavior (characterization
@@ -70,7 +75,9 @@ digraph order {
 
 ## Phase 1 — Refactor (behavior-preserving)
 
-- Look at whole codebase tree and decide if you need to do any structural work.
+- **Decide structural work against the Phase-0 layout map.** With the whole tree in view, judge
+  whether *this* change is well-placed, then reshape toward **SOLID** — each file and function with
+  one clear responsibility — where the change warrants it.
 - Clean it up with the **`/simplify`** command and the **`code-simplifier`** agent: clarity,
   structure, dead code, naming, nesting.
 - You **MAY do justified structural work** — split or move functions, move files, reshape the
@@ -177,9 +184,10 @@ report** — you note it and close. You never pause mid-run to ask whoever ran y
 ## Quick reference
 
 Grounding — from `do`/musician → gate already passed; standalone → behavior-preserving, **no
-gate**. `0` Understand + **net** (core-logic tests pin current behavior; existing tests green) ·
-`1` **Refactor** (behavior-preserving; `/simplify` + `code-simplifier`; justified structural moves
-OK; net stays green = proof) · `2` **Review** (`/code-review` finds bugs → fix yourself,
+gate**. `0` Understand + **map layout** + **net** (full folder tree read; core-logic tests pin
+current behavior; existing tests green) · `1` **Refactor** (behavior-preserving; `/simplify` +
+`code-simplifier`; justified SOLID structural moves OK, tied to the change; net stays green =
+proof) · `2` **Review** (`/code-review` finds bugs → fix yourself,
 apply-not-report; true behavior fork → conductor, never a human) · `3` **Tests** (full coverage,
 once, on the final shape) · `4` **Verify** (evidence; debug to green; slap at 3 strikes) · `5`
 **Commit** (local only, then offer push).
