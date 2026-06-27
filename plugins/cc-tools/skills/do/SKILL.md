@@ -83,6 +83,20 @@ Re-enter do only once the task comes back clear and fork-free.
 
 ## Stage 1 — Scope the work
 
+**Map the layout and place the change cleanly — first.** Print the full folder tree (`tree`, or
+`git ls-files` / `find` if it's absent) and read how the code is organised — module boundaries,
+where this change belongs, the naming and file conventions. Work out how to fit the change **into
+the existing structure** rather than dropping files wherever is easiest: which module it extends,
+what to name things, where new files go. If clean placement needs a **small, obvious structural
+move** — e.g. a lone module at the root gains a sibling, so the two move into their own folder —
+you **may** make it as part of this change to keep the tree tidy; fold it into the checklist below
+as an explicit deliverable. Bound it: it must be warranted by *this* change, not a licence to
+refactor the repo — the wider hardening refactor stays `refactor-review-test`'s. A genuine
+**structural fork** (materially different layouts, no clear winner, costly to reverse) is not a
+routine move — route it to how-to-do like any other fork. **Scale to the change:** a one-line or
+in-place edit to existing files needs only a glance, not a full tree dump; the mapping earns its
+keep when the change *adds* files or modules.
+
 **If you arrived here from how-to-do**, its decision is your starting point: the fork is already
 resolved and the approach chosen — turn that decided approach into the checklist, do not
 re-litigate the decision or bounce it back up. Produce an explicit, **ordered checklist** of the
@@ -205,7 +219,8 @@ and deciding the next move yourself. Keep driving until the work is done and ver
 ## Quick reference
 
 Grounding — no `## Product North Star` → **route to `/find-goal`**, stop · `0` Gate — technical fork → how-to-do, business → refuse,
-vague → brainstorming · `1` Scope — checklist + size · `2` Tools — route & announce · `3` Build —
+vague → brainstorming · `1` Scope — **map layout + place the change cleanly** (small structural
+moves OK, tied to this change; structural fork → how-to-do) · checklist + size · `2` Tools — route & announce · `3` Build —
 goal-loop to done · `4` Smoke-check — does it run? · `5` Hand off → **refactor-review-test** (it owns
 verify, review/simplify, full tests, and the commit). `do` never commits.
 
