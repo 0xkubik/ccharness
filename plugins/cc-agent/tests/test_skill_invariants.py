@@ -57,12 +57,12 @@ class TestMusicianSkill(unittest.TestCase):
 
     def test_qualified_funnel_skill_names(self):
         # The directly-invoked funnel skills must be referenced by QUALIFIED name.
-        for name in ("cc-tools:what-to-do", "cc-tools:how-to-do", "cc-tools:do"):
+        for name in ("cc-funnel:what-to-do", "cc-funnel:how-to-do", "cc-funnel:do"):
             self.assertIn(name, self.text)
 
     def test_refactor_review_test_instrument(self):
         # do always chains to refactor-review-test; the musician can also dispatch it directly.
-        self.assertIn("cc-tools:refactor-review-test", self.text)
+        self.assertIn("cc-funnel:refactor-review-test", self.text)
 
     def test_musician_state_path(self):
         self.assertIn(".claude/ccharness/musician/", self.text)

@@ -52,7 +52,7 @@ or which fork is unresolved, then route by *what* is wrong — this is the funne
 upward, not a dead end:
 
 - **A technical fork** (architecture, approach, or build-scope — materially different options, no
-  obvious winner) → hand the task to **`cc-tools:how-to-do`**, the funnel's decision loop. Resolving
+  obvious winner) → hand the task to **`cc-funnel:how-to-do`**, the funnel's decision loop. Resolving
   *how-to-build* forks is how-to-do's lane, not yours; it decides and flows the chosen approach back
   into the build.
 - **A business / non-technical fork** (money, legal, product direction — a *what/whether* call) →
@@ -165,7 +165,7 @@ before hand-off — **not** the full verify-to-green, the coverage pass, or revi
 ## Stage 5 — Hand off to refactor-review-test
 
 The change runs. **Now hand it off — `do` always ends here.** Invoke
-**`cc-tools:refactor-review-test`** on the change you just built; it owns the rest — the full
+**`cc-funnel:refactor-review-test`** on the change you just built; it owns the rest — the full
 verify, the behavior-preserving refactor, `/code-review` + `/simplify`, the full test coverage,
 and the verified local commit. You do **not** review, simplify, test-to-green, or commit yourself;
 handing off un-committed code is the design, not a gap.
@@ -189,7 +189,7 @@ The Stage-0 fork-test **does not expire at the gate — it stays armed through S
 learn the terrain you will hit technical choices that weren't visible at the start. For each,
 apply the same test: it is a **serious fork** only when it has **(a)** materially different
 consequences, **(b)** no obvious winner, **and (c)** is costly to reverse. All three → stop and
-hand it **up to `cc-tools:how-to-do`**; it's the decision loop (not the user), it rules the fork,
+hand it **up to `cc-funnel:how-to-do`**; it's the decision loop (not the user), it rules the fork,
 and its fork-free decision flows back into the build. Not all three → it's a **routine call:
 decide it yourself and keep moving** — a strict executor keeps momentum on anything it can later
 undo. A fork how-to-do has already ruled is fork-free; never send the same one up twice.

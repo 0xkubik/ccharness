@@ -2,7 +2,7 @@
 # musician worktree helper — the deterministic git bookkeeping for build isolation, extracted from
 # SKILL.md so the exact, error-prone sequence is testable instead of hand-typed across re-fed turns.
 #
-# The musician CONDUCTS from the main repo; every build (a cc-tools:do / refactor-review-test
+# The musician CONDUCTS from the main repo; every build (a cc-funnel:do / refactor-review-test
 # subagent) is dispatched with worktree isolation so its work — and all of its nested agents —
 # stays in one throwaway worktree under .claude/worktrees/, never leaking into the main tree. The
 # harness creates that worktree and hands the conductor back its path + branch. THIS script lands

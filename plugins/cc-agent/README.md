@@ -1,8 +1,8 @@
 # cc-agent
 
 The self-driving agent layer of the cc-* harness. One loop — the **musician**: the project's brain
-for ONE piece of work. It plays the cc-tools instruments (`crux` → `what-to-do` → `how-to-do` →
-`do` → `refactor-review-test`), thinks before it builds, forges its own definition of done, drives to that done, then
+for ONE piece of work. It plays the cc-funnel instruments (`what-to-do` → `how-to-do` →
+`do` → `refactor-review-test`) plus cc-tools's `crux`/`slap`, thinks before it builds, forges its own definition of done, drives to that done, then
 **closes**. Bounded and self-closing — there is no never-stop loop above it.
 
 ## `/musician` — the bounded performer
@@ -92,7 +92,7 @@ session with no pointer simply yields.
 
 The musician **conducts from the main tree but builds in a throwaway git worktree**, so its
 autonomous building never dirties your working tree mid-flight — only the finished, committed result
-lands on your branch. Each build subagent (`cc-tools:do`, chaining to `refactor-review-test`) is
+lands on your branch. Each build subagent (`cc-funnel:do`, chaining to `refactor-review-test`) is
 dispatched with the Agent tool's **`isolation:"worktree"`**: the subagent, its tools, and any
 sub-agents it spawns all run inside one worktree under `.claude/worktrees/`. (A plain "cd into a
 worktree" instruction leaks back to the main tree — a dispatched agent starts at the main root and
@@ -144,7 +144,7 @@ and every action are.
 
 ## Dependencies & supervision
 
-- Depends on **cc-tools** (invokes `cc-tools:crux`, `cc-tools:what-to-do`, `cc-tools:how-to-do`,
-  `cc-tools:do`, `cc-tools:refactor-review-test`, `cc-tools:slap`).
+- Depends on **cc-funnel** (invokes `cc-funnel:what-to-do`, `cc-funnel:how-to-do`, `cc-funnel:do`,
+  `cc-funnel:refactor-review-test`) and **cc-tools** (invokes `cc-tools:crux`, `cc-tools:slap`).
 - Supervised by **cc-maestro**: a `musician` state file signals an autonomous, bounded agent with a
   terminal outcome — cc-maestro watches its progress and can cancel it gracefully.

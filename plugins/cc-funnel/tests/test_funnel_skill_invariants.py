@@ -54,7 +54,7 @@ class TestWhatToDoSkill(unittest.TestCase):
         self.assertIn("off-roadmap", self.text)
 
     def test_qualified_handoff(self):
-        self.assertIn("cc-tools:how-to-do", self.text)
+        self.assertIn("cc-funnel:how-to-do", self.text)
 
 
 class TestRefactorReviewTestSkill(unittest.TestCase):

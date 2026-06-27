@@ -39,7 +39,7 @@ class TestRender(unittest.TestCase):
         (run / "state.json").write_text(json.dumps(
             {"active": True, "status": "working", "cycle": 2, "run_id": "r1",
              "input": "do X", "done_when": "X is observably done"}))
-        (run / "live.log").write_text("12:00 cycle 2   ▶ cc-tools:do\n")
+        (run / "live.log").write_text("12:00 cycle 2   ▶ cc-funnel:do\n")
         bys = Path(repo) / ".claude" / "ccharness" / "musician" / "by-session"
         bys.mkdir(parents=True)
         (bys / "s1").write_text("r1")
@@ -56,7 +56,7 @@ class TestRender(unittest.TestCase):
         # the detail view shows what was asked + the live feed
         detail = render.render_musician_detail(rows[0], NOW)
         self.assertIn("do X", detail)
-        self.assertIn("cc-tools:do", detail)
+        self.assertIn("cc-funnel:do", detail)
 
     def test_render_table_has_headers(self):
         out = render.render_table([{"id": "a", "sessionId": "s1", "kind": "task", "tokens": 5,

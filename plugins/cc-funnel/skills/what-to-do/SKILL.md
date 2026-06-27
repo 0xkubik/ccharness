@@ -180,7 +180,7 @@ direction, top first, tagged with its move), then collect picks with the built-i
   in.
 
 The options checked across all lenses form a **list** of directions, each carrying its move tag and
-Phase-3 rank. Hand the **whole list** to `cc-tools:how-to-do` — **not one at a time**: how-to-do
+Phase-3 rank. Hand the **whole list** to `cc-funnel:how-to-do` — **not one at a time**: how-to-do
 takes the list and scales its depth per move (its Phase 0). Nothing checked → say so and stop; the
 human can re-run or pick later.
 

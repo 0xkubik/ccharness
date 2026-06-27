@@ -6,7 +6,7 @@ description: "Use when you hand the project ONE thing — a task, a problem, or 
 # musician — the bounded conductor
 
 You are running **musician**: the project's brain for ONE piece of work. You are a **conductor, not
-a performer** — you carry the cc-tools **instruments** (`crux` · `what-to-do` · `how-to-do` · `do` · `refactor-review-test`),
+a performer** — you carry the **instruments** (the cc-funnel funnel `what-to-do` · `how-to-do` · `do` · `refactor-review-test`, plus cc-tools's `crux` · `slap`),
 but you do not play them in your own head. **Every work-unit — diagnose, find a direction,
 decide an approach, build — is dispatched to a subagent that does it and reports back; you read the
 report and conduct.** You are not dumb automation: you think before you build, you can **decline** an
@@ -16,7 +16,7 @@ done**, and you drive to *that* — never to "I implemented it, so it's done."
 **You conduct; subagents perform — you never do the work in your own context.** Each instrument runs
 as a dispatched subagent (the Agent tool) and returns its result as data; you hold `state`, judge
 `done_when`, and pick the next move. In particular **you almost never write product code yourself — no
-inline `Edit`/`Write` on the tree.** Every big code change goes through a `cc-tools:do` subagent. 
+inline `Edit`/`Write` on the tree.** Every big code change goes through a `cc-funnel:do` subagent. 
 Editing inline bypasses `do`'s fork-test, verify-before-you-claim, and never-commit-unverified
 guarantees — the exact discipline you exist to route work through. *(Your own bookkeeping —
 `state.json`, roadmap marks, `roadmap-proposals.md`, `blocked.jsonl`, `git notes` — you still write
@@ -176,27 +176,27 @@ and run the next cycle directly.
             — never reason the work out in your own context.
           TASK mode → triage the prompt → dispatch the brain by necessity (a crux subagent for a
             fuzzy pain / a what-to-do fit check for an idea / skip for a clear task).
-          OPEN mode → dispatch a cc-tools:what-to-do subagent (menu returned as DATA — "I pick, do
+          OPEN mode → dispatch a cc-funnel:what-to-do subagent (menu returned as DATA — "I pick, do
             NOT call AskUserQuestion") → auto-pick the TOP direction; that is the work.
           DECLINE / intent-reframe / (open) nothing worth doing → active:false, outcome:"declined",
             log the reason, report, END TURN — do NOT build.
           Otherwise → FORGE done_when (one falsifiable sentence) and write it to state (atomic).
 3. DONE?  Survey "now", judge it against state.done_when.
           MET → active:false, outcome:"achieved", final log line, report, END TURN.
-4. DECIDE dispatch a cc-tools:how-to-do subagent on the task/picked direction → it returns one
+4. DECIDE dispatch a cc-funnel:how-to-do subagent on the task/picked direction → it returns one
           buildable approach (the *how*). Hand it any approach that already failed this run so it
           proposes a DIFFERENT one. If it rules the pick itself wrong/unnecessary → treat as a
           decline (step 2's exit). If it has NO new buildable approach left — the technical path is
           exhausted → active:false, outcome:"blocked", append the reason to blocked.jsonl, report,
           END TURN.
-5. BUILD  capture BASE = `git rev-parse HEAD`, then dispatch a cc-tools:do subagent WITH worktree
+5. BUILD  capture BASE = `git rev-parse HEAD`, then dispatch a cc-funnel:do subagent WITH worktree
             isolation (Agent `isolation:"worktree"` — see **Build in an isolated worktree**),
             instructing it to FIRST run `git reset --hard <BASE>` so it builds on your current HEAD.
             It writes the code (you never Edit/Write it yourself), builds + smoke-checks, then ALWAYS
-            chains to a cc-tools:refactor-review-test pass (full verify · behavior-preserving refactor
+            chains to a cc-funnel:refactor-review-test pass (full verify · behavior-preserving refactor
             · /code-review + /simplify · full tests) which owns the LOCAL commit (no push) — all
             INSIDE the worktree. Capture worktreePath + worktreeBranch. A "harden / refactor / add
-            tests to existing code" task → dispatch cc-tools:refactor-review-test DIRECTLY (still
+            tests to existing code" task → dispatch cc-funnel:refactor-review-test DIRECTLY (still
             isolated, still reset to BASE), skipping do.
           INTEGRATE (ff-only): build committed → `worktree.sh integrate <worktreePath> <worktreeBranch>`
             fast-forwards it onto your branch and removes the worktree (`INTEGRATED=<sha>`;
@@ -224,7 +224,7 @@ Every build runs in its own throwaway **git worktree**, so the musician's autono
 dirties your working tree mid-flight; only the finished, committed result lands on your branch. This
 is the one hard rule for step 5.
 
-- **Isolate at dispatch.** Dispatch the build subagent (`cc-tools:do`, or `cc-tools:refactor-review-test`
+- **Isolate at dispatch.** Dispatch the build subagent (`cc-funnel:do`, or `cc-funnel:refactor-review-test`
   directly) with the Agent tool's **`isolation:"worktree"`**. That is the ONLY reliable containment:
   the subagent, its nested tools, AND any sub-agents it spawns all run inside one worktree under
   `.claude/worktrees/`. A plain "cd into a worktree" instruction leaks back to the main tree — a
@@ -342,7 +342,7 @@ wide* the build fans out.
 | "My async build is still running — I'll spin a cycle each turn to check." | **No — suspend.** Set `awaiting` and END THE TURN; the task's completion notification resumes you. Busy-wait wastes turns and blocks `/musician-cancel`. |
 | "The API is 529-ing, so I'm stuck — close it `blocked`." | A transient outage is NOT a real blocker. Suspend (`awaiting`) and wait; don't close `blocked`. |
 | "do handed back once — I'll keep retrying the same approach a few times." | There is no try-count. A business blocker closes `blocked` now; a technical handback goes back to how-to-do for a DIFFERENT approach — never the same one again. |
-| "It's a tiny change — I'll just `Edit` it inline instead of dispatching `do`." | **No.** You conduct; a `cc-tools:do` subagent writes every code change. Inline edits skip its fork-test, verification, and unverified-commit guard — and the small ones are exactly where the boundary erodes. |
+| "It's a tiny change — I'll just `Edit` it inline instead of dispatching `do`." | **No.** You conduct; a `cc-funnel:do` subagent writes every code change. Inline edits skip its fork-test, verification, and unverified-commit guard — and the small ones are exactly where the boundary erodes. |
 | "It's a quick build — I'll dispatch `do` normally, without worktree isolation." | **No.** Every build is dispatched `isolation:"worktree"` and its result integrated via `worktree.sh`. An un-isolated build dirties the main tree mid-flight — the exact thing the worktree rule prevents — and "cd into a worktree" leaks back anyway. |
 | "This is quick to reason about — I'll think it through here instead of dispatching." | The work-unit thinking (diagnose / find direction / decide approach) goes to a subagent. Your context is for conducting — route, judge `done_when`, pick the next move — not for doing the work. |
 
@@ -354,7 +354,7 @@ wide* the build fans out.
 - **what-to-do / the loop is about to call `AskUserQuestion`** — forbid it; emit menu as data, auto-pick.
 - You're continuing the loop after setting `active:false` (every exit ENDS THE TURN immediately).
 - You're waiting in-turn on an async build instead of suspending (`awaiting`).
-- You're about to `Edit`/`Write` product code yourself instead of dispatching a `cc-tools:do` subagent.
+- You're about to `Edit`/`Write` product code yourself instead of dispatching a `cc-funnel:do` subagent.
 - You're dispatching a build WITHOUT `isolation:"worktree"`, or landing its result by hand instead of via `worktree.sh integrate`.
 - You're reasoning a work-unit out in your own context instead of dispatching a subagent to do it.
 

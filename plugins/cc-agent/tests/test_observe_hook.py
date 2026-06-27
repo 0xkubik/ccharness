@@ -45,11 +45,11 @@ class TestObserveHook(unittest.TestCase):
     def test_active_session_logs_skill(self):
         repo = repo_with({"active": True, "session_id": SESSION, "cycle": 2})
         rc, out = run_observe(repo, {"session_id": SESSION, "tool_name": "Skill",
-                                     "tool_input": {"skill": "cc-tools:how-to-do"}})
+                                     "tool_input": {"skill": "cc-funnel:how-to-do"}})
         self.assertEqual(rc, 0)
         self.assertEqual(out.strip(), "")  # a PreToolUse witness must not emit a decision
         log = live_log(repo)
-        self.assertIn("cc-tools:how-to-do", log)
+        self.assertIn("cc-funnel:how-to-do", log)
         self.assertIn("cycle 2", log)
 
     def test_active_session_logs_bash_head(self):
@@ -81,9 +81,9 @@ class TestObserveHook(unittest.TestCase):
     def test_post_ticks_heavy_tool(self):
         repo = repo_with({"active": True, "session_id": SESSION, "cycle": 3})
         run_observe(repo, {"session_id": SESSION, "tool_name": "Skill",
-                           "tool_input": {"skill": "cc-tools:do"}}, mode="post")
+                           "tool_input": {"skill": "cc-funnel:do"}}, mode="post")
         log = live_log(repo)
-        self.assertIn("cc-tools:do", log)
+        self.assertIn("cc-funnel:do", log)
         self.assertIn("✓", log)  # ✓ completion tick
 
     def test_post_silent_for_light_tool(self):

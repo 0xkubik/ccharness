@@ -111,7 +111,7 @@ climb to the compass; an obvious ADD can drop to the fast path. **Whether the pr
 pushes the same way — a REBUILD in production earns more depth than one in a prototype.
 
 If the task is actually unambiguous with no fork → say so and hand it straight to
-`cc-tools:do` (the funnel's build stage). It doesn't need a decision loop, it just
+`cc-funnel:do` (the funnel's build stage). It doesn't need a decision loop, it just
 needs building.
 
 ---
@@ -245,7 +245,7 @@ direction (no human in the loop) how-to-do rules on itself.
    - the **decision_axes** — each with _your_ ruling and why, recommendation first (you decide
      them; you do not hand the human a quiz to fill in),
    - the **assumptions** it rests on (each with its `kill_signal`).
-2. Hand the decided approach to **`cc-tools:do`** (the funnel's build stage) by
+2. Hand the decided approach to **`cc-funnel:do`** (the funnel's build stage) by
    default, **without waiting** — carry the synthesis contract (`decision`, `robust_core`,
    `assumptions` + their `kill_signal`s, `beaten_alternatives`) into the hand-off so the build
    re-checks against it as drift surfaces. Make the veto cheap and explicit, e.g.:

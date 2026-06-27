@@ -54,7 +54,7 @@ class TestMusician(unittest.TestCase):
              "entry": "task", "ultracode": True,
              "input": "fix the flaky login test", "done_when": "test passes 10x in a row"},
             session="s1",
-            live=["12:00:01 cycle 4   $ npm test", "12:00:09 cycle 4   ▶ cc-tools:do"],
+            live=["12:00:01 cycle 4   $ npm test", "12:00:09 cycle 4   ▶ cc-funnel:do"],
             blocked=2)
         info = musician.musician_info(repo, "s1")
         self.assertEqual(info["status"], "working")
@@ -63,7 +63,7 @@ class TestMusician(unittest.TestCase):
         self.assertEqual(info["cycle"], 4)
         self.assertTrue(info["ultracode"])
         self.assertEqual(info["blocked_count"], 2)
-        self.assertEqual(info["last_action"], "12:00:09 cycle 4   ▶ cc-tools:do")
+        self.assertEqual(info["last_action"], "12:00:09 cycle 4   ▶ cc-funnel:do")
 
     def test_info_none_when_inactive(self):
         self.assertIsNone(musician.musician_info(self._repo({"active": False})))

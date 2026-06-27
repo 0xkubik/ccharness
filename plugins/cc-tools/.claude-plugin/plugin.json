@@ -1,7 +1,7 @@
 {
   "name": "cc-tools",
-  "version": "0.18.0",
-  "description": "cc-tools — the tools layer of the cc-* harness: single-purpose product skills. /find-goal captures the product's North Star and charts a roadmap; /what-to-do ranks where a product could go next; /how-to-do thinks one fork through to ONE decision; /do builds one task to a smoke-checked finish, then hands off to /refactor-review-test, which hardens it (behavior-preserving refactor, /code-review, full tests) and commits; /slap resets a stuck fix. Driven by cc-agent (the musician) and supervised by cc-maestro.",
+  "version": "0.19.0",
+  "description": "cc-tools — the tools layer of the cc-* harness: philosophy-agnostic helpers usable in any project. /crux unwinds a pain, doubt, or blockage into ONE diagnosis and angle of attack; /slap resets a fix stuck in a rabbit hole; /cc-init onboards a project onto the harness (dependencies, recommended rules, a reminder cheat-sheet, doc reconciliation); plus a set of recommended project rules installed into .claude/rules/. The product funnel lives in cc-funnel; the musician (cc-agent) drives it; cc-maestro supervises.",
   "author": {
     "name": "kubik",
     "email": "dev@noxlabs.xyz"

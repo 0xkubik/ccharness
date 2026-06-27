@@ -104,7 +104,7 @@ digraph order {
   **not** take it to a human and do **not** stop. **Surface it to the conductor (the musician)** —
   flag it in your closing report — and keep going on everything else. *(A fix with a genuine HOW
   fork — materially different ways to fix it, no clear winner, costly to reverse — goes to
-  `cc-tools:how-to-do`, exactly like `/do` routes one.)*
+  `cc-funnel:how-to-do`, exactly like `/do` routes one.)*
 
 ---
 
@@ -146,7 +146,7 @@ Past intake you carry this alone, and **hardening never escalates to a human.** 
 
 - **A fix won't take after 3 tries** → **`cc-tools:slap`**, then pick the fresh approach yourself.
 - **A genuine HOW-fork in a fix** (materially different ways to fix · no clear winner · costly to
-  reverse) → **`cc-tools:how-to-do`**, which rules it and flows the approach back.
+  reverse) → **`cc-funnel:how-to-do`**, which rules it and flows the approach back.
 - **A behavior/product fork** (what the code *should* do, no clear intent) → **surface to the
   conductor (musician)** in your closing report. Not decided silently, not asked of a human, not a
   reason to stop — you finish everything else and close.

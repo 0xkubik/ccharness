@@ -32,7 +32,7 @@ so you choose what happens at every step:
 
 ## Stage 1 — Install missing dependencies
 
-cc-tools is glue: `/what-to-do`, `/how-to-do`, and `/do` route to skills from **other**
+The cc-funnel funnel is glue: `/what-to-do`, `/how-to-do`, and `/do` route to skills from **other**
 plugins. Those plugins are not bundled — this stage installs them.
 
 ### The dependency set
@@ -50,7 +50,7 @@ All of these live in the official marketplace `claude-plugins-official`
 | `code-review` | the review pass (do stage 5) |
 
 > **Source of truth:** this table mirrors the "What it orchestrates" section of
-> `plugins/cc-tools/README.md`. If you add or drop a dependency, update **both**.
+> `plugins/cc-funnel/README.md`. If you add or drop a dependency, update **both**.
 
 Missing plugins are not fatal — the harness simply skips those routes. This stage just makes the
 full set available.

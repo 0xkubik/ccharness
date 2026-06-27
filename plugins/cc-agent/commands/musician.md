@@ -1,5 +1,5 @@
 ---
-description: "Hand the project ONE thing to carry to a real finish — a task, problem, or idea. The musician thinks it through (and may DECLINE or reframe a bad idea), forges its own definition of done, builds to that done via the cc-tools funnel, then closes. With a prompt: think → build. Without one: find a direction itself via what-to-do → build. Bounded and self-closing."
+description: "Hand the project ONE thing to carry to a real finish — a task, problem, or idea. The musician thinks it through (and may DECLINE or reframe a bad idea), forges its own definition of done, builds to that done via the cc-funnel pipeline, then closes. With a prompt: think → build. Without one: find a direction itself via what-to-do → build. Bounded and self-closing."
 argument-hint: "[task / problem / idea — or nothing to let it find the work] [--ultracode]"
 ---
 
@@ -7,8 +7,9 @@ Invoke the `musician` skill to arm and run the BOUNDED performer loop, with this
 
 > $ARGUMENTS
 
-The musician is the project's brain for ONE piece of work. It plays the cc-tools instruments
-(`crux` → `what-to-do` → `how-to-do` → `do`) and drives the work to a REAL finish, then **closes**.
+The musician is the project's brain for ONE piece of work. It plays the cc-funnel instruments
+(`what-to-do` → `how-to-do` → `do` → `refactor-review-test`) plus cc-tools's `crux`/`slap`, and drives
+the work to a REAL finish, then **closes**.
 
 - **With a prompt** (a task/problem/idea): it **thinks first** — sized to the input — and may come
   back **declined** ("not worth it / wrong problem") or reframed, rather than blindly building. If it
