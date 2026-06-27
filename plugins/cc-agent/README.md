@@ -133,10 +133,10 @@ instrument it called (`crux` / `what-to-do` / `how-to-do` / `do` / `refactor-rev
 spawned subagent — with the cycle number. It is a read-only witness: it **never blocks or alters a
 tool**, and logging is best-effort (skipped if it can't parse the input).
 
-Follow it from another terminal while the musician works (`musician-watch` tails the newest run):
+Follow it from another terminal while the musician works (`musicians watch` tails the newest run):
 
 ```
-bin/musician-watch        # or: tail -f .claude/ccharness/musician/runs/<run-id>/live.log
+bin/musicians watch       # or: tail -f .claude/ccharness/musician/runs/<run-id>/live.log
 ```
 
 The model's hidden chain-of-thought is not a tool call and is not captured — its spoken narration

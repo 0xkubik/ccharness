@@ -5,8 +5,7 @@ ROOT = Path(__file__).resolve().parent.parent
 HOOK = ROOT / "hooks" / "nonstop-stop.sh"
 HOOKS_JSON = ROOT / "hooks" / "hooks.json"
 MUS_HOOK = ROOT / "hooks" / "musician-stop.sh"
-CMD_ON = ROOT / "commands" / "nonstop-on.md"
-CMD_OFF = ROOT / "commands" / "nonstop-off.md"
+MUSICIANS = ROOT / "bin" / "musicians"
 SESSION = "11111111-1111-1111-1111-111111111111"
 OTHER = "22222222-2222-2222-2222-222222222222"
 RUN_ID = "20260626-120000-aaaa"
@@ -34,8 +33,10 @@ def repo_with(ns=None, mus=None):
     repo = tempfile.mkdtemp()
     base = Path(repo) / ".claude" / "ccharness"
     if ns is not None:
-        (base / "nonstop").mkdir(parents=True, exist_ok=True)
-        (base / "nonstop" / "state.json").write_text(json.dumps(ns))
+        sid = ns.get("session_id", SESSION)
+        d = base / "nonstop" / "by-session"
+        d.mkdir(parents=True, exist_ok=True)
+        (d / sid).write_text(json.dumps(ns))
     if mus is not None:
         run = base / "musician" / "runs" / RUN_ID
         run.mkdir(parents=True, exist_ok=True)
@@ -111,7 +112,7 @@ class TestNonstopHook(unittest.TestCase):
 
 class TestNonstopInvariants(unittest.TestCase):
     def test_files_exist(self):
-        for p in (HOOK, CMD_ON, CMD_OFF):
+        for p in (HOOK, MUSICIANS):
             self.assertTrue(p.exists(), f"missing {p}")
 
     def test_registered_in_hooks_json(self):

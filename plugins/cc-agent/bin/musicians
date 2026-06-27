@@ -1,0 +1,209 @@
+#!/usr/bin/env bash
+# musicians — inspect and steer this project's musician runs from the shell.
+#
+# Project-local: it reads .claude/ccharness/musician/ in the current repo (the machine-wide fleet
+# view across all repos is `ccmaestro`). Call it with the `!` prefix inside Claude Code, or straight
+# from a terminal sitting in the repo.
+#
+# Usage:
+#   musicians ls                     list every run here (id, state, nonstop, age, task)
+#   musicians <id> info              the full card for one run
+#   musicians watch [<id>]           follow a run's live action feed (newest run if no id)
+#   musicians <id> nonstop on|off    arm/disarm nonstop for that run's session
+#   musicians nonstop on|off         same, for the musician in the current session
+#
+# <id> matches a run-id exactly, or by unique prefix. `nonstop on` only sets the flag — it does NOT
+# launch a musician; start one with /musician. When armed, the musician keeps walking the roadmap
+# (re-launching after each piece closes) until it finds nothing left or you disarm.
+set -u
+
+MUS=".claude/ccharness/musician"
+RUNS="$MUS/runs"
+NS=".claude/ccharness/nonstop/by-session"
+
+now_iso() { date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || echo "1970-01-01T00:00:00Z"; }
+
+# json_field <file> <key>  ->  value of a string/scalar field (jq if present, else pure-bash regex,
+# so the nonstop toggle still works with no jq on PATH). Objects/arrays are not parsed (callers that
+# need to know "is this object present" use grep on the raw text instead).
+json_field() {
+  local file="$1" key="$2" raw
+  [ -f "$file" ] || return 0
+  if command -v jq >/dev/null 2>&1; then
+    jq -r --arg k "$key" '.[$k] // "" | if type=="object" or type=="array" then "" else tostring end' \
+       "$file" 2>/dev/null && return 0
+  fi
+  raw="$(<"$file")"
+  local re="\"$key\"[[:space:]]*:[[:space:]]*\"([^\"]*)\""
+  if [[ $raw =~ $re ]]; then printf '%s' "${BASH_REMATCH[1]}"; return 0; fi
+  re="\"$key\"[[:space:]]*:[[:space:]]*([^,}[:space:]]+)"
+  [[ $raw =~ $re ]] && printf '%s' "${BASH_REMATCH[1]}"
+}
+
+is_awaiting() { grep -Eq '"awaiting"[[:space:]]*:[[:space:]]*\{' "$1" 2>/dev/null; }
+
+# resolve_id <query>  ->  the one full run-id matching exactly or by unique prefix; empty if 0 or >1.
+resolve_id() {
+  local q="$1" d matches=()
+  [ -d "$RUNS" ] || return 0
+  if [ -d "$RUNS/$q" ]; then printf '%s' "$q"; return 0; fi
+  for d in "$RUNS/$q"*; do
+    [ -d "$d" ] && matches+=("${d##*/}")
+  done
+  [ "${#matches[@]}" -eq 1 ] && printf '%s' "${matches[0]}"
+}
+
+ns_on() {  # nonstop armed for session $1 ?
+  local f="$NS/$1"
+  [ -f "$f" ] || return 1
+  [ "$(json_field "$f" on)" = "true" ]
+}
+
+state_label() {  # short state for run dir $1
+  local st="$1/state.json" active outcome
+  active="$(json_field "$st" active)"
+  if [ "$active" = "true" ]; then
+    is_awaiting "$st" && { echo "awaiting"; return; }
+    echo "working"; return
+  fi
+  outcome="$(json_field "$st" outcome)"
+  if [ -n "$outcome" ] && [ "$outcome" != "null" ]; then echo "$outcome"; else echo "closed"; fi
+}
+
+iso_to_epoch() {
+  date -j -f "%Y-%m-%dT%H:%M:%SZ" "$1" +%s 2>/dev/null || date -d "$1" +%s 2>/dev/null || echo ""
+}
+
+human_age() {  # seconds -> "5s"/"4m"/"2h"/"3d"
+  local s="$1"
+  [ -n "$s" ] || { echo "—"; return; }
+  if   [ "$s" -lt 60 ];    then echo "${s}s"
+  elif [ "$s" -lt 3600 ];  then echo "$((s/60))m"
+  elif [ "$s" -lt 86400 ]; then echo "$((s/3600))h"
+  else echo "$((s/86400))d"; fi
+}
+
+run_age() {  # run dir $1 -> human age since started_at
+  local started ep now
+  started="$(json_field "$1/state.json" started_at)"
+  ep="$(iso_to_epoch "$started")"
+  [ -n "$ep" ] || { echo "—"; return; }
+  now="$(date +%s 2>/dev/null || echo 0)"
+  human_age "$((now - ep))"
+}
+
+run_task() {  # run dir $1 -> task text (truncated) or "(open)"
+  local input; input="$(json_field "$1/state.json" input)"
+  [ -n "$input" ] || { echo "(open)"; return; }
+  [ "${#input}" -gt 50 ] && input="${input:0:49}…"
+  echo "$input"
+}
+
+do_ls() {
+  if [ ! -d "$RUNS" ] || [ -z "$(ls -A "$RUNS" 2>/dev/null)" ]; then
+    echo "No musician runs in this repo yet. Start one with /musician."
+    return 0
+  fi
+  printf '%-22s %-9s %-8s %-5s %s\n' "ID" "STATE" "NONSTOP" "AGE" "TASK"
+  local d id sid ns
+  while IFS= read -r id; do
+    d="$RUNS/$id"
+    [ -f "$d/state.json" ] || continue
+    sid="$(json_field "$d/state.json" session_id)"
+    if [ -n "$sid" ] && ns_on "$sid"; then ns="on"; else ns="off"; fi
+    printf '%-22s %-9s %-8s %-5s %s\n' \
+      "$id" "$(state_label "$d")" "$ns" "$(run_age "$d")" "$(run_task "$d")"
+  done < <(ls -1 "$RUNS" 2>/dev/null | sort -r)
+}
+
+do_info() {
+  local rid; rid="$(resolve_id "$1")"
+  [ -n "$rid" ] || { echo "musicians: no run matches '$1' (try: musicians ls)" >&2; exit 2; }
+  local d="$RUNS/$rid" st="$RUNS/$rid/state.json" sid ns blocked
+  sid="$(json_field "$st" session_id)"
+  if [ -n "$sid" ] && ns_on "$sid"; then ns="on"; else ns="off"; fi
+  blocked=0
+  [ -f "$d/blocked.jsonl" ] && blocked="$(grep -c . "$d/blocked.jsonl" 2>/dev/null)"
+  [ -n "$blocked" ] || blocked=0
+  printf '%-12s %s\n' "id"        "$rid"
+  printf '%-12s %s\n' "mode"      "$(json_field "$st" entry)"
+  printf '%-12s %s\n' "task"      "$(run_task "$d")"
+  printf '%-12s %s\n' "state"     "$(state_label "$d")"
+  printf '%-12s %s\n' "nonstop"   "$ns"
+  printf '%-12s %s\n' "started"   "$(json_field "$st" started_at)"
+  printf '%-12s %s\n' "cycle"     "$(json_field "$st" cycle)"
+  printf '%-12s %s\n' "blocked"   "$blocked"
+  printf '%-12s %s\n' "session"   "$sid"
+  printf '%-12s %s\n' "dir"       "$d"
+}
+
+do_watch() {  # do_watch <id-or-empty> -> follow a run's live feed (newest run if empty)
+  local rid="$1" log
+  if [ -z "$rid" ]; then
+    rid="$(ls -1 "$RUNS" 2>/dev/null | sort | tail -1)"
+  else
+    rid="$(resolve_id "$rid")"
+  fi
+  log="$RUNS/$rid/live.log"
+  if [ -z "$rid" ] || [ ! -f "$log" ]; then
+    echo "No musician live feed here ($RUNS/<run-id>/live.log)."
+    echo "Start one with /musician, then run this again."
+    exit 0
+  fi
+  echo "🎼 watching $log  —  Ctrl-C to stop"
+  exec tail -n 40 -f "$log"
+}
+
+do_nonstop() {  # do_nonstop <id-or-empty> <on|off>
+  local id="$1" action="${2:-}" sid=""
+  if [ -z "$id" ]; then
+    sid="${CLAUDE_CODE_SESSION_ID:-}"
+    if [ -z "$sid" ]; then
+      echo "musicians: no CLAUDE_CODE_SESSION_ID in this shell — name the run instead:" >&2
+      echo "  musicians <id> nonstop ${action:-on|off}   (find the id with: musicians ls)" >&2
+      exit 2
+    fi
+  else
+    local rid; rid="$(resolve_id "$id")"
+    [ -n "$rid" ] || { echo "musicians: no run matches '$id' (try: musicians ls)" >&2; exit 2; }
+    sid="$(json_field "$RUNS/$rid/state.json" session_id)"
+    [ -n "$sid" ] || { echo "musicians: run '$rid' records no session — cannot toggle nonstop" >&2; exit 2; }
+  fi
+  mkdir -p "$NS" 2>/dev/null || true
+  local f="$NS/$sid"
+  case "$action" in
+    on)
+      local tmp="$f.tmp.$$"
+      printf '{"on":true,"session_id":"%s","armed_at":"%s"}\n' "$sid" "$(now_iso)" > "$tmp" && mv "$tmp" "$f"
+      echo "🔁 nonstop ON for session ${sid:0:8} — after each piece closes the musician picks the next"
+      echo "   roadmap milestone and keeps going. It does NOT launch one now; start with /musician."
+      ;;
+    off)
+      rm -f "$f"
+      echo "⏹  nonstop OFF for session ${sid:0:8} — a piece mid-run finishes, then the musician stops."
+      ;;
+    *)
+      echo "musicians: nonstop needs 'on' or 'off'" >&2; exit 2 ;;
+  esac
+}
+
+usage() {
+  sed -n '2,/^set -u/{/^set -u/d;p;}' "$0" | sed 's/^# \{0,1\}//'
+}
+
+cmd="${1:-}"; [ "$#" -gt 0 ] && shift
+case "$cmd" in
+  ls|"")     do_ls ;;
+  -h|--help) usage ;;
+  watch)     do_watch "${1:-}" ;;
+  nonstop)   do_nonstop "" "${1:-}" ;;
+  *)
+    sub="${1:-}"; [ "$#" -gt 0 ] && shift
+    case "$sub" in
+      info)    do_info "$cmd" ;;
+      watch)   do_watch "$cmd" ;;
+      nonstop) do_nonstop "$cmd" "${1:-}" ;;
+      *)       echo "musicians: unknown command — see: musicians --help" >&2; exit 2 ;;
+    esac
+    ;;
+esac
