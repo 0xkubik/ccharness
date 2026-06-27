@@ -43,7 +43,7 @@ Each run gets its OWN folder so many runs in one repo never collide:
       state.json             loop control + identity
                              {active, status, run_id, session_id, mode:"musician",
                               entry:"task"|"open", input (the original prompt, verbatim), done_when,
-                              cycle, ultracode, awaiting, outcome, …}
+                              cycle, ultracode, awaiting, outcome, worktree_helper, …}
       blocked.jsonl          directions handed back during this run
       log.jsonl              one line per cycle
       live.log               live action feed — one line per tool call (see "Watching a run live")
@@ -87,6 +87,37 @@ The hook finds THIS session's run via the `by-session/<session-id>` pointer (see
 It fails **closed** where it matters: if this session has a run pointer but its `state.json` is
 unreadable, the hook re-feeds — a live task is never dropped to a parse failure. A Stop from a
 session with no pointer simply yields.
+
+## Build isolation (worktrees)
+
+The musician **conducts from the main tree but builds in a throwaway git worktree**, so its
+autonomous building never dirties your working tree mid-flight — only the finished, committed result
+lands on your branch. Each build subagent (`cc-tools:do`, chaining to `refactor-review-test`) is
+dispatched with the Agent tool's **`isolation:"worktree"`**: the subagent, its tools, and any
+sub-agents it spawns all run inside one worktree under `.claude/worktrees/`. (A plain "cd into a
+worktree" instruction leaks back to the main tree — a dispatched agent starts at the main root and
+`cd` doesn't persist — which is why the harness primitive is the only reliable containment.)
+
+`skills/musician/worktree.sh` owns the deterministic git bookkeeping (so it isn't hand-typed across
+re-fed turns):
+
+- `prepare` (once, at arm) — gitignore `.claude/worktrees/`, set `worktree.baseRef:"head"` (in the
+  personal `settings.local.json`) so build worktrees branch from your **local HEAD** (not stale
+  origin), and flag an uncommitted North Star (`GROUNDING_DIRTY=1`) that would be absent in the
+  worktree.
+
+A worktree is cut from committed HEAD, so the build sees **committed state only** — uncommitted
+working-tree changes are not visible to it (the musician builds from your last commit).
+- `integrate <path> <branch>` — the build committed: fast-forward (or merge) it onto your branch and
+  remove the worktree + branch. A true `CONFLICT` keeps the worktree and is surfaced, never guessed.
+- `discard <path> <branch>` — an abandoned build (handback / dead approach): drop the worktree,
+  keeping nothing.
+
+Isolation is **per build dispatch**, so a multi-step piece cuts a fresh worktree each build and
+integrates as it goes; a single-build piece is exactly "cut a worktree → build → integrate →
+remove". A `declined` run never builds, so it creates no worktree. Its absolute path is recorded in
+`state.json` as `worktree_helper` so the in-loop calls find it on re-fed turns (where
+`${CLAUDE_PLUGIN_ROOT}` isn't set).
 
 ## Watching a run live
 

@@ -151,8 +151,15 @@ what it reports — it does the exact, error-prone bookkeeping so you never hand
    - `RESUME_MISSING=<id>` → that run id doesn't exist; tell the user and stop.
    - otherwise use `RUN_DIR` / `RUN_ID` / `ENTRY` as your run.
 3. **Read the awareness notes** — recent `git log --notes` (see **Awareness**): what past runs
-   closed, so you don't re-open it. Then **announce** the entry mode and the input (note
-   `[ultracode]` if set, and any surfaced orphan), and run cycle 1.
+   closed, so you don't re-open it.
+4. **Prep build isolation:** run the worktree helper (its absolute path is recorded in state as
+   `worktree_helper`, so the in-loop calls find it on re-fed turns too):
+   `HELPER="$(jq -r .worktree_helper <run>/state.json)"; bash "$HELPER" prepare`. It gitignores
+   `.claude/worktrees/` and sets `worktree.baseRef:"head"` so build worktrees branch from your local
+   HEAD (see **Build in an isolated worktree**). If it reports `GROUNDING_DIRTY=1`, commit the
+   grounding (CLAUDE.md / roadmap) before the first build, or the build worktree won't carry the
+   North Star. Then **announce** the entry mode and the input (note `[ultracode]` if set, and any
+   surfaced orphan), and run cycle 1.
 
 When the Stop hook **re-feeds** you (the normal in-loop path): your run already exists — skip
 arming. Resolve `<run>` from the pointer (`runs/$(cat .claude/ccharness/musician/by-session/<$CLAUDE_CODE_SESSION_ID>)/`)
@@ -182,12 +189,17 @@ and run the next cycle directly.
           decline (step 2's exit). If it has NO new buildable approach left — the technical path is
           exhausted → active:false, outcome:"blocked", append the reason to blocked.jsonl, report,
           END TURN.
-5. BUILD  dispatch a cc-tools:do subagent (it writes the code — you never Edit/Write it yourself).
-            do builds + smoke-checks, then ALWAYS chains to a cc-tools:refactor-review-test pass
-            (full verify · behavior-preserving refactor · /code-review + /simplify · full tests)
-            which owns the LOCAL commit (no push); you read back the result + sha from the chain's
-            end. A "harden / refactor / add tests to existing code" task → dispatch
-            cc-tools:refactor-review-test DIRECTLY, skipping do.
+5. BUILD  dispatch a cc-tools:do subagent WITH worktree isolation (Agent `isolation:"worktree"` —
+            see **Build in an isolated worktree**); it writes the code (you never Edit/Write it
+            yourself), builds + smoke-checks, then ALWAYS chains to a cc-tools:refactor-review-test
+            pass (full verify · behavior-preserving refactor · /code-review + /simplify · full tests)
+            which owns the LOCAL commit (no push) — all INSIDE the worktree. Capture the dispatch's
+            worktreePath + worktreeBranch. A "harden / refactor / add tests to existing code" task →
+            dispatch cc-tools:refactor-review-test DIRECTLY (still isolated), skipping do.
+          INTEGRATE: build committed → `worktree.sh integrate <worktreePath> <worktreeBranch>` lands
+            it on your branch and removes the worktree (`INTEGRATED=<sha>`; `CONFLICT=<branch>` →
+            surface it, the worktree is kept). Build produced no commit (handback / dead approach) →
+            `worktree.sh discard <worktreePath> <worktreeBranch>`.
           ASYNC build (the do subagent runs in the background and can't finish in-turn, and no
             parallel in-turn work is worth doing) → set awaiting:{what, since} (atomic), log
             "suspended", END TURN. NOT a cycle. (Hook releases on awaiting; the subagent's
@@ -202,6 +214,41 @@ and run the next cycle directly.
 6. LOG    <run>/log.jsonl line {cycle, picked, outcome, moved_goal, sha?, ts}; bump cycle (atomic).
 7. END TURN → the musician hook re-feeds (unless awaiting was set in 5 — then it released).
 ```
+
+## Build in an isolated worktree — the build never touches the main tree
+
+Every build runs in its own throwaway **git worktree**, so the musician's autonomous building never
+dirties your working tree mid-flight; only the finished, committed result lands on your branch. This
+is the one hard rule for step 5.
+
+- **Isolate at dispatch.** Dispatch the build subagent (`cc-tools:do`, or `cc-tools:refactor-review-test`
+  directly) with the Agent tool's **`isolation:"worktree"`**. That is the ONLY reliable containment:
+  the subagent, its nested tools, AND any sub-agents it spawns all run inside one worktree under
+  `.claude/worktrees/`. A plain "cd into a worktree" instruction leaks back to the main tree — a
+  dispatched agent starts at the main root, `cd` doesn't persist between its commands, and its own
+  sub-agents reset to the main root. The harness returns the dispatch's **`worktreePath`** and
+  **`worktreeBranch`** — capture both.
+- **You stay in main.** Never enter the worktree yourself: your run `state.json`, the hooks, and the
+  by-session pointer all resolve from the main tree (they'd be lost in a worktree). Only the build
+  subagent lives in the worktree; you conduct from main and integrate its result.
+- **Call the helper by its recorded path.** Every `worktree.sh` call uses the absolute path in
+  `<run>/state.json`'s `worktree_helper` (`HELPER="$(jq -r .worktree_helper <run>/state.json)"`),
+  because re-fed turns don't have `${CLAUDE_PLUGIN_ROOT}` set.
+- **Integrate when the build commits.** `refactor-review-test` makes the local commit INSIDE the
+  worktree; then land it: `bash "$HELPER" integrate <worktreePath> <worktreeBranch>` fast-forwards it
+  onto your branch and removes the worktree + branch. `INTEGRATED=<sha>` → the work is on your
+  branch. `CONFLICT=<branch>` → the build branched from a base that moved and can't auto-land; the
+  worktree is KEPT — surface it (treat like a blocker), never guess the merge.
+- **Discard an abandoned build.** A build that produced NO commit (a handback, or a dead approach) →
+  `bash "$HELPER" discard <worktreePath> <worktreeBranch>` drops the worktree, keeping nothing.
+- **Per build, not one for the whole run.** Containment is per-dispatch, so a multi-cycle piece cuts a
+  fresh worktree each build and integrates as it goes (each cycle builds on the last, now on your
+  branch). A single-build piece is exactly "cut a worktree → build in it → integrate → remove".
+- **Builds from committed HEAD.** A worktree is cut from your last commit, so the build does NOT see
+  uncommitted working-tree changes — the musician builds from committed state. (`GROUNDING_DIRTY`
+  guards the one case that would otherwise break a build silently: an uncommitted North Star.)
+- **declined never builds → no worktree.** The brain's "no" closes before any build, so a declined
+  run creates nothing to clean up.
 
 ## Terminal exits — the only doors out
 
@@ -261,12 +308,14 @@ Rules:
 
 ## Ultracode mode (`--ultracode`)
 
-A **plus**, not a switch. The baseline already dispatches one subagent per work-unit; `--ultracode`
+A **plus**, not a switch. The baseline already dispatches one isolated build per cycle; `--ultracode`
 raises that to **maximal fan-out**. When `ultracode` is set (the Stop hook injects this each cycle),
-step 6's **build** must go wide instead of a single `do` subagent: author a **Workflow** and/or
-dispatch **parallel** `do` subagents, isolate parallel file-mutating work in **git worktrees**, and
-verify findings adversarially. Apply it at the build level — don't fight `do`'s gated pipeline. The
-exits are unchanged; ultracode only affects *how wide* the build fans out.
+step 5's **build** must go wide instead of a single `do` subagent: author a **Workflow** and/or
+dispatch **parallel** `do` subagents — each with its own `isolation:"worktree"` (the parallel
+file-mutating work is already isolated, which is exactly what makes parallel builds safe), and
+`worktree.sh integrate` each one's branch as it lands. Verify findings adversarially. Apply it at the
+build level — don't fight `do`'s gated pipeline. The exits are unchanged; ultracode only affects *how
+wide* the build fans out.
 
 ## Rationalizations — STOP, the loop is trying to skip the brain or the done-check
 
@@ -281,6 +330,7 @@ exits are unchanged; ultracode only affects *how wide* the build fans out.
 | "The API is 529-ing, so I'm stuck — close it `blocked`." | A transient outage is NOT a real blocker. Suspend (`awaiting`) and wait; don't close `blocked`. |
 | "do handed back once — I'll keep retrying the same approach a few times." | There is no try-count. A business blocker closes `blocked` now; a technical handback goes back to how-to-do for a DIFFERENT approach — never the same one again. |
 | "It's a tiny change — I'll just `Edit` it inline instead of dispatching `do`." | **No.** You conduct; a `cc-tools:do` subagent writes every code change. Inline edits skip its fork-test, verification, and unverified-commit guard — and the small ones are exactly where the boundary erodes. |
+| "It's a quick build — I'll dispatch `do` normally, without worktree isolation." | **No.** Every build is dispatched `isolation:"worktree"` and its result integrated via `worktree.sh`. An un-isolated build dirties the main tree mid-flight — the exact thing the worktree rule prevents — and "cd into a worktree" leaks back anyway. |
 | "This is quick to reason about — I'll think it through here instead of dispatching." | The work-unit thinking (diagnose / find direction / decide approach) goes to a subagent. Your context is for conducting — route, judge `done_when`, pick the next move — not for doing the work. |
 
 ## Red flags — you are about to make the wrong call
@@ -292,6 +342,7 @@ exits are unchanged; ultracode only affects *how wide* the build fans out.
 - You're continuing the loop after setting `active:false` (every exit ENDS THE TURN immediately).
 - You're waiting in-turn on an async build instead of suspending (`awaiting`).
 - You're about to `Edit`/`Write` product code yourself instead of dispatching a `cc-tools:do` subagent.
+- You're dispatching a build WITHOUT `isolation:"worktree"`, or landing its result by hand instead of via `worktree.sh integrate`.
 - You're reasoning a work-unit out in your own context instead of dispatching a subagent to do it.
 
 ## Quick reference
@@ -300,14 +351,17 @@ exits are unchanged; ultracode only affects *how wide* the build fans out.
 parse (`--ultracode` / `--resume`; no spend flag, no caps), `run_id` + `runs/<run_id>/state.json`
 (`status:"working"`, `input` verbatim, empty `done_when`) + `by-session` pointer + `heartbeat`, and
 the crash-orphan scan (surface `ORPHAN=…`, never auto-adopt) · then read awareness
-(`git log --notes`, closed facts only).
+(`git log --notes`, closed facts only) · `worktree.sh prepare` (gitignore `.claude/worktrees/`,
+`baseRef:"head"`; `GROUNDING_DIRTY=1` → commit grounding first).
 `Cycle` (every work-unit is a dispatched subagent — you conduct, never do the work inline): `1` read
 state + blocked · `2` **BRAIN** while `done_when==""`: dispatch a subagent to think, sized-to-input
 (crux / fit / skip; open → what-to-do auto-pick top) → decline/intent-reframe/nothing-worth-doing →
 **close `declined`** → else forge `done_when` · `3` **DONE?** survey vs `done_when` → MET → close
 `achieved` · `4` dispatch how-to-do subagent → buildable approach (no new approach left → close
-`blocked`) · `5` dispatch do subagent (do builds+smoke → chains to refactor-review-test, which owns
-the local commit; harden-existing-code → refactor-review-test directly) → local commit (async →
+`blocked`) · `5` dispatch do subagent **`isolation:"worktree"`** (do builds+smoke → chains to
+refactor-review-test, which owns the local commit INSIDE the worktree; harden-existing-code →
+refactor-review-test directly) → `worktree.sh integrate <worktreePath> <worktreeBranch>` lands it on
+your branch + removes the worktree (no commit → `discard`; `CONFLICT` → surface) (async →
 `awaiting`; handback: business blocker → close `blocked`, technical → back to step 4) · `6` log +
 bump cycle (atomic) · `7` end turn → hook re-feeds.
 On any close: `git notes append` one closed fact (`built`/`declined`/`blocked`
@@ -315,5 +369,6 @@ On any close: `git notes append` one closed fact (`built`/`declined`/`blocked`
 
 **Invariant:** you **conduct, never perform** — every work-unit is a dispatched subagent and you
 never write product code inline; the brain leads and may say no (`declined`); you forge your own
-`done_when`; the done-check leads every build cycle; one piece of work, to its end, then **close**.
-`active:false` is the only door out. There is no never-stop loop above you.
+`done_when`; the done-check leads every build cycle; **every build runs isolated in a worktree and is
+integrated to your branch**, never edited into the main tree; one piece of work, to its end, then
+**close**. `active:false` is the only door out. There is no never-stop loop above you.

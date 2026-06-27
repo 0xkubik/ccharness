@@ -50,6 +50,16 @@ class TestArmTaskMode(unittest.TestCase):
         for f in ("heartbeat", "log.jsonl", "blocked.jsonl"):
             self.assertTrue((Path(repo) / MUS / "runs" / rid / f).exists())
 
+    def test_records_worktree_helper(self):
+        # The in-loop build integrate/discard calls need the helper's path on re-fed turns (no
+        # ${CLAUDE_PLUGIN_ROOT} then), so arm records its absolute path into state.
+        repo = tempfile.mkdtemp()
+        out, _, _ = run_arm(repo, "build something")
+        st = state_of(repo, out["RUN_ID"])
+        self.assertIn("worktree_helper", st)
+        self.assertTrue(st["worktree_helper"].endswith("/worktree.sh"))
+        self.assertTrue(Path(st["worktree_helper"]).exists())  # points at the real sibling helper
+
     def test_flags_parsed_prompt_preserved(self):
         repo = tempfile.mkdtemp()
         out, _, _ = run_arm(repo, "make it fast --ultracode")

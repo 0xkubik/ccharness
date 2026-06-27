@@ -12,7 +12,12 @@ Stop the musician loop for THIS session. Do exactly this:
    `outcome:"cancelled"` in `RUN/state.json` (atomic: temp file + `mv`), then **remove the pointer**
    `.claude/ccharness/musician/by-session/$CLAUDE_CODE_SESSION_ID` (`rm`). Either alone frees the
    Stop hook; doing both records the cancellation *and* lets a fresh `/musician` arm cleanly.
-4. Leave `RUN/` itself in place — `state.json`, `blocked.jsonl`, `log.jsonl`, and `live.log` are the
+4. **Clean up build isolation:** run `git worktree prune` (clears stale entries for already-removed
+   worktrees). If a build was mid-flight when cancelled, a worktree may remain under
+   `.claude/worktrees/` — list any with `git worktree list` and report them so the user can remove
+   them (`git worktree remove --force <path>`). Don't force-remove blindly: another session's
+   musician may own one.
+5. Leave `RUN/` itself in place — `state.json`, `blocked.jsonl`, `log.jsonl`, and `live.log` are the
    durable record of this run. Report: **cycles run**, the **input** it was working (or "open
-   mode"), and the entries in `RUN/blocked.jsonl` (each one's `direction` + `reason`). If the queue
-   is empty, say so.
+   mode"), any **leftover worktree** from step 4, and the entries in `RUN/blocked.jsonl` (each one's
+   `direction` + `reason`). If the queue is empty, say so.

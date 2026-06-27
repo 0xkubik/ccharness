@@ -128,6 +128,19 @@ class TestMusicianSkill(unittest.TestCase):
         self.assertIn("work-unit", lowered)
         self.assertIn("never write product code", lowered)
 
+    def test_build_runs_in_isolated_worktree(self):
+        # The build (and only the build) runs in a throwaway worktree so it never dirties the main
+        # tree; the conductor stays in main and integrates the result via the helper.
+        self.assertIn('isolation:"worktree"', self.text)
+        self.assertIn("worktree.sh", self.text)
+        lowered = self.text.lower()
+        self.assertIn("integrate", lowered)
+        self.assertIn("discard", lowered)
+        # The helper path is recorded in state so re-fed turns (no plugin-root env) can find it.
+        self.assertIn("worktree_helper", self.text)
+        # baseRef:head so build worktrees branch from local HEAD, not stale origin.
+        self.assertIn("baseRef", self.text)
+
     def test_no_autopilot_residue(self):
         # The whole point of the redesign: no autopilot / semipilot / milestone-walking loop left.
         lowered = self.text.lower()

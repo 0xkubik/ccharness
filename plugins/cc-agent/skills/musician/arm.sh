@@ -26,6 +26,9 @@ set -u
 MUS=".claude/ccharness/musician"
 SID="${CLAUDE_CODE_SESSION_ID:-}"
 STALE_MIN=30
+# Absolute path to the worktree helper (our sibling). Recorded into state so the in-loop build
+# integrate/discard calls can find it on re-fed turns, where ${CLAUDE_PLUGIN_ROOT} is not set.
+HELPER="$(cd "$(dirname "$0")" 2>/dev/null && pwd)/worktree.sh"
 now_iso() { date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || echo "1970-01-01T00:00:00Z"; }
 
 # --- parse the argument string: pull known flags, the rest is the prompt ---
@@ -53,7 +56,7 @@ if [ -n "$RESUME" ]; then
     printf 'RESUME_MISSING=%s\n' "$RESUME"; exit 0
   fi
   tmp="$RDIR/state.json.tmp.$$"
-  jq --arg sid "$SID" '.active=true | .status="working" | .awaiting=null | .outcome=null | .session_id=$sid' \
+  jq --arg sid "$SID" --arg helper "$HELPER" '.active=true | .status="working" | .awaiting=null | .outcome=null | .session_id=$sid | .worktree_helper=$helper' \
      "$RDIR/state.json" > "$tmp" 2>/dev/null && mv "$tmp" "$RDIR/state.json"
   [ -n "$SID" ] && printf '%s' "$RESUME" > "$MUS/by-session/$SID"
   : > "$RDIR/heartbeat"
@@ -75,10 +78,11 @@ tmp="$RUN_DIR/state.json.tmp.$$"
 jq -n \
   --arg run_id "$RUN_ID" --arg sid "$SID" --arg input "$PROMPT" --arg entry "$ENTRY" \
   --argjson ultra "$ULTRA" \
-  --arg started "$(now_iso)" \
+  --arg started "$(now_iso)" --arg helper "$HELPER" \
   '{active:true, status:"working", run_id:$run_id, session_id:$sid, mode:"musician",
     entry:$entry, input:$input, done_when:"", cycle:0, ultracode:$ultra,
-    started_at:$started, last_surveyed_sha:"", awaiting:null, outcome:null}' \
+    started_at:$started, last_surveyed_sha:"", awaiting:null, outcome:null,
+    worktree_helper:$helper}' \
   > "$tmp" && mv "$tmp" "$RUN_DIR/state.json"
 
 [ -n "$SID" ] && printf '%s' "$RUN_ID" > "$MUS/by-session/$SID"
