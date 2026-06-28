@@ -9,12 +9,18 @@ for ONE piece of work. It plays the cc-funnel instruments (`what-to-do` → `how
 
 Hand it ONE thing to carry to a real finish — a task, a problem, or an idea.
 
+By default it runs in **two phases: shape the idea with you first, then build alone.** It develops the
+idea together with you (asking questions, running the thinking instruments), derives its definition of
+done, then asks whether you want to review *how* it'll build it before it goes — and only then flips
+into the fully autonomous build loop. **`--auto` skips the shaping** and starts autonomous from the
+first turn (the old behaviour; this is what `nonstop` passes to walk the roadmap hands-off).
+
 - **With a prompt** (`/musician <task / problem / idea>`): it **thinks first**, sized to the input
   (a fuzzy pain → `crux`; an idea → North-Star fit; a clear task → straight to build). The brain may
   come back **declined** ("not worth it / wrong problem") or reframed, instead of blindly building.
   If it clears, it forges a falsifiable definition of done and builds to it.
-- **Without a prompt** (`/musician`): it **finds the work itself** via `what-to-do` (auto-picking the
-  top direction — no human in the loop), then builds that one direction to done.
+- **Without a prompt** (`/musician`): it **finds the work itself** via `what-to-do` (picking the top
+  direction *with* you in shaping, or autonomously under `--auto`), then builds that one direction to done.
 
 It runs as a loop across turns (the Stop hook re-feeds one cycle per turn), but it is **bounded**:
 one piece of work, to its end, then stop. Want another — launch it again.
@@ -29,6 +35,7 @@ one piece of work, to its end, then stop. Want another — launch it again.
     left). There is no try-count and no cycle cap — one real blocker closes the run.
 - **Open mode requires a roadmap's North Star** (it leans on `what-to-do`). None → `/find-goal` first.
 - `/musician-cancel` is the manual brake.
+- `--auto` skips the collaborative shaping phase and arms straight into the autonomous build loop.
 - `--ultracode` forces maximum parallelism in the build (mandatory Workflow + parallel subagents +
   git worktrees). There is **no spend flag** — the musician is bounded by design.
 
@@ -42,7 +49,8 @@ Each run gets its OWN folder so many runs in one repo never collide:
     runs/<run-id>/            one folder per run  (run-id = UTC YYYYMMDD-HHMMSS-<hex>, sortable)
       state.json             loop control + identity
                              {active, status, run_id, session_id, mode:"musician",
-                              entry:"task"|"open", input (the original prompt, verbatim), done_when,
+                              entry:"task"|"open", phase:"shaping"|"building",
+                              input (the original prompt, verbatim), done_when,
                               cycle, ultracode, awaiting, outcome, worktree_helper, …}
       blocked.jsonl          directions handed back during this run
       log.jsonl              one line per cycle
@@ -60,7 +68,8 @@ task's completion notification resumes it.
 ## Arm & crash recovery
 
 `/musician` runs `skills/musician/arm.sh` first — the deterministic setup the skill used to
-hand-write: it parses the flags (`--ultracode` / `--resume <run-id>`), runs the open-mode North-Star
+hand-write: it parses the flags (`--auto` → arm in the `building` phase, else `shaping`; `--ultracode` /
+`--resume <run-id>`), runs the open-mode North-Star
 gate, forges the `run_id`, writes `state.json` +
 the pointer + the record files, and **scans for crashed runs**. The brain stays in the skill; only
 the bookkeeping is in the script.
@@ -79,7 +88,8 @@ The hook finds THIS session's run via the `by-session/<session-id>` pointer (see
 
 | Situation | `musician-stop.sh` |
 | --- | --- |
-| this session's run active | blocks (re-feeds one cycle) |
+| this session's run active, `phase:"building"` | blocks (re-feeds one cycle) |
+| active but `phase:"shaping"` | yields (collaborating with the human — normal conversation, no re-feed) |
 | active but `awaiting` set | yields (suspended — terminal frees, no turn burned) |
 | `active:false` (achieved / declined / blocked / cancelled) | yields (session ends) |
 | no pointer for this session | yields (the common case — most Stops have no musician) |

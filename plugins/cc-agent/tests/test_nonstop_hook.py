@@ -91,6 +91,13 @@ class TestNonstopHook(unittest.TestCase):
         self.assertIn("block", out)
         self.assertIn("/musician", out)
 
+    def test_relaunch_is_autonomous(self):
+        # nonstop is the autonomous milestone-walker — it must re-launch the musician in --auto so it
+        # does NOT pause to collaborate with the human between milestones.
+        rc, out = run_hook(repo_with(ns=armed(), mus={"active": False, "session_id": SESSION}),
+                           {"session_id": SESSION})
+        self.assertIn("--auto", out)
+
     def test_different_session_noop(self):
         # A nonstop armed in another session must not fire here.
         rc, out = run_hook(repo_with(ns=armed(OTHER), mus={"active": False, "session_id": SESSION}),

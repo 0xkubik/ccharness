@@ -93,6 +93,44 @@ class TestArmTaskMode(unittest.TestCase):
         self.assertTrue((Path(repo) / MUS / "runs" / b["RUN_ID"]).exists())
 
 
+class TestArmPhase(unittest.TestCase):
+    """Default arms into the collaborative SHAPING phase; --auto arms straight into BUILDING."""
+
+    def test_default_task_mode_is_shaping(self):
+        repo = tempfile.mkdtemp()
+        out, _, _ = run_arm(repo, "fix the flaky login test")
+        self.assertEqual(state_of(repo, out["RUN_ID"])["phase"], "shaping")
+
+    def test_default_open_mode_is_shaping(self):
+        repo = tempfile.mkdtemp()
+        with_north_star(repo)
+        out, _, _ = run_arm(repo, "")
+        self.assertEqual(state_of(repo, out["RUN_ID"])["phase"], "shaping")
+
+    def test_auto_flag_sets_building(self):
+        repo = tempfile.mkdtemp()
+        out, _, _ = run_arm(repo, "fix the flaky login test --auto")
+        st = state_of(repo, out["RUN_ID"])
+        self.assertEqual(st["phase"], "building")
+        self.assertEqual(st["input"], "fix the flaky login test")  # flag stripped from the prompt
+
+    def test_auto_open_mode_is_building(self):
+        repo = tempfile.mkdtemp()
+        with_north_star(repo)
+        out, _, _ = run_arm(repo, "--auto")
+        st = state_of(repo, out["RUN_ID"])
+        self.assertEqual(out["ENTRY"], "open")
+        self.assertEqual(st["phase"], "building")
+
+    def test_auto_and_ultracode_coexist(self):
+        repo = tempfile.mkdtemp()
+        out, _, _ = run_arm(repo, "make it fast --auto --ultracode")
+        st = state_of(repo, out["RUN_ID"])
+        self.assertEqual(st["phase"], "building")
+        self.assertTrue(st["ultracode"])
+        self.assertEqual(st["input"], "make it fast")
+
+
 class TestArmOpenMode(unittest.TestCase):
     def test_open_mode_needs_north_star(self):
         repo = tempfile.mkdtemp()
@@ -149,6 +187,22 @@ class TestArmOrphanScan(unittest.TestCase):
                         f"expected the stale run surfaced, got {orphans}")
         # surface only — it was NOT auto-adopted (pointer points at the NEW run)
         self.assertEqual((Path(repo) / MUS / "by-session" / SESSION).read_text(), out["RUN_ID"])
+
+    def test_shaping_run_not_an_orphan(self):
+        repo = tempfile.mkdtemp()
+        # a run parked in the collaborative SHAPING phase is waiting on the HUMAN, not crashed
+        # autonomous work — a stale heartbeat there must NOT be surfaced as a resumable orphan.
+        shaping = Path(repo) / MUS / "runs" / "20260626-080000-talk"
+        shaping.mkdir(parents=True)
+        (shaping / "state.json").write_text(json.dumps(
+            {"active": True, "status": "working", "phase": "shaping",
+             "awaiting": None, "input": "discuss this idea"}))
+        hb = shaping / "heartbeat"; hb.write_text("")
+        old = time.time() - 3600
+        os.utime(hb, (old, old))
+
+        _, orphans, _ = run_arm(repo, "fresh task")
+        self.assertEqual(orphans, [])
 
     def test_awaiting_run_not_an_orphan(self):
         repo = tempfile.mkdtemp()

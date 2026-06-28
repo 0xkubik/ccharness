@@ -47,6 +47,22 @@ class TestMusicians(unittest.TestCase):
         self.assertTrue(marker.exists(), "nonstop marker not written where the hook reads it")
         self.assertTrue(json.loads(marker.read_text())["on"])
 
+    def test_ls_shows_shaping_phase(self):
+        # A run active in the collaborative SHAPING phase reads "shaping" (waiting on the human),
+        # not "working" (autonomous) — so the fleet view doesn't mislabel a conversation as work.
+        repo = tempfile.mkdtemp()
+        base = Path(repo) / ".claude" / "ccharness" / "musician"
+        run = base / "runs" / RUN_ID
+        run.mkdir(parents=True, exist_ok=True)
+        (run / "state.json").write_text(json.dumps({
+            "active": True, "status": "working", "run_id": RUN_ID, "session_id": SESSION,
+            "entry": "task", "phase": "shaping", "input": "discuss the idea", "cycle": 0,
+            "started_at": "2026-06-27T08:00:00Z", "outcome": None,
+        }))
+        rc, out, _ = run_bin(repo, "ls")
+        self.assertEqual(rc, 0)
+        self.assertIn("shaping", out)
+
     def test_nonstop_off_removes_marker_current_session(self):
         repo = repo_with_run()
         run_bin(repo, RUN_ID, "nonstop", "on")

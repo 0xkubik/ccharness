@@ -52,6 +52,22 @@ class TestMusicianSkill(unittest.TestCase):
     def test_no_askuserquestion_under_loop(self):
         self.assertIn("AskUserQuestion", self.text)  # must mention it to forbid it
 
+    def test_collaborative_shaping_default(self):
+        # Default: a collaborative SHAPING phase (idea developed WITH the human) precedes the
+        # autonomous BUILDING phase. --auto skips shaping and goes straight to autonomy.
+        self.assertIn("--auto", self.text)
+        lowered = self.text.lower()
+        self.assertIn("shaping", lowered)
+        self.assertIn("building", lowered)
+
+    def test_askuserquestion_allowed_in_shaping(self):
+        # The blanket "AskUserQuestion is forbidden" is scoped to the autonomous (building) phase —
+        # during shaping it is the very mechanism of the collaboration, so it must be allowed there.
+        self.assertIn("AskUserQuestion", self.text)
+        lowered = self.text.lower()
+        self.assertIn("shaping", lowered)
+        self.assertIn("allowed", lowered)
+
     def test_grounding_gate(self):
         self.assertIn("find-goal", self.text)
 

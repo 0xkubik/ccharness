@@ -52,6 +52,19 @@ if [ -z "$ULTRA" ]; then
   case "$STATE_RAW" in *'"ultracode": true'*|*'"ultracode":true'*) ULTRA=1;; esac
 fi
 
+# phase → "shaping" (collaborating with the human) vs "building" (autonomous loop). Absent → building
+# (back-compat: a run armed before this field re-feeds as before). Only "shaping" changes behaviour.
+PHASE=""
+if command -v jq >/dev/null 2>&1; then
+  PHASE="$(jq -r '.phase // ""' "$STATE_FILE" 2>/dev/null || true)"
+fi
+if [ -z "$PHASE" ] && command -v grep >/dev/null 2>&1; then
+  grep -Eq '"phase"[[:space:]]*:[[:space:]]*"shaping"' "$STATE_FILE" && PHASE=shaping
+fi
+if [ -z "$PHASE" ]; then
+  case "$STATE_RAW" in *'"phase": "shaping"'*|*'"phase":"shaping"'*) PHASE=shaping;; esac
+fi
+
 # RELEASE — work finished (achieved / declined / blocked) or cancelled.
 [ "$STATE_ACTIVE" = "false" ] && exit 0
 
@@ -69,6 +82,15 @@ if [ -z "$AWAITING" ]; then
   case "$STATE_RAW" in *'"awaiting": {'*|*'"awaiting":{'*) AWAITING=1;; esac
 fi
 [ -n "$AWAITING" ] && exit 0
+
+# RELEASE — SHAPING phase: the musician is developing the idea WITH the human, not running the
+# autonomous loop. End the turn so the human can answer; do NOT re-feed. (AskUserQuestion and normal
+# back-and-forth happen here; the musician itself flips phase to "building" at the handoff, and only
+# THEN does this hook start re-feeding.) Keep the heartbeat fresh so the live conversation reads alive.
+if [ "$PHASE" = "shaping" ]; then
+  : > "$RUN_DIR/heartbeat" 2>/dev/null || true
+  exit 0
+fi
 
 # Heartbeat — this run is alive and working. Refreshing it each turn means a hard crash (no Stop
 # event) leaves a STALE heartbeat, which the next `/musician` arm scan reads as a crashed orphan.

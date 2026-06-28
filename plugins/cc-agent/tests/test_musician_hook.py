@@ -154,6 +154,41 @@ class TestMusicianHook(unittest.TestCase):
         self.assertEqual(r.stdout.strip(), "")
 
 
+class TestMusicianPhase(unittest.TestCase):
+    """The phase gates the re-feed: shaping = a human conversation (release), building = autonomous (re-feed)."""
+
+    def test_shaping_releases(self):
+        # phase:"shaping" — the musician is collaborating with the human. The hook must NOT re-feed;
+        # the turn ends so the human can answer.
+        repo = repo_with({"active": True, "session_id": SESSION, "cycle": 0,
+                          "entry": "task", "phase": "shaping"})
+        rc, out = run_hook(repo, {"session_id": SESSION})
+        self.assertEqual(rc, 0)
+        self.assertEqual(out.strip(), "")
+
+    def test_building_blocks(self):
+        # phase:"building" — the autonomous loop. Re-feed (block) as before.
+        repo = repo_with({"active": True, "session_id": SESSION, "cycle": 1,
+                          "entry": "task", "phase": "building"})
+        rc, out = run_hook(repo, {"session_id": SESSION})
+        self.assertIn("block", out)
+
+    def test_absent_phase_blocks(self):
+        # Back-compat: a run armed before the phase field exists must re-feed (treated as building).
+        repo = repo_with({"active": True, "session_id": SESSION, "cycle": 1, "entry": "task"})
+        rc, out = run_hook(repo, {"session_id": SESSION})
+        self.assertIn("block", out)
+
+    def test_shaping_releases_without_jq(self):
+        # jq absent (coreutils present): the shaping release must still fire via the grep fallback.
+        repo = repo_with({"active": True, "session_id": SESSION, "cycle": 0,
+                          "entry": "task", "phase": "shaping"})
+        r = subprocess.run(["/bin/bash", str(HOOK)], input=json.dumps({"session_id": SESSION}),
+                           cwd=repo, capture_output=True, text=True, env=nojq_env())
+        self.assertEqual(r.returncode, 0)
+        self.assertEqual(r.stdout.strip(), "")
+
+
 class TestMusicianFlags(unittest.TestCase):
     """The musician carries --ultracode only. There is NO spend flag (it is bounded by design)."""
 

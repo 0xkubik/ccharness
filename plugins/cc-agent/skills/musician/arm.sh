@@ -9,8 +9,12 @@
 # steps inline.
 #
 # Usage:  musician-arm.sh "<raw $ARGUMENTS>"
-#   Flags in the argument string: --ultracode  --resume <run-id>
+#   Flags in the argument string: --auto  --ultracode  --resume <run-id>
 #   Everything else = the task/problem prompt (empty -> open mode).
+#
+# Phase: by default a run arms into the collaborative SHAPING phase (the musician develops the idea
+# WITH the human before building). --auto skips that and arms straight into the autonomous BUILDING
+# phase — the old behaviour. The Stop hook gates the re-feed on this phase.
 # Env:    CLAUDE_CODE_SESSION_ID — the session that owns the run (required to write the pointer).
 #
 # Output (stdout, KEY=VALUE lines for the skill to parse):
@@ -32,7 +36,7 @@ HELPER="$(cd "$(dirname "$0")" 2>/dev/null && pwd)/worktree.sh"
 now_iso() { date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || echo "1970-01-01T00:00:00Z"; }
 
 # --- parse the argument string: pull known flags, the rest is the prompt ---
-ULTRA=false; RESUME=""; PROMPT=""
+ULTRA=false; AUTO=false; RESUME=""; PROMPT=""
 # -d '' reads the WHOLE argument (incl. any newlines) into the array — a multi-line prompt is not
 # truncated; flag detection still works word-by-word (the rejoined prompt normalizes whitespace).
 IFS=$' \t\n' read -r -d '' -a _a <<< "${1:-}" || true
@@ -40,12 +44,15 @@ _i=0; _n=${#_a[@]}
 while [ "$_i" -lt "$_n" ]; do
   case "${_a[$_i]}" in
     --ultracode)     ULTRA=true ;;
+    --auto)          AUTO=true ;;
     --resume)        _i=$((_i+1)); RESUME="${_a[$_i]:-}" ;;
     *)               PROMPT="${PROMPT:+$PROMPT }${_a[$_i]}" ;;
   esac
   _i=$((_i+1))
 done
 ENTRY=task; [ -z "$PROMPT" ] && ENTRY=open
+# Default to the collaborative shaping phase; --auto goes straight to autonomous building.
+PHASE=shaping; [ "$AUTO" = true ] && PHASE=building
 
 mkdir -p "$MUS/by-session" "$MUS/runs" 2>/dev/null || true
 
@@ -77,10 +84,10 @@ mkdir -p "$RUN_DIR"
 tmp="$RUN_DIR/state.json.tmp.$$"
 jq -n \
   --arg run_id "$RUN_ID" --arg sid "$SID" --arg input "$PROMPT" --arg entry "$ENTRY" \
-  --argjson ultra "$ULTRA" \
+  --argjson ultra "$ULTRA" --arg phase "$PHASE" \
   --arg started "$(now_iso)" --arg helper "$HELPER" \
   '{active:true, status:"working", run_id:$run_id, session_id:$sid, mode:"musician",
-    entry:$entry, input:$input, done_when:"", cycle:0, ultracode:$ultra,
+    entry:$entry, input:$input, phase:$phase, done_when:"", cycle:0, ultracode:$ultra,
     started_at:$started, last_surveyed_sha:"", awaiting:null, outcome:null,
     worktree_helper:$helper}' \
   > "$tmp" && mv "$tmp" "$RUN_DIR/state.json"
@@ -97,6 +104,8 @@ if [ -d "$MUS/runs" ]; then
     st="$d/state.json"; [ -f "$st" ] || continue
     [ "$(jq -r '.active' "$st" 2>/dev/null)" = "true" ] || continue
     [ "$(jq -r 'if (.awaiting//null)==null then "" else "1" end' "$st" 2>/dev/null)" = "" ] || continue
+    # A run still in the SHAPING phase is waiting on the human, not crashed autonomous work — skip it.
+    [ "$(jq -r '.phase // "building"' "$st" 2>/dev/null)" = "shaping" ] && continue
     hbt="$(stat -f %m "$hb" 2>/dev/null || stat -c %Y "$hb" 2>/dev/null || echo 0)"
     mins=$(( ( $(date +%s 2>/dev/null || echo 0) - hbt ) / 60 ))
     printf 'ORPHAN=%s|%s|%s\n' "${d##*/}" "$mins" "$(jq -r '.input // ""' "$st" 2>/dev/null)"

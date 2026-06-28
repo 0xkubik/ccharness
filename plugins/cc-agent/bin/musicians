@@ -64,6 +64,7 @@ state_label() {  # short state for run dir $1
   active="$(json_field "$st" active)"
   if [ "$active" = "true" ]; then
     is_awaiting "$st" && { echo "awaiting"; return; }
+    [ "$(json_field "$st" phase)" = "shaping" ] && { echo "shaping"; return; }
     echo "working"; return
   fi
   outcome="$(json_field "$st" outcome)"

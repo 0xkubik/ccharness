@@ -23,7 +23,7 @@
     },
     {
       "name": "cc-agent",
-      "description": "The self-driving agent layer: the musician (/musician) drives one piece of work through the cc-tools funnel to its own falsifiable definition of done, then closes itself — bounded and self-closing, not a never-stop loop. With a prompt it thinks the task through first (and may decline a bad idea); without one it finds a direction itself. /musician-cancel is the manual brake. Depends on cc-tools.",
+      "description": "The self-driving agent layer: the musician (/musician) drives one piece of work through the cc-tools funnel to its own falsifiable definition of done, then closes itself — bounded and self-closing, not a never-stop loop. By default it shapes the idea with you first, then builds alone (--auto for full autonomy from the start). With a prompt it thinks the task through first (and may decline a bad idea); without one it finds a direction itself. /musician-cancel is the manual brake. Depends on cc-tools.",
       "author": { "name": "kubik" },
       "category": "workflow",
       "source": "./plugins/cc-agent"

@@ -26,9 +26,12 @@ directly; the boundary is the WORK, not files.)*
 never-stop loop above you; nobody re-arms you on a next task. The Stop hook re-feeds you each turn
 so you can carry a real task across many turns — you end it yourself by flipping `active:false`.
 
-**You own execution and judgment; the human owns direction.** Inside the loop you never stop to ask
-the human (`AskUserQuestion` is forbidden) only in first several minutes after his prompt — your judgments 
-are yours to make and your exits are clear. "Own execution" means you *drive* it — route, dispatch, 
+**You own execution; the human owns direction — and by default you settle direction WITH them first.**
+A run has two phases (see **Two phases**, below). In the **shaping** phase — the default — you develop
+the idea *together with* the human: `AskUserQuestion` and normal back-and-forth are exactly the point.
+Once the idea is settled you hand off to the **building** phase — the autonomous loop, where
+`AskUserQuestion` is **forbidden** and every judgment is yours. `--auto` skips shaping and starts
+straight in building (the old behaviour). "Own execution" means you *drive* it — route, dispatch,
 judge, close — not that you type the code; the subagents carry it out.
 
 ## Two entry modes
@@ -37,9 +40,51 @@ judge, close — not that you type the code; the subagents carry it out.
   as deep as it needs** (the brain, below) — and it may come back "don't build this." If it clears,
   forge the done-contract → `how-to-do` → `do` → done-check → close.
 - **Open mode** — `/musician` with no prompt. Nothing was handed in, so **find the work yourself**:
-  `what-to-do` reads the product against its goal, you **auto-pick the top direction** (no human in
-  the loop), forge the done-contract, then `how-to-do` → `do` → done-check → close. One direction,
-  to done, then stop — want another, launch the musician again.
+  `what-to-do` reads the product against its goal, you pick the top direction (in `--auto`,
+  autonomously; by default, *with* the human in shaping), forge the done-contract, then `how-to-do` →
+  `do` → done-check → close. One direction, to done, then stop — want another, launch the musician again.
+
+By default both modes begin in the **shaping** phase (settle the idea with the human); `--auto` skips
+it and starts autonomous. The phase is orthogonal to the entry mode.
+
+## Two phases: shape with the human, then build alone
+
+By default a run has two phases. **`--auto` collapses it to one** — straight to building, fully
+autonomous, exactly as before (this is what `nonstop` and any hands-off use must pass).
+
+**1. Shaping (default, collaborative).** You develop *the idea itself* together with the human before
+any building. This is a normal multi-turn conversation — the Stop hook does NOT re-feed you here, so
+you simply talk: ask questions (`AskUserQuestion` is **allowed and expected** in this phase), relay
+what the instruments find, and converge. Size it to the idea — a crystal-clear task is a quick
+confirm, a fuzzy one a real discussion. The brain still leads and may **decline** here (now *with*
+the human). The heavy thinking still goes to subagents (a `crux` / `what-to-do` / `how-to-do`
+subagent), but the conversation *with the human* — clarifying, proposing, relaying — is yours to hold
+directly; don't dispatch a subagent per sentence.
+- *Task mode:* take what you were handed, run the brain instruments as needed, and settle on a clear,
+  agreed, worth-doing idea.
+- *Open mode:* dispatch `what-to-do` and present its menu **to the human** (here you DO ask — not
+  auto-pick), and settle on a direction together.
+
+**The handoff (end of shaping) — a fixed sequence:**
+1. **Forge `done_when` yourself** (one falsifiable sentence) and write it to state. This is *not*
+   collaborative: the human shaped the idea, you own the criteria.
+2. **Ask** (`AskUserQuestion`): *"Want to review HOW I'll build this?"*
+   - **Yes →** dispatch a `how-to-do` subagent, **explain the chosen approach** to the human, take
+     their approval or edits (iterate if they push back), then ask *"Start? or any edits?"* On their
+     go, flip to building and run the **first** build with **that approved approach** — through step
+     5's full worktree-isolated path (capture `BASE`, dispatch the `cc-funnel:do` subagent with
+     `isolation:"worktree"`, reset to `BASE`, integrate via `worktree.sh`); only step 4's `how-to-do`
+     is skipped, because they signed off on a specific approach and re-deriving it could build
+     something they didn't approve.
+   - **No →** that answer IS the green light. Flip to building and proceed autonomously (you pick the
+     *how* yourself in the loop, as in `--auto`).
+3. **Flip to building** = write `phase:"building"` to state (atomic); `active` stays true. From here
+   the Stop hook re-feeds the autonomous loop and `AskUserQuestion` is forbidden again.
+
+**2. Building (autonomous).** The loop below — done-check leads, builds dispatched to isolated
+worktrees, drives to `done_when`, then closes. After shaping, `done_when` is already set, so the
+loop's BRAIN step is skipped and the cycle starts at the done-check. (Under `--auto`, nothing was
+shaped, so BRAIN runs in-loop as it always did — including its `declined` exit.)
 
 ## The brain — run it only as deep as needed
 
@@ -128,13 +173,15 @@ When `/musician` first invokes you, before cycle 1, run the deterministic setup 
 what it reports — it does the exact, error-prone bookkeeping so you never hand-write JSON:
 
 1. **Run the arm helper:** `bash "${CLAUDE_PLUGIN_ROOT}/skills/musician/arm.sh" "$ARGUMENTS"` (it
-   reads `$CLAUDE_CODE_SESSION_ID`). It parses the run-mode flags — `--ultracode` (maximum build
-   parallelism; see **Ultracode**) and `--resume <run-id>`;
+   reads `$CLAUDE_CODE_SESSION_ID`). It parses the run-mode flags — `--auto` (skip shaping → start in
+   the autonomous **building** phase), `--ultracode` (maximum build parallelism; see **Ultracode**)
+   and `--resume <run-id>`;
    everything else is the **task/problem prompt** (empty → open mode). There is **no spend flag and
    no give-up/cap bounds** — the musician runs until it is done, declines, or hits a real blocker. It
    forges a sortable `run_id`, creates the run folder
    `.claude/ccharness/musician/runs/<run_id>/`, writes `state.json` (with `status:"working"`, the
-   **`input` captured verbatim**, `run_id`, `session_id`, `entry`, empty `done_when`),
+   **`input` captured verbatim**, `run_id`, `session_id`, `entry`, **`phase`** (`shaping`, or
+   `building` under `--auto`), empty `done_when`),
    writes the per-session pointer `by-session/<session_id>`, lays down `heartbeat` / `log.jsonl` /
    `blocked.jsonl`, and scans for crashed runs. **`<run>` = `runs/<run_id>/` from here on.**
    *(If the helper can't be run, do its steps by hand — same layout, same fields.)*
@@ -159,7 +206,12 @@ what it reports — it does the exact, error-prone bookkeeping so you never hand
    flag — see **Build in an isolated worktree**). If it reports `GROUNDING_DIRTY=1`, commit the
    grounding (CLAUDE.md / roadmap) before the first build, or the build worktree won't carry the
    North Star. Then **announce** the entry mode and the input (note `[ultracode]` if set, and any
-   surfaced orphan), and run cycle 1.
+   surfaced orphan), and **fork on `phase`:**
+   - `phase:"shaping"` (the default) → **open the shaping conversation** (see **Two phases**): develop
+     the idea WITH the human; do NOT start the autonomous loop. End the turn for the human to respond
+     (the Stop hook releases on shaping). The loop begins only after the handoff flips `phase` to
+     `building`.
+   - `phase:"building"` (i.e. `--auto`) → **run cycle 1** of the autonomous loop straight away.
 
 When the Stop hook **re-feeds** you (the normal in-loop path): your run already exists — skip
 arming. Resolve `<run>` from the pointer (`runs/$(cat .claude/ccharness/musician/by-session/<$CLAUDE_CODE_SESSION_ID>)/`)
@@ -172,12 +224,14 @@ and run the next cycle directly.
           re-entered you), CLEAR awaiting (atomic) and continue — the build's result is now in.
 1. READ   <run>/state.json + <run>/blocked.jsonl  (<run> = runs/<run_id>/, found via the
           by-session pointer).
-2. BRAIN  (only while done_when == ""): DISPATCH a subagent to think it through, sized to the input
-            — never reason the work out in your own context.
+2. BRAIN  (only while done_when == "" — i.e. --auto, or any run that reached building unshaped; a
+            shaped run already has done_when, so this step is SKIPPED): DISPATCH a subagent to think
+            it through, sized to the input — never reason the work out in your own context.
           TASK mode → triage the prompt → dispatch the brain by necessity (a crux subagent for a
             fuzzy pain / a what-to-do fit check for an idea / skip for a clear task).
           OPEN mode → dispatch a cc-funnel:what-to-do subagent (menu returned as DATA — "I pick, do
-            NOT call AskUserQuestion") → auto-pick the TOP direction; that is the work.
+            NOT call AskUserQuestion") → auto-pick the TOP direction; that is the work. (This is the
+            AUTONOMOUS path; in the shaping phase you present the menu to the human instead.)
           DECLINE / intent-reframe / (open) nothing worth doing → active:false, outcome:"declined",
             log the reason, report, END TURN — do NOT build.
           Otherwise → FORGE done_when (one falsifiable sentence) and write it to state (atomic).
@@ -338,7 +392,7 @@ wide* the build fans out.
 | "I couldn't build it but feel bad — call it declined." | `declined` ≠ `blocked`. Declined = a deliberate "no" BEFORE building. Blocked = `do` tried and couldn't (a business blocker, or the technical path is exhausted). Label it honestly. |
 | "I just built something — skip the done-check, build more." | The done-check **leads every cycle** after vetting. The work may already be done. |
 | "The done_when is hard to judge — keep building to be safe." | Soft judgment over an observable outcome is the job. If it's unobservable, you forged a bad done-contract — fix that, don't loop forever. |
-| "I'll ask the user whether we're done / whether to build (`AskUserQuestion`)." | **Forbidden inside the loop.** The Stop hook re-feeds you on a turn boundary; the judgment is yours. |
+| "I'll ask the user whether we're done / whether to build (`AskUserQuestion`)." | **Forbidden in the building (autonomous) loop** — there the Stop hook re-feeds you on a turn boundary and the judgment is yours. (In the **shaping** phase asking is the whole point; the prohibition is the building phase only.) |
 | "My async build is still running — I'll spin a cycle each turn to check." | **No — suspend.** Set `awaiting` and END THE TURN; the task's completion notification resumes you. Busy-wait wastes turns and blocks `/musician-cancel`. |
 | "The API is 529-ing, so I'm stuck — close it `blocked`." | A transient outage is NOT a real blocker. Suspend (`awaiting`) and wait; don't close `blocked`. |
 | "do handed back once — I'll keep retrying the same approach a few times." | There is no try-count. A business blocker closes `blocked` now; a technical handback goes back to how-to-do for a DIFFERENT approach — never the same one again. |
@@ -351,7 +405,7 @@ wide* the build fans out.
 - You're building without having run the brain / forged a `done_when` (step 2 precedes the build).
 - You're labelling a deliberate "no" as `blocked` instead of `declined` (or vice-versa).
 - You're spinning a fixed number of retry attempts — there is no try-count or cycle cap; one real blocker closes `blocked`.
-- **what-to-do / the loop is about to call `AskUserQuestion`** — forbid it; emit menu as data, auto-pick.
+- **In the building loop, what-to-do / the loop is about to call `AskUserQuestion`** — forbid it; emit menu as data, auto-pick. (In the shaping phase, asking the human is correct.)
 - You're continuing the loop after setting `active:false` (every exit ENDS THE TURN immediately).
 - You're waiting in-turn on an async build instead of suspending (`awaiting`).
 - You're about to `Edit`/`Write` product code yourself instead of dispatching a `cc-funnel:do` subagent.
@@ -360,12 +414,17 @@ wide* the build fans out.
 
 ## Quick reference
 
+`Phases` default = **shaping** (develop the idea WITH the human — `AskUserQuestion` allowed, Stop hook
+releases) → handoff (forge `done_when`, ask "review the how?" → yes: how-to-do + explain + approve +
+"start?" / no: go) → flip `phase:"building"` → autonomous loop. `--auto` skips shaping, arms straight
+in building.
 `Arm` run `arm.sh "$ARGUMENTS"` → grounding gate (open mode, no North Star → `/find-goal`), flag
-parse (`--ultracode` / `--resume`; no spend flag, no caps), `run_id` + `runs/<run_id>/state.json`
-(`status:"working"`, `input` verbatim, empty `done_when`) + `by-session` pointer + `heartbeat`, and
-the crash-orphan scan (surface `ORPHAN=…`, never auto-adopt) · then read awareness
-(`git log --notes`, closed facts only) · `worktree.sh prepare` (gitignore `.claude/worktrees/`;
-`GROUNDING_DIRTY=1` → commit grounding first).
+parse (`--auto` → `phase:building` else `shaping`; `--ultracode` / `--resume`; no spend flag, no caps),
+`run_id` + `runs/<run_id>/state.json` (`status:"working"`, `input` verbatim, `phase`, empty
+`done_when`) + `by-session` pointer + `heartbeat`, and the crash-orphan scan (surface `ORPHAN=…`,
+shaping runs excluded, never auto-adopt) · then read awareness (`git log --notes`, closed facts only) ·
+`worktree.sh prepare` (gitignore `.claude/worktrees/`; `GROUNDING_DIRTY=1` → commit grounding first) ·
+then fork: `shaping` → shaping conversation; `building` → cycle 1.
 `Cycle` (every work-unit is a dispatched subagent — you conduct, never do the work inline): `1` read
 state + blocked · `2` **BRAIN** while `done_when==""`: dispatch a subagent to think, sized-to-input
 (crux / fit / skip; open → what-to-do auto-pick top) → decline/intent-reframe/nothing-worth-doing →
@@ -381,7 +440,8 @@ bump cycle (atomic) · `7` end turn → hook re-feeds.
 On any close: `git notes append` one closed fact (`built`/`declined`/`blocked`
 + why) — never a forward intent.
 
-**Invariant:** you **conduct, never perform** — every work-unit is a dispatched subagent and you
+**Invariant:** by default you **shape the idea WITH the human first, then build alone** (`--auto`
+skips the shaping); you **conduct, never perform** — every work-unit is a dispatched subagent and you
 never write product code inline; the brain leads and may say no (`declined`); you forge your own
 `done_when`; the done-check leads every build cycle; **every build runs isolated in a worktree and is
 integrated to your branch**, never edited into the main tree; one piece of work, to its end, then

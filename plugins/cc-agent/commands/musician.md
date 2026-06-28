@@ -1,6 +1,6 @@
 ---
 description: "Hand the project ONE thing to carry to a real finish — a task, problem, or idea. The musician thinks it through (and may DECLINE or reframe a bad idea), forges its own definition of done, builds to that done via the cc-funnel pipeline, then closes. With a prompt: think → build. Without one: find a direction itself via what-to-do → build. Bounded and self-closing."
-argument-hint: "[task / problem / idea — or nothing to let it find the work] [--ultracode]"
+argument-hint: "[task / problem / idea — or nothing to let it find the work] [--auto] [--ultracode]"
 ---
 
 Invoke the `musician` skill to arm and run the BOUNDED performer loop, with this argument:
@@ -16,6 +16,13 @@ the work to a REAL finish, then **closes**.
   clears, it forges a falsifiable definition of done and builds to it.
 - **Without a prompt:** it **finds the work itself** via `what-to-do` (auto-picking the top
   direction), then builds that one direction to done.
+
+By default it **shapes the idea with you first, then builds alone.** Before any building it develops
+the idea together with you — asking questions, running the thinking instruments — then derives its
+definition of done and asks whether you want to review *how* it'll build it (run `how-to-do` and get
+your approval) or just go. Only after that does it flip into the fully autonomous build loop.
+**`--auto` skips the shaping** and goes straight to autonomy from the first turn (the old behaviour;
+this is what `nonstop` uses to walk the roadmap hands-off).
 
 It is **bounded and self-closing**: one piece of work, to its end, then stop — there is no
 never-stop loop above it. Exits: **achieved** (done), **declined** (the brain said no — a success,
