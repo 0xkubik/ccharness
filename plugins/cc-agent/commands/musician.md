@@ -3,9 +3,21 @@ description: "Hand the project ONE thing to carry to a real finish — a task, p
 argument-hint: "[task / problem / idea — or nothing to let it find the work] [--auto] [--ultracode]"
 ---
 
-Invoke the `musician` skill to arm and run the BOUNDED performer loop, with this argument:
+!`cfg="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"; r="$(jq -r '.plugins["cc-agent@ccharness"][0].installPath // empty' "$cfg/plugins/installed_plugins.json" 2>/dev/null)"; a="$r/skills/musician/arm.sh"; [ -f "$a" ] || a="$(ls "$cfg"/plugins/cache/*/cc-agent/*/skills/musician/arm.sh 2>/dev/null | sort -V | tail -1)"; [ -f "$a" ] && bash "$a" "$ARGUMENTS" || echo "MUSICIAN_ARM_ERROR: could not locate arm.sh under $cfg/plugins — report this, do not improvise"`
 
-> $ARGUMENTS
+The block above is the **arm step, already run deterministically** for `> $ARGUMENTS` — it created
+(or re-adopted) this run and printed `KEY=VALUE` lines. Now **invoke the `musician` skill and follow
+it**, reacting to that arm output:
+
+- `RUN_DIR` / `RUN_ID` / `ENTRY` → your run; `phase:"shaping"|"building"` → fork on it.
+- `GATE=no-north-star` → tell the user to run `/find-goal`; do not proceed.
+- `ORPHAN=…` → surface it (resume with `/musician --resume <id>`); don't auto-adopt.
+- `RESUMED=…` / `RESUME_MISSING=…` → continue that run / report missing.
+- `BUSY=<id>` → this session already has an ACTIVE run; tell the user to `/musician-cancel` it first.
+- `MUSICIAN_ARM_ERROR` (should never happen) → report it; do **not** run `arm.sh` yourself.
+
+**Do NOT run `arm.sh` again** — it already ran here (and a second run is refused as a duplicate). The
+skill's Arm step reacts to this output; it does not re-arm.
 
 The musician is the project's brain for ONE piece of work. It plays the cc-funnel instruments
 (`what-to-do` → `how-to-do` → `do` → `refactor-review-test`) plus cc-tools's `crux`/`slap`, and drives

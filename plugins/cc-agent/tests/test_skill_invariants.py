@@ -99,6 +99,14 @@ class TestMusicianSkill(unittest.TestCase):
         self.assertIn("arm.sh", self.text)
         self.assertTrue((ROOT / "skills" / "musician" / "arm.sh").exists(), "arm.sh missing")
 
+    def test_arm_runs_in_command_not_skill(self):
+        # arm.sh is triggered deterministically by the /musician COMMAND's ! preprocessing (so it can
+        # never be skipped by the model). The skill REACTS to its output and must NOT re-run it —
+        # one place only, so a duplicate run can't be forged.
+        lowered = self.text.lower()
+        self.assertIn("command", lowered)
+        self.assertIn("do not run", lowered)  # the skill explicitly says not to re-run arm
+
     def test_status_and_heartbeat(self):
         # Explicit lifecycle label + the crash-fuse heartbeat the next arm scans.
         self.assertIn("status", self.text.lower())

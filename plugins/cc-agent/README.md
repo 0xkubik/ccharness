@@ -67,12 +67,19 @@ task's completion notification resumes it.
 
 ## Arm & crash recovery
 
-`/musician` runs `skills/musician/arm.sh` first — the deterministic setup the skill used to
-hand-write: it parses the flags (`--auto` → arm in the `building` phase, else `shaping`; `--ultracode` /
-`--resume <run-id>`), runs the open-mode North-Star
-gate, forges the `run_id`, writes `state.json` +
-the pointer + the record files, and **scans for crashed runs**. The brain stays in the skill; only
-the bookkeeping is in the script.
+`arm.sh` is run **deterministically by the `/musician` command's `!` preprocessing** — before the
+model's turn even starts — so arming can never be skipped (the failure mode where the model read the
+command but didn't load the skill, and no run was created). It is triggered from **exactly one place**
+(the command); the skill only reacts to its output and never re-runs it. Because the command's `!`
+context has no `CLAUDE_PLUGIN_ROOT`, the command locates `arm.sh` via the install manifest
+(`~/.claude/plugins/installed_plugins.json` → the active `cc-agent` `installPath`), falling back to a
+highest-version cache glob.
+
+`arm.sh` parses the flags (`--auto` → arm in the `building` phase, else `shaping`; `--ultracode` /
+`--resume <run-id>`), runs the open-mode North-Star gate, enforces **idempotency** (one active run per
+session — a second arm is refused as `BUSY=<id>`, so a duplicate run can never be forged), forges the
+`run_id`, writes `state.json` + the pointer + the record files, and **scans for crashed runs**. The
+brain stays in the skill; only the bookkeeping is in the script.
 
 A musician can't leave a task *accidentally*: while the session lives, the Stop hook re-feeds an
 unclosed run. A hard crash (terminal closed, kill, reboot) fires no Stop event — so each working run

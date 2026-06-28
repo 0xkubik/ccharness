@@ -19,6 +19,7 @@
 #
 # Output (stdout, KEY=VALUE lines for the skill to parse):
 #   GATE=no-north-star         open mode but no North Star -> route to /find-goal; no run created
+#   BUSY=<id>                  this session already has an ACTIVE run -> refused (no duplicate run)
 #   RESUME_MISSING=<id>        --resume named a run that does not exist
 #   RUN_DIR=<path>             the run folder to use this run
 #   RUN_ID=<id>
@@ -69,6 +70,20 @@ if [ -n "$RESUME" ]; then
   : > "$RDIR/heartbeat"
   printf 'RESUMED=%s\nRUN_DIR=%s\nRUN_ID=%s\nENTRY=%s\n' "$RESUME" "$RDIR" "$RESUME" "$(jq -r '.entry // "open"' "$RDIR/state.json")"
   exit 0
+fi
+
+# --- idempotency: one active run per session. If this session already has an ACTIVE run, do NOT
+#     forge a second — a double /musician, or anything that triggers arm twice, is refused as BUSY.
+#     (--resume is exempt: it returned above.) This is the structural guarantee against duplicate
+#     runs, independent of WHERE arm is triggered from. ---
+if [ -n "$SID" ] && [ -f "$MUS/by-session/$SID" ]; then
+  BID="$(cat "$MUS/by-session/$SID" 2>/dev/null)"
+  BST="$MUS/runs/$BID/state.json"
+  if [ -f "$BST" ] && [ "$(jq -r '.active' "$BST" 2>/dev/null)" = "true" ]; then
+    printf 'BUSY=%s\nRUN_DIR=%s\nRUN_ID=%s\nENTRY=%s\n' \
+      "$BID" "$MUS/runs/$BID" "$BID" "$(jq -r '.entry // "open"' "$BST" 2>/dev/null)"
+    exit 0
+  fi
 fi
 
 # --- grounding gate: open mode needs a North Star ---

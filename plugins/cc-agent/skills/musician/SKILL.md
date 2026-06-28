@@ -167,35 +167,41 @@ drive the single-direction loop a self-written to-do list would.
   never self-read it; `find-goal` surfaces it to the human. **Notes feed you closed past; proposals
   feed the human open future — never cross the two.**
 
-## Arm (only when invoked by `/musician` — not when the hook re-feeds)
+## Arm (already done by the `/musician` command — you react, you do NOT re-run it)
 
-When `/musician` first invokes you, before cycle 1, run the deterministic setup helper and react to
-what it reports — it does the exact, error-prone bookkeeping so you never hand-write JSON:
+**`arm.sh` is run for you, deterministically, by the `/musician` command's `!` preprocessing** —
+*before* you even start, so arming can never be skipped by the model. The `arm.sh` invocation lives in
+**exactly one place** (the command); the skill **never runs it**. Its `KEY=VALUE` output is already in
+your context (just above this skill). It reads `$CLAUDE_CODE_SESSION_ID`, parses the run-mode flags —
+`--auto` (skip shaping → start in the autonomous **building** phase), `--ultracode` (maximum build
+parallelism; see **Ultracode**) and `--resume <run-id>`; everything else is the **task/problem
+prompt** (empty → open mode). There is **no spend flag and no give-up/cap bounds**. It forges a
+sortable `run_id`, creates `.claude/ccharness/musician/runs/<run_id>/`, writes `state.json`
+(`status:"working"`, **`input` verbatim**, `run_id`, `session_id`, `entry`, **`phase`** (`shaping`, or
+`building` under `--auto`), empty `done_when`), writes the per-session pointer
+`by-session/<session_id>`, lays down `heartbeat` / `log.jsonl` / `blocked.jsonl`, and scans for
+crashed runs. **`<run>` = `runs/<run_id>/` from here on.**
 
-1. **Run the arm helper:** `bash "${CLAUDE_PLUGIN_ROOT}/skills/musician/arm.sh" "$ARGUMENTS"` (it
-   reads `$CLAUDE_CODE_SESSION_ID`). It parses the run-mode flags — `--auto` (skip shaping → start in
-   the autonomous **building** phase), `--ultracode` (maximum build parallelism; see **Ultracode**)
-   and `--resume <run-id>`;
-   everything else is the **task/problem prompt** (empty → open mode). There is **no spend flag and
-   no give-up/cap bounds** — the musician runs until it is done, declines, or hits a real blocker. It
-   forges a sortable `run_id`, creates the run folder
-   `.claude/ccharness/musician/runs/<run_id>/`, writes `state.json` (with `status:"working"`, the
-   **`input` captured verbatim**, `run_id`, `session_id`, `entry`, **`phase`** (`shaping`, or
-   `building` under `--auto`), empty `done_when`),
-   writes the per-session pointer `by-session/<session_id>`, lays down `heartbeat` / `log.jsonl` /
-   `blocked.jsonl`, and scans for crashed runs. **`<run>` = `runs/<run_id>/` from here on.**
-   *(If the helper can't be run, do its steps by hand — same layout, same fields.)*
-2. **React to its `KEY=VALUE` output:**
-   - `GATE=no-north-star` (open mode, no `## Product North Star` in repo-root `CLAUDE.md`) → do
-     **not** arm; tell the user _"No North Star yet — run `/find-goal` once to set it, then
+1. **Do NOT run `arm.sh` yourself.** It already ran in the command. Re-running it is refused as a
+   duplicate (`BUSY`), but don't even try — read the output that's already there.
+2. **React to the arm `KEY=VALUE` output:**
+   - `GATE=no-north-star` (open mode, no `## Product North Star` in repo-root `CLAUDE.md`) → no run
+     was created; tell the user _"No North Star yet — run `/find-goal` once to set it, then
      `/musician`."_ END TURN. (Task mode does **not** hard-gate: a fuzzy pain can go to `crux`, which
      is grounding-free, and the `do` build enforces its own North Star gate.)
+   - `BUSY=<run-id>` → this session already has an ACTIVE run, so arm created nothing. Tell the user
+     _"a musician run is already active here — `/musician-cancel` it first, or let it finish."_ END TURN.
    - one or more `ORPHAN=<run-id>|<minutes>|<input>` → a past run looks **crashed mid-work** (still
      `working`, heartbeat stale). **Surface it to the user** — _"run `<id>` (`<input>`) looks
      stopped mid-work ~`<minutes>`m ago; resume with `/musician --resume <id>`, or leave it."_ Do
-     **not** auto-adopt it; carry on with the run the helper just made.
-   - `RESUMED=<id>` → the helper re-adopted that run (you passed `--resume`); continue ITS loop.
+     **not** auto-adopt it; carry on with the run arm just made.
+   - `RESUMED=<id>` → arm re-adopted that run (you passed `--resume`); continue ITS loop.
    - `RESUME_MISSING=<id>` → that run id doesn't exist; tell the user and stop.
+   - `MUSICIAN_ARM_ERROR` (arm.sh could not be located — should never happen) → report it to the
+     user; do **not** improvise a hand-written run or run `arm.sh` from the skill.
+   - **No arm output at all** (none of the above is in your context — the command didn't run, e.g. the
+     skill was somehow loaded without it) → say so and ask the user to re-invoke `/musician`; do **not**
+     hand-arm or run `arm.sh` yourself.
    - otherwise use `RUN_DIR` / `RUN_ID` / `ENTRY` as your run.
 3. **Read the awareness notes** — recent `git log --notes` (see **Awareness**): what past runs
    closed, so you don't re-open it.
@@ -418,13 +424,17 @@ wide* the build fans out.
 releases) → handoff (forge `done_when`, ask "review the how?" → yes: how-to-do + explain + approve +
 "start?" / no: go) → flip `phase:"building"` → autonomous loop. `--auto` skips shaping, arms straight
 in building.
-`Arm` run `arm.sh "$ARGUMENTS"` → grounding gate (open mode, no North Star → `/find-goal`), flag
-parse (`--auto` → `phase:building` else `shaping`; `--ultracode` / `--resume`; no spend flag, no caps),
-`run_id` + `runs/<run_id>/state.json` (`status:"working"`, `input` verbatim, `phase`, empty
-`done_when`) + `by-session` pointer + `heartbeat`, and the crash-orphan scan (surface `ORPHAN=…`,
-shaping runs excluded, never auto-adopt) · then read awareness (`git log --notes`, closed facts only) ·
-`worktree.sh prepare` (gitignore `.claude/worktrees/`; `GROUNDING_DIRTY=1` → commit grounding first) ·
-then fork: `shaping` → shaping conversation; `building` → cycle 1.
+`Arm` runs in the `/musician` **command** (its `!` preprocessing), NOT in the skill — `arm.sh
+"$ARGUMENTS"` fires deterministically before you start, so it can never be skipped; the skill only
+**reacts** and never re-runs it. arm → grounding gate (open mode, no North Star → `/find-goal`),
+idempotency (`BUSY` if this session already has an active run), flag parse (`--auto` →
+`phase:building` else `shaping`; `--ultracode` / `--resume`; no spend flag, no caps), `run_id` +
+`runs/<run_id>/state.json` (`status:"working"`, `input` verbatim, `phase`, empty `done_when`) +
+`by-session` pointer + `heartbeat`, and the crash-orphan scan (surface `ORPHAN=…`, shaping runs
+excluded, never auto-adopt). You then react to its output (`GATE` / `BUSY` / `ORPHAN` / `RESUMED` /
+`RUN_*`) · read awareness (`git log --notes`, closed facts only) · `worktree.sh prepare` (gitignore
+`.claude/worktrees/`; `GROUNDING_DIRTY=1` → commit grounding first) · then fork: `shaping` → shaping
+conversation; `building` → cycle 1.
 `Cycle` (every work-unit is a dispatched subagent — you conduct, never do the work inline): `1` read
 state + blocked · `2` **BRAIN** while `done_when==""`: dispatch a subagent to think, sized-to-input
 (crux / fit / skip; open → what-to-do auto-pick top) → decline/intent-reframe/nothing-worth-doing →

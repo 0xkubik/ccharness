@@ -131,6 +131,54 @@ class TestArmPhase(unittest.TestCase):
         self.assertEqual(st["input"], "make it fast")
 
 
+class TestArmIdempotency(unittest.TestCase):
+    """One active run per session — arm refuses a second (BUSY), so no duplicate run can ever exist,
+    no matter how many times arm is triggered (a double /musician, command + skill, etc.)."""
+
+    def test_active_run_refuses_second_arm_as_busy(self):
+        repo = tempfile.mkdtemp()
+        out1, _, _ = run_arm(repo, "first task")
+        rid1 = out1["RUN_ID"]
+        self.assertTrue(state_of(repo, rid1)["active"])
+        # second arm in the SAME session while the first is active → BUSY, pointing at the existing run
+        out2, _, _ = run_arm(repo, "second task")
+        self.assertEqual(out2.get("BUSY"), rid1)
+        self.assertEqual(out2["RUN_ID"], rid1)
+        # exactly ONE run folder — no duplicate was forged
+        runs = [p for p in (Path(repo) / MUS / "runs").iterdir() if p.is_dir()]
+        self.assertEqual(len(runs), 1)
+
+    def test_closed_run_allows_a_fresh_arm(self):
+        repo = tempfile.mkdtemp()
+        out1, _, _ = run_arm(repo, "first task")
+        rid1 = out1["RUN_ID"]
+        # close the first run (achieved) — the session is now free for a new one
+        st = state_of(repo, rid1); st["active"] = False; st["status"] = "achieved"
+        (Path(repo) / MUS / "runs" / rid1 / "state.json").write_text(json.dumps(st))
+        out2, _, _ = run_arm(repo, "second task")
+        self.assertNotIn("BUSY", out2)
+        self.assertNotEqual(out2["RUN_ID"], rid1)
+        self.assertEqual(state_of(repo, out2["RUN_ID"])["input"], "second task")
+
+
+class TestMusicianCommand(unittest.TestCase):
+    """The /musician command runs arm.sh deterministically in its ! preprocessing — the ONE place arm
+    is triggered (CLAUDE_PLUGIN_ROOT is absent there, so it locates arm.sh via the install manifest)."""
+
+    def setUp(self):
+        self.cmd = (Path(__file__).resolve().parent.parent / "commands" / "musician.md").read_text()
+
+    def test_command_runs_arm_in_preprocessing(self):
+        self.assertIn("!`", self.cmd)                 # a ! preprocessing block
+        self.assertIn("arm.sh", self.cmd)             # which runs arm.sh
+        self.assertIn("$ARGUMENTS", self.cmd)         # passing the user's args
+        self.assertIn("installed_plugins.json", self.cmd)  # located via the install manifest (no plugin-root)
+
+    def test_command_tells_model_not_to_rearm(self):
+        # single place: the model must NOT also run arm from the skill.
+        self.assertIn("Do NOT run", self.cmd)
+
+
 class TestArmOpenMode(unittest.TestCase):
     def test_open_mode_needs_north_star(self):
         repo = tempfile.mkdtemp()
