@@ -188,8 +188,8 @@ class TestCcInitWizard(unittest.TestCase):
     def test_doc_reconcile_prose_only(self):
         self.assertIn("Code and tests are out of scope", self.text)
 
-    def test_offers_find_goal(self):
-        self.assertIn("/find-goal", self.text)
+    def test_offers_roadmap_management(self):
+        self.assertIn("/roadmap-management", self.text)
 
     def test_idempotent_documented(self):
         self.assertIn("idempotent", self.text.lower())

@@ -130,14 +130,14 @@ careful:
   is observably done. That is a truthful state update, not invention.
 - **The goal layer is READ-ONLY to you:** the North Star at the top of the roadmap, and the roadmap's
   feature set, ordering, and priorities. Never reorder features, never add a future feature, never re-prioritize.
-  That layer is `find-goal`'s — set with the human. Silently rewriting it is the goal-drift you must
+  That layer is `roadmap-management`'s — set with the human. Silently rewriting it is the goal-drift you must
   not cause.
 - **Work revealed the goal itself is wrong / misframed?** That is not a roadmap edit — it is the
   `declined` / intent-reframe exit: surface *"the real target looks different — revise via
-  `/find-goal`?"* and close. The human decides.
+  `/roadmap-management`?"* and close. The human decides.
 - **A forward-looking idea** ("a later feature might need X", something further down the list could…) → **propose, don't commit:**
   append a line to `.claude/ccharness/roadmap-proposals.md` (create if missing) and note it in your
-  closing report. `find-goal` reads that file on its next run and surfaces it to the human; you never
+  closing report. `roadmap-management` reads that file on its next run and surfaces it to the human; you never
   fold it into the roadmap yourself.
 
 Upkeep is bounded like everything else: a small reconciliation at the **end** of a piece of work, not
@@ -163,7 +163,7 @@ drive the single-direction loop a self-written to-do list would.
 - **NEVER write a forward intention here.** No "next", no "want", no "TODO", no "continue X". A
   self-written list of future wishes that you then re-read IS the infinite-single-direction loop this
   forbids. Forward ideas keep their human-gated home, `roadmap-proposals.md` (above): you write it but
-  never self-read it; `find-goal` surfaces it to the human. **Notes feed you closed past; proposals
+  never self-read it; `roadmap-management` surfaces it to the human. **Notes feed you closed past; proposals
   feed the human open future — never cross the two.**
 
 ## Arm (already done by the `/musician` command — you react, you do NOT re-run it)
@@ -185,7 +185,7 @@ crashed runs. **`<run>` = `runs/<run_id>/` from here on.**
    duplicate (`BUSY`), but don't even try — read the output that's already there.
 2. **React to the arm `KEY=VALUE` output:**
    - `GATE=no-north-star` (open mode, no `## Product North Star` in `.claude/ccharness/roadmap.md`) → no run
-     was created; tell the user _"No North Star yet — run `/find-goal` once to set it, then
+     was created; tell the user _"No North Star yet — run `/roadmap-management` once to set it, then
      `/musician`."_ END TURN. (Task mode does **not** hard-gate: a fuzzy pain can go to `crux`, which
      is grounding-free, and the `do` build enforces its own North Star gate.)
    - `BUSY=<run-id>` → this session already has an ACTIVE run, so arm created nothing. Tell the user
@@ -425,7 +425,7 @@ releases) → handoff (forge `done_when`, ask "review the how?" → yes: how-to-
 in building.
 `Arm` runs in the `/musician` **command** (its `!` preprocessing), NOT in the skill — `arm.sh
 "$ARGUMENTS"` fires deterministically before you start, so it can never be skipped; the skill only
-**reacts** and never re-runs it. arm → grounding gate (open mode, no North Star → `/find-goal`),
+**reacts** and never re-runs it. arm → grounding gate (open mode, no North Star → `/roadmap-management`),
 idempotency (`BUSY` if this session already has an active run), flag parse (`--auto` →
 `phase:building` else `shaping`; `--ultracode` / `--resume`; no spend flag, no caps), `run_id` +
 `runs/<run_id>/state.json` (`status:"working"`, `input` verbatim, `phase`, empty `done_when`) +

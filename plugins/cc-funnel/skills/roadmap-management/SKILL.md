@@ -1,9 +1,9 @@
 ---
-name: find-goal
+name: roadmap-management
 description: Use when setting up or revising a product's long-horizon direction — the grounding loop that sets the goal and lays out the road to it as an ordered feature list.
 ---
 
-# find-goal — set the goal, then lay out the road to it
+# roadmap-management — set the goal, then lay out the road to it
 
 You are the harness's grounding front door: you guide a human to **set the product's goal** (the
 **North Star**) and **lay out the route to it** as a **flat, ordered list of features** — both written
@@ -43,7 +43,7 @@ When the goal already exists, treat the run as a revision, not a fresh start: sh
 Star back and ask whether to **keep it or rework it** — rework → re-run the questions and overwrite the
 North Star block (**leaving the feature list below it intact**); keep → leave it untouched. Either way
 you then enter the feature loop, which revises the existing list rather than building from scratch.
-**No flag for any of this** — re-running find-goal is always safe: it reads what exists and adapts.
+**No flag for any of this** — re-running roadmap-management is always safe: it reads what exists and adapts.
 
 The goal-setting dialogue — open questions only, no multiple-choice. Draw out, one question at a
 time, in plain language: what does the finished product look like at the very end — who is it for, and
@@ -55,7 +55,7 @@ below), keeping the vision to **one to three sentences**:
 ```markdown
 ## Product North Star
 
-<!-- managed by find-goal · edit freely, the harness re-reads this · captured: <YYYY-MM-DD> -->
+<!-- managed by roadmap-management · edit freely, the harness re-reads this · captured: <YYYY-MM-DD> -->
 
 <one to three sentences — how the finished product looks at the end, who it's for, what success is>
 
@@ -150,7 +150,7 @@ unchecked `[ ]` box** — derived from the checkboxes, no separate pointer.
 
 ## Product North Star
 
-<!-- managed by find-goal · edit freely, find-goal re-reads this · captured: <YYYY-MM-DD> -->
+<!-- managed by roadmap-management · edit freely, roadmap-management re-reads this · captured: <YYYY-MM-DD> -->
 
 <one to three sentences — the vision>
 
@@ -172,7 +172,7 @@ sits in the list — reordering a feature never renumbers it.
 
 ## Re-run = revise (the roadmap is a living artifact)
 
-Re-running find-goal on a product that already has a goal or roadmap is a revision, not a restart —
+Re-running roadmap-management on a product that already has a goal or roadmap is a revision, not a restart —
 and it needs no flag. A re-run: **re-survey** "now" (Phase 1) → **show the current goal, roadmap, and
 progress** (which features' `done when:` now hold, where the frontier sits) → **propose adjustments**
 one decision at a time (rework the goal, check off completed, add/split/reorder features, drop the
@@ -193,5 +193,5 @@ build?", one decision at a time, in build order (_need A before B → A higher_)
 observable `done when:` → **write to `roadmap.md` and urge a review** → next feature or finish (once the
 list credibly reaches the North Star) · re-run = revise the living roadmap.
 
-**Invariant:** find-goal owns the North Star write and lays out the route; it never decides a fork
+**Invariant:** roadmap-management owns the North Star write and lays out the route; it never decides a fork
 (how-to-do) or builds a task (do). The roadmap only _biases_ what-to-do — it never gates it.

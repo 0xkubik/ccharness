@@ -69,7 +69,7 @@ class TestMusicianSkill(unittest.TestCase):
         self.assertIn("allowed", lowered)
 
     def test_grounding_gate(self):
-        self.assertIn("find-goal", self.text)
+        self.assertIn("roadmap-management", self.text)
 
     def test_qualified_funnel_skill_names(self):
         # The directly-invoked funnel skills must be referenced by QUALIFIED name.

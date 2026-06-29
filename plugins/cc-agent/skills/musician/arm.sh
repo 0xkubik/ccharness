@@ -18,7 +18,7 @@
 # Env:    CLAUDE_CODE_SESSION_ID — the session that owns the run (required to write the pointer).
 #
 # Output (stdout, KEY=VALUE lines for the skill to parse):
-#   GATE=no-north-star         open mode but no North Star -> route to /find-goal; no run created
+#   GATE=no-north-star         open mode but no North Star -> route to /roadmap-management; no run created
 #   BUSY=<id>                  this session already has an ACTIVE run -> refused (no duplicate run)
 #   RESUME_MISSING=<id>        --resume named a run that does not exist
 #   RUN_DIR=<path>             the run folder to use this run

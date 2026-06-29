@@ -16,7 +16,7 @@
     },
     {
       "name": "cc-funnel",
-      "description": "The product funnel: /find-goal grounds the North Star and charts a roadmap, /what-to-do ranks where to go next, /how-to-do decides one fork, /do builds one task to a smoke-checked finish, /refactor-review-test hardens it and commits — a ground -> diverge -> decide -> build pipeline. Depends on cc-tools.",
+      "description": "The product funnel: /roadmap-management grounds the North Star and charts a roadmap, /what-to-do ranks where to go next, /how-to-do decides one fork, /do builds one task to a smoke-checked finish, /refactor-review-test hardens it and commits — a ground -> diverge -> decide -> build pipeline. Depends on cc-tools.",
       "author": { "name": "kubik" },
       "category": "workflow",
       "source": "./plugins/cc-funnel"

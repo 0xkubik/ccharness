@@ -9,7 +9,7 @@ A **product harness** for Claude Code: a `ground → diverge → decide → buil
 product from "what's the goal?" all the way to committed code — and refuses to skip the thinking.
 
 ```
-/find-goal  ──►  /what-to-do  ──►  /how-to-do  ──►  /do     (/slap = reset · /crux = unwind a pain — both from cc-tools)
+/roadmap-management  ──►  /what-to-do  ──►  /how-to-do  ──►  /do     (/slap = reset · /crux = unwind a pain — both from cc-tools)
  GROUND          DIVERGE         DECIDE          BUILD
  set the goal    rank where      work out HOW    take one task to
  (North Star)    it could go     to build the    done: built,
@@ -32,11 +32,11 @@ harness with the plugins the funnel orchestrates (see [What it orchestrates](#wh
 `/cc-init` (from cc-tools) is a 5-stage setup wizard (each stage skippable, driven by your choices): it
 installs missing dependencies, installs the harness's recommended rules into this project's
 `.claude/rules/`, builds the reminder cheat-sheet a hook re-surfaces every few prompts, reconciles your
-docs against reality, and offers to run `/find-goal`. Idempotent — re-run any time (e.g. on a new machine).
+docs against reality, and offers to run `/roadmap-management`. Idempotent — re-run any time (e.g. on a new machine).
 
 Then **ground your product once** — every funnel command depends on it:
 ```
-/find-goal
+/roadmap-management
 ```
 This captures the product's *North Star* (the goal) and the ordered feature list (the route to it) into
 `.claude/ccharness/roadmap.md` — the goal at the top, the features below. Until a North Star exists, the other commands route you here.
@@ -45,10 +45,10 @@ This captures the product's *North Star* (the goal) and the ordered feature list
 
 | Command | What it does | When you reach for it |
 |---|---|---|
-| **`/find-goal`** | The **grounding loop** — the front door. Captures the product's *North Star* (goal-setting: vision · core problem · level) and a **flat, ordered list of features** (each `done when …`) to it — both saved to `.claude/ccharness/roadmap.md` (North Star at the top, features below, built top to bottom). Run once up front; re-run any time to revise — goal or roadmap, no flag. Every other command routes here when no North Star exists. | "Set the goal and plan the project far ahead." |
-| **`/what-to-do [theme]`** | The **direction loop.** Surveys a product and emits a **ranked menu** of where it could go next — across four moves: **add** (new features), **finish** (half-built work), **rebuild** (redo better), **refactor** (tech debt) — each scored against the product's goal, and **biased toward the roadmap's current frontier** (the next unbuilt feature) if one exists. Requires the *North Star* — no North Star → routes you to `/find-goal`. Runs with or without a prompt. Decides nothing — you pick. | "Where should this product go next?" |
+| **`/roadmap-management`** | The **grounding loop** — the front door. Captures the product's *North Star* (goal-setting: vision · core problem · level) and a **flat, ordered list of features** (each `done when …`) to it — both saved to `.claude/ccharness/roadmap.md` (North Star at the top, features below, built top to bottom). Run once up front; re-run any time to revise — goal or roadmap, no flag. Every other command routes here when no North Star exists. | "Set the goal and plan the project far ahead." |
+| **`/what-to-do [theme]`** | The **direction loop.** Surveys a product and emits a **ranked menu** of where it could go next — across four moves: **add** (new features), **finish** (half-built work), **rebuild** (redo better), **refactor** (tech debt) — each scored against the product's goal, and **biased toward the roadmap's current frontier** (the next unbuilt feature) if one exists. Requires the *North Star* — no North Star → routes you to `/roadmap-management`. Runs with or without a prompt. Decides nothing — you pick. | "Where should this product go next?" |
 | **`/how-to-do <decision>`** | The **decision loop.** Works out HOW to build a picked direction (or resolves a standalone technical fork) — four opposed proposers (MVP / Final / Conventional / Contrarian) argue different ways to build it → cross-examination → synthesis into ONE buildable approach. It decides the *how*, not *whether* (the pick is what-to-do's); a pick that looks wrong it flags rather than overrides. Depth scales to stakes. | "How to build it — and why?" |
-| **`/do <task>`** | The **strict executor.** Runs one well-scoped task through a gated pipeline (below) to a **smoke-checked** finish, then **hands off to `/refactor-review-test`**. Requires the *North Star* (routes to `/find-goal` if missing). Refuses fork-laden or ambiguous tasks instead of guessing — a technical fork goes back to `/how-to-do`, a non-technical (business) one it refuses outright, pure ambiguity to brainstorming; never declares done with work open; **never commits** (that's refactor-review-test's). | "Build this concrete task." |
+| **`/do <task>`** | The **strict executor.** Runs one well-scoped task through a gated pipeline (below) to a **smoke-checked** finish, then **hands off to `/refactor-review-test`**. Requires the *North Star* (routes to `/roadmap-management` if missing). Refuses fork-laden or ambiguous tasks instead of guessing — a technical fork goes back to `/how-to-do`, a non-technical (business) one it refuses outright, pure ambiguity to brainstorming; never declares done with work open; **never commits** (that's refactor-review-test's). | "Build this concrete task." |
 | **`/refactor-review-test [target]`** | The **autonomous hardener** — the tail of the funnel. Takes the change `/do` just built (or existing code) and carries it to a *solid* finish: safety-net tests → behavior-preserving refactor (`/simplify` + `code-simplifier`) → review (`/code-review`) with fixes **applied, not reported** → full test coverage → verified **local commit**. Fully autonomous — it **never hands work back to a human**; a genuine behavior/product fork it flags to the conductor, never asks. `/do` always hands off here; also runs standalone. | "Harden this to done." |
 
 > The funnel leans on two **cc-tools** side doors: **`/slap`** (reset a fix stuck in a rabbit hole — `/do`
@@ -57,10 +57,10 @@ This captures the product's *North Star* (the goal) and the ordered feature list
 
 ## The funnel
 
-`/find-goal` grounds the funnel; the three loops then chain, each handing its output to the next,
+`/roadmap-management` grounds the funnel; the three loops then chain, each handing its output to the next,
 each owning a different kind of thinking:
 
-- **`/find-goal`** *grounds* — the front door. It interviews you for the product's **North Star**
+- **`/roadmap-management`** *grounds* — the front door. It interviews you for the product's **North Star**
   (vision · core problem · level `1/2/3`) and writes it to `CLAUDE.md`, then offers to chart the
   **roadmap** — a **flat, ordered list of features** toward that goal
   (`.claude/ccharness/roadmap.md`). Every other command depends on the North
@@ -81,7 +81,7 @@ each owning a different kind of thinking:
   verified local commit. Fully autonomous — it never hands work back to a human; the commit lives
   here, not in `/do`.
 
-You act at just a few boundaries: set the **North Star** (once, via `/find-goal`) and shape the
+You act at just a few boundaries: set the **North Star** (once, via `/roadmap-management`) and shape the
 **roadmap**, **pick a direction** (the one required choice each cycle), and **trigger the push** at
 the end. Everything between flows on its own — you can redirect at any boundary, but you're never
 forced to.
@@ -126,8 +126,8 @@ Beyond the marketplace set, `/cc-init` also **offers** two external MCP tools it
 [`headroom`](https://github.com/headroomlabs-ai/headroom) (token-saving output compression).
 
 ## Layout
-- `commands/find-goal.md` · `commands/what-to-do.md` · `commands/how-to-do.md` · `commands/do.md` · `commands/refactor-review-test.md` — the entry points.
-- `skills/find-goal/SKILL.md` — the grounding loop (goal-setting → North Star capture, then the sequenced roadmap). The front door every other skill routes to when ungrounded.
+- `commands/roadmap-management.md` · `commands/what-to-do.md` · `commands/how-to-do.md` · `commands/do.md` · `commands/refactor-review-test.md` — the entry points.
+- `skills/roadmap-management/SKILL.md` — the grounding loop (goal-setting → North Star capture, then the sequenced roadmap). The front door every other skill routes to when ungrounded.
 - `skills/what-to-do/SKILL.md` — the direction loop (diverge → ranked menu, biased toward the roadmap's current frontier).
 - `skills/how-to-do/SKILL.md` — the decision loop (four proposers → synthesis).
 - `skills/do/SKILL.md` — the gated executor: builds + smoke-checks, then hands off (the brains).

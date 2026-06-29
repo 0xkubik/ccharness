@@ -1,5 +1,5 @@
 ---
-description: "5-stage onboarding wizard for the cc-* harness, driven by AskUserQuestion. Stage 1 installs missing marketplace dependencies and offers the recommended external tools (codegraph, headroom); Stage 2 installs the harness's recommended rules into this project's .claude/rules/; Stage 3 builds the reminder cheat-sheet — the always-loaded plugins, skills, agents, and MCP, nothing project-specific — that a UserPromptSubmit hook re-surfaces every few prompts; Stage 4 reconciles the project's prose docs against your current understanding so stale text doesn't mislead later decisions; Stage 5 offers to run /find-goal. Every stage is offered and skippable; idempotent — safe to re-run."
+description: "5-stage onboarding wizard for the cc-* harness, driven by AskUserQuestion. Stage 1 installs missing marketplace dependencies and offers the recommended external tools (codegraph, headroom); Stage 2 installs the harness's recommended rules into this project's .claude/rules/; Stage 3 builds the reminder cheat-sheet — the always-loaded plugins, skills, agents, and MCP, nothing project-specific — that a UserPromptSubmit hook re-surfaces every few prompts; Stage 4 reconciles the project's prose docs against your current understanding so stale text doesn't mislead later decisions; Stage 5 offers to run /roadmap-management. Every stage is offered and skippable; idempotent — safe to re-run."
 argument-hint: "(no arguments)"
 ---
 
@@ -15,7 +15,7 @@ so you choose what happens at every step:
    few prompts so it doesn't fade from context.
 4. **Reconcile docs with reality** — check the project's prose docs against your current
    understanding so stale text doesn't quietly steer later decisions.
-5. **Offer `/find-goal`** — set the product's North Star.
+5. **Offer `/roadmap-management`** — set the product's North Star.
 
 ## Wizard flow
 
@@ -284,9 +284,9 @@ Report what changed.
 ## Stage 5 — Set the product's direction
 
 **Gate** with `AskUserQuestion`:
-- question: "Run /find-goal now to set the product's North Star?"
-- options: **Run /find-goal now** / **Not now**
+- question: "Run /roadmap-management now to set the product's North Star?"
+- options: **Run /roadmap-management now** / **Not now**
 
-On **Run /find-goal now**, hand off to `/find-goal` (it owns the North Star write). Note for the user:
-plugins installed in Stage 1 only activate on the next session, but `/find-goal` does not
+On **Run /roadmap-management now**, hand off to `/roadmap-management` (it owns the North Star write). Note for the user:
+plugins installed in Stage 1 only activate on the next session, but `/roadmap-management` does not
 hard-require them, so running it now is safe.

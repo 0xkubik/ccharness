@@ -31,7 +31,7 @@ autonomous critical thinking into ONE clear diagnosis + an angle of attack. You 
   rides on all four lenses.
 
 **No grounding gate.** crux is free-standing — fire it on any pain whether or not the product has a
-North Star. (Unlike the funnel skills, it does not route to `/find-goal`.) It is not in the
+North Star. (Unlike the funnel skills, it does not route to `/roadmap-management`.) It is not in the
 ground→diverge→decide→build funnel; it is a side door for "something hurts — make sense of it."
 
 ---

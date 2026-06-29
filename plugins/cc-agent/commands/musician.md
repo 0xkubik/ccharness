@@ -10,7 +10,7 @@ The block above is the **arm step, already run deterministically** for `> $ARGUM
 it**, reacting to that arm output:
 
 - `RUN_DIR` / `RUN_ID` / `ENTRY` → your run; `phase:"shaping"|"building"` → fork on it.
-- `GATE=no-north-star` → tell the user to run `/find-goal`; do not proceed.
+- `GATE=no-north-star` → tell the user to run `/roadmap-management`; do not proceed.
 - `ORPHAN=…` → surface it (resume with `/musician --resume <id>`); don't auto-adopt.
 - `RESUMED=…` / `RESUME_MISSING=…` → continue that run / report missing.
 - `BUSY=<id>` → this session already has an ACTIVE run; tell the user to `/musician-cancel` it first.
@@ -40,7 +40,7 @@ It is **bounded and self-closing**: one piece of work, to its end, then stop —
 never-stop loop above it. Exits: **achieved** (done), **declined** (the brain said no — a success,
 not a failure), **blocked** (tried, couldn't build it — a business blocker or an exhausted technical
 path; no try-count, no cycle cap). Open mode
-needs the North Star — with none it routes you to **`/find-goal`**.
+needs the North Star — with none it routes you to **`/roadmap-management`**.
 
 `--ultracode` forces maximum parallelism in the build step (mandatory Workflow + parallel subagents +
 git worktrees). There is **no spend flag** — the musician is bounded by design. Stop it early with

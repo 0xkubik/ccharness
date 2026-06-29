@@ -34,14 +34,14 @@ or doubt into one diagnosis) and **`/slap`** (reset a fix stuck in a rabbit hole
 **cc-funnel** is a product funnel that refuses to skip the thinking:
 
 ```
-/find-goal  ──►  /what-to-do  ──►  /how-to-do  ──►  /do     (/slap = reset when stuck)
+/roadmap-management  ──►  /what-to-do  ──►  /how-to-do  ──►  /do     (/slap = reset when stuck)
  GROUND          DIVERGE         DECIDE          BUILD
  set the goal    rank where      work out HOW    take one task to
  (North Star)    it could go     to build the    done: built,
  + the roadmap   next (a menu)   pick (one way)  verified, committed
 ```
 
-- **`/find-goal`** — set the product's goal (its *North Star*) and chart a roadmap of milestones.
+- **`/roadmap-management`** — set the product's goal (its *North Star*) and chart a roadmap of milestones.
   The front door: every other command sends you here first if no goal is set.
 - **`/what-to-do`** — survey the product and get a ranked menu of where it could go next.
 - **`/how-to-do`** — work out **how** to build the direction you picked (it converges the
@@ -111,7 +111,7 @@ safe to re-run on a new machine.
 Then **ground your product once** — every command depends on it:
 
 ```
-/find-goal
+/roadmap-management
 ```
 
 ## How the layers depend on each other

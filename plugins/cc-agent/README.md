@@ -33,7 +33,7 @@ one piece of work, to its end, then stop. Want another — launch it again.
   - **blocked** — *tried and couldn't build it*: the `do` subagent hit a business / non-technical
     blocker it refuses, or the technical path is exhausted (how-to-do has no new buildable approach
     left). There is no try-count and no cycle cap — one real blocker closes the run.
-- **Open mode requires a roadmap's North Star** (it leans on `what-to-do`). None → `/find-goal` first.
+- **Open mode requires a roadmap's North Star** (it leans on `what-to-do`). None → `/roadmap-management` first.
 - `/musician-cancel` is the manual brake.
 - `--auto` skips the collaborative shaping phase and arms straight into the autonomous build loop.
 - `--ultracode` forces maximum parallelism in the build (mandatory Workflow + parallel subagents +

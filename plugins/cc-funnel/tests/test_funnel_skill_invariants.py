@@ -2,20 +2,20 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-FIND_GOAL = ROOT / "skills" / "find-goal" / "SKILL.md"
+ROADMAP_MANAGEMENT = ROOT / "skills" / "roadmap-management" / "SKILL.md"
 WHAT_TO_DO = ROOT / "skills" / "what-to-do" / "SKILL.md"
 RRT = ROOT / "skills" / "refactor-review-test" / "SKILL.md"
 
 
 class TestFindGoalSkill(unittest.TestCase):
     def setUp(self):
-        self.text = FIND_GOAL.read_text() if FIND_GOAL.exists() else ""
+        self.text = ROADMAP_MANAGEMENT.read_text() if ROADMAP_MANAGEMENT.exists() else ""
 
     def test_exists(self):
-        self.assertTrue(FIND_GOAL.exists(), "find-goal SKILL.md missing")
+        self.assertTrue(ROADMAP_MANAGEMENT.exists(), "roadmap-management SKILL.md missing")
 
     def test_owns_north_star_write(self):
-        # find-goal owns the shared North Star contract block.
+        # roadmap-management owns the shared North Star contract block.
         self.assertIn("## Product North Star", self.text)
 
     def test_flat_feature_list_format(self):

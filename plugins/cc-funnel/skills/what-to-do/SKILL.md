@@ -9,7 +9,7 @@ You are running **what-to-do**: look at a product and produce a ranked menu of d
 take next. **You do the exploring; the human picks; you never decide.** what-to-do is the mouth of the
 funnel — it generates the agenda the other tools act on.
 The funnel:
-find-goal grounds the goal → what-to-do fans out a menu (nothing chosen) → how-to-do decides _how_ (one way) → do builds one task and smoke-checks it → refactor-review-test hardens it (refactor · review · full tests) and commits.
+roadmap-management grounds the goal → what-to-do fans out a menu (nothing chosen) → how-to-do decides _how_ (one way) → do builds one task and smoke-checks it → refactor-review-test hardens it (refactor · review · full tests) and commits.
 
 Its whole job is to fight the **fortune-cookie failure** — ungrounded "add SSO, add analytics, add
 dark mode" lists that fit any product — by anchoring every move to the **North Star** and asking one
@@ -48,18 +48,18 @@ usually spans more than one — the empty-lane valve keeps any barren lane hones
 
 **North Star detection.** Look for a `## Product North Star` heading at the top of
 `.claude/ccharness/roadmap.md`. The **heading** is the stable contract — its marker comment /
-parenthetical owner may read `what-to-do` or `find-goal`, both count.
+parenthetical owner may read `what-to-do` or `roadmap-management`, both count.
 
 | State       | Path                                                                                                                                                                                                                                                                      |
 | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Absent**  | **Not grounded — route to `/find-goal` and stop.** Say _"No North Star yet — run `/find-goal` to set the goal, then re-issue this."_ If a prompt was given, tell the human it didn't run and to re-issue `/what-to-do <theme>` after — **never silently discard the prompt.** |
+| **Absent**  | **Not grounded — route to `/roadmap-management` and stop.** Say _"No North Star yet — run `/roadmap-management` to set the goal, then re-issue this."_ If a prompt was given, tell the human it didn't run and to re-issue `/what-to-do <theme>` after — **never silently discard the prompt.** |
 | **Present** | **Read it = the goal.** A prompt (if given) scopes the run to a theme/area; no prompt = full survey. Then read the roadmap (below) and proceed to Phase 1.                                                                                                                |
 
 **Read the feature list.** The roadmap (`.claude/ccharness/roadmap.md`, located above) holds the North
 Star at the top and the feature list below it. Derive the **frontier** = the **first unchecked `[ ]`
 box** (the list is flat and ordered; tracking is checkboxes only — no separate pointer). The frontier
 biases Phase 2 and Phase 3. If there are no feature lines yet (goal set, route not charted), what-to-do
-runs unbiased — you may nudge _("no feature list yet — `/find-goal` charts the route far ahead")_, then
+runs unbiased — you may nudge _("no feature list yet — `/roadmap-management` charts the route far ahead")_, then
 proceed.
 
 ---
@@ -192,7 +192,7 @@ what-to-do's.
 
 ## Quick reference
 
-`0` Ground — `## Product North Star` at the top of `.claude/ccharness/roadmap.md`? no → **route to `/find-goal`**, stop; yes → North Star = goal, feature list below (**frontier** = the
+`0` Ground — `## Product North Star` at the top of `.claude/ccharness/roadmap.md`? no → **route to `/roadmap-management`**, stop; yes → North Star = goal, feature list below (**frontier** = the
 first unchecked `[ ]`) · `1` Survey — repo = where we are
 now; if roadmap, check the **frontier milestone's** `done when` (interactive: offer to check off ·
 under the musician: auto-mark) · `2` Fan-out — four lenses (ADD / FINISH / REBUILD / REFACTOR), parallel,
