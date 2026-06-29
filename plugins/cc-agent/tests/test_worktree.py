@@ -21,6 +21,9 @@ def run_wt(repo, *args):
 def make_repo():
     repo = tempfile.mkdtemp()
     git(repo, "init", "-q")
+    # integrate lands on `main`, so the repo's default branch must be main (git defaults to master on
+    # older versions). Point unborn HEAD at main before the first commit creates it.
+    git(repo, "symbolic-ref", "HEAD", "refs/heads/main")
     git(repo, "config", "user.email", "t@t")
     git(repo, "config", "user.name", "t")
     d = Path(repo) / ".claude" / "ccharness"
@@ -75,9 +78,23 @@ class TestIntegrate(unittest.TestCase):
         path, branch = build_worktree(repo)
         out, _ = run_wt(repo, "integrate", path, branch)
         self.assertIn("INTEGRATED", out)
-        self.assertIn("feature", (Path(repo) / "app.txt").read_text())  # landed on current branch
+        self.assertIn("feature", (Path(repo) / "app.txt").read_text())  # landed on local main
         self.assertFalse((Path(repo) / path).exists())                  # worktree gone
         self.assertNotIn(branch, git(repo, "branch").stdout)            # branch gone
+
+    def test_refuses_when_not_on_main(self):
+        # Integration lands on LOCAL main, so main must be the checked-out branch. Off main, integrate
+        # REFUSES: report STALE/not-on-main, keep the worktree + branch, and never touch main.
+        repo = make_repo()
+        path, branch = build_worktree(repo)
+        git(repo, "checkout", "-q", "-b", "feat")  # conductor wandered off main
+        main_before = git(repo, "rev-parse", "main").stdout.strip()
+        out, _ = run_wt(repo, "integrate", path, branch)
+        self.assertIn("STALE", out)
+        self.assertEqual(out.get("REASON"), "not-on-main")
+        self.assertTrue((Path(repo) / path).exists())            # worktree kept
+        self.assertIn(branch, git(repo, "branch").stdout)        # branch kept
+        self.assertEqual(git(repo, "rev-parse", "main").stdout.strip(), main_before)  # main untouched
 
     def test_stale_base_is_not_merged_and_worktree_kept(self):
         # If the build branch is NOT a fast-forward of the current HEAD (its base is stale — the

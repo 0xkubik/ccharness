@@ -273,10 +273,10 @@ and run the next cycle directly.
             INSIDE the worktree. Capture worktreePath + worktreeBranch. A "harden / refactor / add
             tests to existing code" task → dispatch cc-funnel:refactor-review-test DIRECTLY (still
             isolated, still reset to BASE), skipping do.
-          INTEGRATE (ff-only): build committed → `worktree.sh integrate <worktreePath> <worktreeBranch>`
-            fast-forwards it onto your branch and removes the worktree (`INTEGRATED=<sha>`;
-            `STALE=<branch>` → build wasn't on your HEAD, worktree kept → `discard` + rebuild, and a
-            SECOND consecutive STALE → close `blocked`). Build produced no commit (handback / dead
+          INTEGRATE (ff-only, onto local `main`): build committed → `worktree.sh integrate <worktreePath> <worktreeBranch>`
+            fast-forwards it onto your local `main` branch and removes the worktree (`INTEGRATED=<sha>`;
+            `STALE=<branch>` → build wasn't on `main`'s HEAD, or you're not on `main` (`REASON=not-on-main`);
+            worktree kept → `discard` + rebuild, and a SECOND consecutive STALE → close `blocked`). Build produced no commit (handback / dead
             approach) → `worktree.sh discard <worktreePath> <worktreeBranch>`.
           ASYNC build (the do subagent runs in the background and can't finish in-turn, and no
             parallel in-turn work is worth doing) → set awaiting:{what, since} (atomic), log
@@ -296,8 +296,8 @@ and run the next cycle directly.
 ## Build in an isolated worktree — the build never touches the main tree
 
 Every build runs in its own throwaway **git worktree**, so the musician's autonomous building never
-dirties your working tree mid-flight; only the finished, committed result lands on your branch. This
-is the one hard rule for step 5.
+dirties your working tree mid-flight; only the finished, committed result lands on your local `main`
+branch. This is the one hard rule for step 5.
 
 - **Isolate at dispatch.** Dispatch the build subagent (`cc-funnel:do`, or `cc-funnel:refactor-review-test`
   directly) with the Agent tool's **`isolation:"worktree"`**. That is the ONLY reliable containment:
@@ -306,9 +306,10 @@ is the one hard rule for step 5.
   dispatched agent starts at the main root, `cd` doesn't persist between its commands, and its own
   sub-agents reset to the main root. The harness returns the dispatch's **`worktreePath`** and
   **`worktreeBranch`** — capture both.
-- **You stay in main.** Never enter the worktree yourself: your run `state.json`, the hooks, and the
-  by-session pointer all resolve from the main tree (they'd be lost in a worktree). Only the build
-  subagent lives in the worktree; you conduct from main and integrate its result.
+- **You stay in the main tree, on `main`.** Never enter the worktree yourself: your run `state.json`,
+  the hooks, and the by-session pointer all resolve from the main tree (they'd be lost in a worktree).
+  Only the build subagent lives in the worktree; you conduct from the main tree on the `main` branch,
+  and each finished result is integrated onto local `main`.
 - **Force the build onto your current HEAD — don't trust the worktree's base.** The harness cuts the
   isolation worktree from a base you don't control (it can be a stale `origin`, not your latest local
   commit). So make the build start from your real HEAD yourself: capture `BASE` = the main repo's
@@ -318,20 +319,21 @@ is the one hard rule for step 5.
 - **Call the helper by its recorded path.** Every `worktree.sh` call uses the absolute path in
   `<run>/state.json`'s `worktree_helper` (`HELPER="$(jq -r .worktree_helper <run>/state.json)"`),
   because re-fed turns don't have `${CLAUDE_PLUGIN_ROOT}` set.
-- **Integrate is fast-forward-only — that's the hard guarantee.** `refactor-review-test` makes the
-  local commit INSIDE the worktree; then land it: `bash "$HELPER" integrate <worktreePath> <worktreeBranch>`.
-  Because the build was reset onto your HEAD, its branch is HEAD + the new commits and
-  **fast-forwards** cleanly → `INTEGRATED=<sha>`, worktree + branch removed. `STALE=<branch>` → the
-  build was NOT on your current HEAD (the reset was skipped, or HEAD moved): the worktree is KEPT and
-  **stale work is never merged in silently.** On `STALE`, `discard` it and rebuild this cycle; a
-  **second consecutive `STALE`** is an infra failure, not a build problem → close `blocked`
-  ("build isolation can't align to HEAD"). This bound is about the reset misfiring, not a retry-count
-  on the work itself.
+- **Integrate is fast-forward-only onto local `main` — that's the hard guarantee.** `refactor-review-test`
+  makes the local commit INSIDE the worktree; then land it on `main`: `bash "$HELPER" integrate <worktreePath> <worktreeBranch>`.
+  Because the build was reset onto your HEAD (= `main`'s tip, since you conduct on `main`), its branch
+  is `main` + the new commits and **fast-forwards** cleanly → `INTEGRATED=<sha>`, worktree + branch
+  removed. `STALE=<branch>` → the build was NOT on `main`'s HEAD (the reset was skipped, or `main`
+  moved), or you are not on `main` (`REASON=not-on-main`): the worktree is KEPT and **stale work is
+  never merged into `main` silently.** On `STALE`, `discard` it and rebuild this cycle; a **second
+  consecutive `STALE`** is an infra failure, not a build problem → close `blocked` ("build isolation
+  can't align to `main`"). This bound is about the reset misfiring (or an off-main conductor), not a
+  retry-count on the work itself.
 - **Discard an abandoned build.** A build that produced NO commit (a handback, or a dead approach) →
   `bash "$HELPER" discard <worktreePath> <worktreeBranch>` drops the worktree, keeping nothing.
 - **Per build, not one for the whole run.** Containment is per-dispatch, so a multi-cycle piece cuts a
-  fresh worktree each build and integrates as it goes (each cycle builds on the last, now on your
-  branch). A single-build piece is exactly "cut a worktree → build in it → integrate → remove".
+  fresh worktree each build and integrates as it goes (each cycle builds on the last, now on local
+  `main`). A single-build piece is exactly "cut a worktree → build in it → integrate → remove".
 - **Builds from committed HEAD.** A worktree is cut from your last commit, so the build does NOT see
   uncommitted working-tree changes — the musician builds from committed state. (`GROUNDING_DIRTY`
   guards the one case that would otherwise break a build silently: an uncommitted North Star.)
@@ -460,7 +462,7 @@ state + blocked · `2` **BRAIN** while `done_when==""`: dispatch a subagent to t
 `blocked`) · `5` capture BASE=`git rev-parse HEAD`, dispatch do subagent **`isolation:"worktree"`**
 told to FIRST `git reset --hard <BASE>` (do builds+smoke → chains to refactor-review-test, which owns
 the local commit INSIDE the worktree; harden-existing-code → refactor-review-test directly) →
-`worktree.sh integrate <worktreePath> <worktreeBranch>` **ff-only** lands it on your branch + removes
+`worktree.sh integrate <worktreePath> <worktreeBranch>` **ff-only** lands it on local `main` + removes
 the worktree (no commit → `discard`; `STALE` → discard + rebuild, 2nd consecutive STALE → `blocked`) (async →
 `awaiting`; handback: business blocker → close `blocked`, technical → back to step 4) · `6` log +
 bump cycle (atomic) · `7` end turn → hook re-feeds.
@@ -471,5 +473,5 @@ On any close: `git notes append` one closed fact (`built`/`declined`/`blocked`
 skips the shaping); you **conduct, never perform** — every work-unit is a dispatched subagent and you
 never write product code inline; the brain leads and may say no (`declined`); you forge your own
 `done_when`; the done-check leads every build cycle; **every build runs isolated in a worktree and is
-integrated to your branch**, never edited into the main tree; one piece of work, to its end, then
+integrated to local `main`**, never edited into the main tree; one piece of work, to its end, then
 **close**. `active:false` is the only door out. There is no never-stop loop above you.

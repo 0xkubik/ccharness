@@ -2,15 +2,16 @@
 # musician worktree helper — the deterministic git bookkeeping for build isolation, extracted from
 # SKILL.md so the exact, error-prone sequence is testable instead of hand-typed across re-fed turns.
 #
-# The musician CONDUCTS from the main repo; every build (a cc-funnel:do / refactor-review-test
-# subagent) is dispatched with worktree isolation so its work — and all of its nested agents —
-# stays in one throwaway worktree under .claude/worktrees/, never leaking into the main tree. The
-# harness creates that worktree and hands the conductor back its path + branch. THIS script lands
-# the finished commit on the current branch and removes the worktree, or discards an abandoned one.
+# The musician CONDUCTS from the main repo on the `main` branch; every build (a cc-funnel:do /
+# refactor-review-test subagent) is dispatched with worktree isolation so its work — and all of its
+# nested agents — stays in one throwaway worktree under .claude/worktrees/, never leaking into the
+# main tree. The harness creates that worktree and hands the conductor back its path + branch. THIS
+# script lands the finished commit on the local `main` branch and removes the worktree, or discards
+# an abandoned one.
 #
 # Usage:
 #   worktree.sh prepare                       once at arm: make build isolation correct + clean
-#   worktree.sh integrate <wt_path> <branch>  a build committed -> land it on the current branch
+#   worktree.sh integrate <wt_path> <branch>  a build committed -> land it on local main
 #   worktree.sh discard   <wt_path> <branch>  an abandoned build -> drop the worktree, keep nothing
 #
 # Output: KEY=VALUE lines for the skill to react to. Always exits 0 (the skill reads the keys).
@@ -44,10 +45,20 @@ case "$cmd" in
   integrate)
     wt="${2:-}"; br="${3:-}"
     if [ -z "$wt" ] || [ -z "$br" ]; then printf 'ERROR=integrate-needs-path-and-branch\n'; exit 0; fi
-    # ff-only is the load-bearing guarantee. The build reset its worktree to the current HEAD before
-    # building, so its branch is HEAD + the new commits and fast-forwards cleanly. If ff FAILS, the
-    # build was NOT on the current HEAD (its reset was skipped, or HEAD moved under a concurrent run)
-    # — STALE work must NOT be merged in silently. Keep the worktree and report; the caller rebuilds.
+    # The finished build lands on the LOCAL `main` branch — that is where the conductor builds toward.
+    # Integration is therefore an ff-only merge of the build branch into `main`, so `main` has to be
+    # the branch checked out here. If it isn't, REFUSE rather than touch `main` behind the scenes:
+    # an off-main run is a misconfiguration, not a build to merge. Report it as STALE (kept worktree),
+    # which the caller surfaces the same way as any can't-align case.
+    cur="$(git symbolic-ref --quiet --short HEAD 2>/dev/null || echo '')"
+    if [ "$cur" != "main" ]; then
+      printf 'STALE=%s\nWORKTREE_KEPT=%s\nREASON=not-on-main\n' "$br" "$wt"
+      exit 0
+    fi
+    # ff-only is the load-bearing guarantee. The build reset its worktree to main's HEAD before
+    # building, so its branch is main + the new commits and fast-forwards cleanly. If ff FAILS, the
+    # build was NOT on main's HEAD (its reset was skipped, or main moved under a concurrent run)
+    # — STALE work must NOT be merged into main silently. Keep the worktree and report; caller rebuilds.
     if ! git merge --ff-only "$br" 2>/dev/null; then
       printf 'STALE=%s\nWORKTREE_KEPT=%s\n' "$br" "$wt"
       exit 0

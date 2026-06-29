@@ -166,6 +166,8 @@ class TestMusicianSkill(unittest.TestCase):
         # so a stale build can't land silently.
         self.assertIn("reset --hard", self.text)
         self.assertIn("STALE", self.text)
+        # The finished build is integrated onto the LOCAL main branch (not just "the current branch").
+        self.assertIn("local `main`", self.text)
 
     def test_reads_and_passes_project_rules(self):
         # The musician reads the project rules at arm, holds them for the run, and passes them to
