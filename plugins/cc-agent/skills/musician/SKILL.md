@@ -128,8 +128,8 @@ careful:
 
 - **You MAY edit the route** — the progress toward an already-agreed goal: mark a feature `[x]` when it
   is observably done. That is a truthful state update, not invention.
-- **The goal layer is READ-ONLY to you:** the North Star in `CLAUDE.md`, and the roadmap's feature set,
-  ordering, and priorities. Never reorder features, never add a future feature, never re-prioritize.
+- **The goal layer is READ-ONLY to you:** the North Star at the top of the roadmap, and the roadmap's
+  feature set, ordering, and priorities. Never reorder features, never add a future feature, never re-prioritize.
   That layer is `find-goal`'s — set with the human. Silently rewriting it is the goal-drift you must
   not cause.
 - **Work revealed the goal itself is wrong / misframed?** That is not a roadmap edit — it is the
@@ -184,7 +184,7 @@ crashed runs. **`<run>` = `runs/<run_id>/` from here on.**
 1. **Do NOT run `arm.sh` yourself.** It already ran in the command. Re-running it is refused as a
    duplicate (`BUSY`), but don't even try — read the output that's already there.
 2. **React to the arm `KEY=VALUE` output:**
-   - `GATE=no-north-star` (open mode, no `## Product North Star` in repo-root `CLAUDE.md`) → no run
+   - `GATE=no-north-star` (open mode, no `## Product North Star` in `.claude/ccharness/roadmap.md`) → no run
      was created; tell the user _"No North Star yet — run `/find-goal` once to set it, then
      `/musician`."_ END TURN. (Task mode does **not** hard-gate: a fuzzy pain can go to `crux`, which
      is grounding-free, and the `do` build enforces its own North Star gate.)
@@ -209,8 +209,8 @@ crashed runs. **`<run>` = `runs/<run_id>/` from here on.**
    `HELPER="$(jq -r .worktree_helper <run>/state.json)"; bash "$HELPER" prepare`. It gitignores
    `.claude/worktrees/` (the build worktree's base is forced per-dispatch by a reset, not a settings
    flag — see **Build in an isolated worktree**). If it reports `GROUNDING_DIRTY=1`, commit the
-   grounding (CLAUDE.md / roadmap) before the first build, or the build worktree won't carry the
-   North Star. Then **announce** the entry mode and the input (note `[ultracode]` if set, and any
+   grounding (`.claude/ccharness/roadmap.md` — North Star + features) before the first build, or the
+   build worktree won't carry the North Star. Then **announce** the entry mode and the input (note `[ultracode]` if set, and any
    surfaced orphan), and **fork on `phase`:**
    - `phase:"shaping"` (the default) → **open the shaping conversation** (see **Two phases**): develop
      the idea WITH the human; do NOT start the autonomous loop. End the turn for the human to respond

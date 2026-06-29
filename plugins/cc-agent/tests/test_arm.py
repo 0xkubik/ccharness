@@ -26,7 +26,9 @@ def state_of(repo, run_id):
 
 
 def with_north_star(repo):
-    (Path(repo) / "CLAUDE.md").write_text("# Project\n\n## Product North Star\nBe great.\n")
+    d = Path(repo) / ".claude" / "ccharness"
+    d.mkdir(parents=True, exist_ok=True)
+    (d / "roadmap.md").write_text("# Roadmap\n\n## Product North Star\n\nBe great.\n")
 
 
 class TestArmTaskMode(unittest.TestCase):

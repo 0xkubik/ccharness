@@ -43,7 +43,7 @@ All of these live in the official marketplace `claude-plugins-official`
 | Plugin | What the harness uses it for |
 |---|---|
 | `superpowers` | brainstorming, writing/executing plans, TDD, subagents, systematic-debugging, code-review review loop |
-| `claude-md-management` | North Star capture / CLAUDE.md upkeep (what-to-do) |
+| `claude-md-management` | CLAUDE.md upkeep (what-to-do) |
 | `frontend-design` | UI build route (do stage 2) |
 | `code-simplifier` | the simplify pass (do stage 5) |
 | `ralph-loop` | long autonomous build loops (do stage 2) |

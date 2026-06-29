@@ -6,8 +6,8 @@ description: Use when setting up or revising a product's long-horizon direction 
 # find-goal — set the goal, then lay out the road to it
 
 You are the harness's grounding front door: you guide a human to **set the product's goal** (the
-**North Star** → `CLAUDE.md`) and **lay out the route to it** as a **flat, ordered list of features**
-(written to `.claude/ccharness/roadmap.md` — build top to bottom). This is a
+**North Star**) and **lay out the route to it** as a **flat, ordered list of features** — both written
+to `.claude/ccharness/roadmap.md`, the goal at the top and the features below it, built top to bottom. This is a
 **high-stakes conversation**, not a form — every later step builds on it: what-to-do ranks moves
 against the goal, the musician builds straight from the roadmap, so a sloppy goal or vague feature
 aims every automated step at the wrong target. Run once up front (other product skills route here
@@ -26,13 +26,13 @@ guided interview — lead with questions, one decision at a time, until the pict
   free-text fallback). This is where you actively steer — "which feature is the core, the very first
   to build?", "does X come before Y, or are they independent?".
 - **One decision at a time** (borrow `superpowers:brainstorming`'s technique). The terminal is
-  `CLAUDE.md` + `roadmap.md` — not `writing-plans`.
+  `.claude/ccharness/roadmap.md` — not `writing-plans`.
 
 ---
 
 ## Phase 0 — The global goal (the North Star) — ask, don't offer
 
-**Detect first.** Look for a `## Product North Star` heading in the repo-root `CLAUDE.md`.
+**Detect first.** Look for a `## Product North Star` heading at the top of `.claude/ccharness/roadmap.md`.
 
 | State       | Path                                                                     |
 | ----------- | ------------------------------------------------------------------------ |
@@ -41,27 +41,29 @@ guided interview — lead with questions, one decision at a time, until the pict
 
 When the goal already exists, treat the run as a revision, not a fresh start: show the current North
 Star back and ask whether to **keep it or rework it** — rework → re-run the questions and overwrite the
-block (**preserving the rest of `CLAUDE.md`**); keep → leave it untouched. Either way you then enter the
-feature loop, which revises an existing roadmap rather than building from scratch. **No flag for any of
-this** — re-running find-goal is always safe: it reads what exists and adapts.
+North Star block (**leaving the feature list below it intact**); keep → leave it untouched. Either way
+you then enter the feature loop, which revises the existing list rather than building from scratch.
+**No flag for any of this** — re-running find-goal is always safe: it reads what exists and adapts.
 
 The goal-setting dialogue — open questions only, no multiple-choice. Draw out, one question at a
 time, in plain language: what does the finished product look like at the very end — who is it for, and
 what does success look like? And **is it already in production (real users), or not yet?** Don't move
-on until the answer is concrete. The durable artifact is this stable block — append it to the project-root `CLAUDE.md`,
-**preserving everything already there**:
+on until the answer is concrete. The durable artifact is this stable block — write it as the **opening
+of `.claude/ccharness/roadmap.md`** (create the file if needed; full file shape in the format block
+below), keeping the vision to **one to three sentences**:
 
 ```markdown
-## Product North Star (cc-tools)
+## Product North Star
 
 <!-- managed by find-goal · edit freely, the harness re-reads this · captured: <YYYY-MM-DD> -->
 
-- **Vision:** <a few sentences — how the finished product looks at the end>
+<one to three sentences — how the finished product looks at the end, who it's for, what success is>
+
 - **In production?** <yes — live users, move carefully · no — full carte blanche>
 ```
 
 Confirm the written block back in one line. The goal is **mandatory**; it's what every other skill
-detects. Then move into the feature loop.
+detects (the `## Product North Star` heading). Then move into the feature loop.
 
 ---
 
@@ -138,14 +140,24 @@ human decides. Then stop.
 
 ## The roadmap format (the contract — keep it exact)
 
-Write `.claude/ccharness/roadmap.md` (create the directory if needed). The roadmap is a **flat, ordered
-checklist of features** — no versions, no stages. **Document order is build order**: top to bottom. The
-**frontier** = the **first unchecked `[ ]` box** — derived from the checkboxes, no separate pointer.
+Write `.claude/ccharness/roadmap.md` (create the directory if needed). The file **opens with the North
+Star** (the goal — Phase 0's block), followed by a **flat, ordered checklist of features** — no
+versions, no stages. **Document order is build order**: top to bottom. The **frontier** = the **first
+unchecked `[ ]` box** — derived from the checkboxes, no separate pointer.
 
 ```markdown
 # Roadmap — <product>
 
-<!-- managed by find-goal · edit freely, find-goal re-reads this · captured: <YYYY-MM-DD> · North Star → CLAUDE.md -->
+## Product North Star
+
+<!-- managed by find-goal · edit freely, find-goal re-reads this · captured: <YYYY-MM-DD> -->
+
+<one to three sentences — the vision>
+
+- **In production?** <yes — live users, move carefully · no — full carte blanche>
+
+---
+
 <!-- Flat ordered feature list — build top to bottom. Frontier = the first unchecked [ ] box. -->
 
 - [ ] M1 — <feature> · done when: <observable outcome>
@@ -164,7 +176,7 @@ Re-running find-goal on a product that already has a goal or roadmap is a revisi
 and it needs no flag. A re-run: **re-survey** "now" (Phase 1) → **show the current goal, roadmap, and
 progress** (which features' `done when:` now hold, where the frontier sits) → **propose adjustments**
 one decision at a time (rework the goal, check off completed, add/split/reorder features, drop the
-obsolete) → **rewrite** the affected files, urging a review. Keep ids stable.
+obsolete) → **rewrite** the affected parts of `roadmap.md`, urging a review. Keep ids stable.
 
 **Reason about impact before you rewrite.** A revision ripples: reworking the goal can strand features
 that no longer serve it; reordering or dropping a feature shifts the frontier and what the downstream

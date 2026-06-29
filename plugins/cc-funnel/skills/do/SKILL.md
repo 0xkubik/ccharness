@@ -23,9 +23,9 @@ checklist has open items. **You do not verify-to-green, review, simplify, or com
 
 ## Grounding precondition (the gate — before Stage 0)
 
-Confirm a `## Product North Star` heading exists in repo-root `CLAUDE.md`. **Absent → STOP and route
-to `/find-goal`** (cc-tools builds from the goal outward; don't run ungrounded). Arriving from how-to-do
-or under the musician, the North Star already exists — the gate just passes.
+Confirm a `## Product North Star` heading exists at the top of `.claude/ccharness/roadmap.md`. **Absent
+→ STOP and route to `/find-goal`** (cc-tools builds from the goal outward; don't run ungrounded).
+Arriving from how-to-do or under the musician, the North Star already exists — the gate just passes.
 
 ---
 

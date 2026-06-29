@@ -31,10 +31,10 @@ ensure_gitignore() {
 case "$cmd" in
   prepare)
     ensure_gitignore
-    # A build worktree is cut from committed HEAD — an uncommitted North Star (e.g. /find-goal was
-    # just run) would be ABSENT in the worktree and fail do's grounding gate. Surface it so the
-    # conductor commits the grounding before building.
-    if [ -n "$(git status --porcelain CLAUDE.md 2>/dev/null)" ]; then
+    # A build worktree is cut from committed HEAD — an uncommitted North Star / roadmap (e.g.
+    # /find-goal was just run) would be ABSENT in the worktree and fail do's grounding gate. Surface
+    # it so the conductor commits the grounding before building.
+    if [ -n "$(git status --porcelain .claude/ccharness/roadmap.md 2>/dev/null)" ]; then
       printf 'GROUNDING_DIRTY=1\n'
     fi
     git worktree prune 2>/dev/null || true

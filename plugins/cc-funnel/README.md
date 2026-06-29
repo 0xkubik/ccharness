@@ -38,14 +38,14 @@ Then **ground your product once** — every funnel command depends on it:
 ```
 /find-goal
 ```
-This captures the product's *North Star* (the goal) into `CLAUDE.md` and then offers to lay out the
-*roadmap* (the ordered feature list — the route to it). Until a North Star exists, the other commands route you here.
+This captures the product's *North Star* (the goal) and the ordered feature list (the route to it) into
+`.claude/ccharness/roadmap.md` — the goal at the top, the features below. Until a North Star exists, the other commands route you here.
 
 ## The commands
 
 | Command | What it does | When you reach for it |
 |---|---|---|
-| **`/find-goal`** | The **grounding loop** — the front door. Captures the product's *North Star* (goal-setting: vision · core problem · level) into `CLAUDE.md`, then **offers** to lay out the *roadmap* — a **flat, ordered list of features** (each `done when …`), built top to bottom, saved to `.claude/ccharness/roadmap.md`. Run once up front; re-run any time to revise — goal or roadmap, no flag. Every other command routes here when no North Star exists. | "Set the goal and plan the project far ahead." |
+| **`/find-goal`** | The **grounding loop** — the front door. Captures the product's *North Star* (goal-setting: vision · core problem · level) and a **flat, ordered list of features** (each `done when …`) to it — both saved to `.claude/ccharness/roadmap.md` (North Star at the top, features below, built top to bottom). Run once up front; re-run any time to revise — goal or roadmap, no flag. Every other command routes here when no North Star exists. | "Set the goal and plan the project far ahead." |
 | **`/what-to-do [theme]`** | The **direction loop.** Surveys a product and emits a **ranked menu** of where it could go next — across four moves: **add** (new features), **finish** (half-built work), **rebuild** (redo better), **refactor** (tech debt) — each scored against the product's goal, and **biased toward the roadmap's current frontier** (the next unbuilt feature) if one exists. Requires the *North Star* — no North Star → routes you to `/find-goal`. Runs with or without a prompt. Decides nothing — you pick. | "Where should this product go next?" |
 | **`/how-to-do <decision>`** | The **decision loop.** Works out HOW to build a picked direction (or resolves a standalone technical fork) — four opposed proposers (MVP / Final / Conventional / Contrarian) argue different ways to build it → cross-examination → synthesis into ONE buildable approach. It decides the *how*, not *whether* (the pick is what-to-do's); a pick that looks wrong it flags rather than overrides. Depth scales to stakes. | "How to build it — and why?" |
 | **`/do <task>`** | The **strict executor.** Runs one well-scoped task through a gated pipeline (below) to a **smoke-checked** finish, then **hands off to `/refactor-review-test`**. Requires the *North Star* (routes to `/find-goal` if missing). Refuses fork-laden or ambiguous tasks instead of guessing — a technical fork goes back to `/how-to-do`, a non-technical (business) one it refuses outright, pure ambiguity to brainstorming; never declares done with work open; **never commits** (that's refactor-review-test's). | "Build this concrete task." |

@@ -23,7 +23,9 @@ def make_repo():
     git(repo, "init", "-q")
     git(repo, "config", "user.email", "t@t")
     git(repo, "config", "user.name", "t")
-    (Path(repo) / "CLAUDE.md").write_text("# P\n## Product North Star\nx\n")
+    d = Path(repo) / ".claude" / "ccharness"
+    d.mkdir(parents=True, exist_ok=True)
+    (d / "roadmap.md").write_text("# Roadmap\n\n## Product North Star\n\nx\n")
     (Path(repo) / "app.txt").write_text("base\n")
     git(repo, "add", "-A")
     git(repo, "commit", "-qm", "init")
@@ -59,9 +61,10 @@ class TestPrepare(unittest.TestCase):
         self.assertEqual((Path(repo) / ".gitignore").read_text().count(".claude/worktrees/"), 1)
 
     def test_flags_uncommitted_north_star(self):
-        # A build worktree is cut from committed HEAD — an uncommitted North Star would be absent.
+        # A build worktree is cut from committed HEAD — an uncommitted North Star / roadmap is absent.
         repo = make_repo()
-        (Path(repo) / "CLAUDE.md").write_text("# P\n## Product North Star\nCHANGED\n")
+        (Path(repo) / ".claude" / "ccharness" / "roadmap.md").write_text(
+            "# Roadmap\n\n## Product North Star\n\nCHANGED\n")
         out, _ = run_wt(repo, "prepare")
         self.assertEqual(out.get("GROUNDING_DIRTY"), "1")
 

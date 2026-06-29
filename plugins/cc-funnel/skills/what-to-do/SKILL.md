@@ -46,20 +46,21 @@ usually spans more than one — the empty-lane valve keeps any barren lane hones
 
 ## Phase 0 — Ground (the gate: North Star, then roadmap)
 
-**North Star detection.** Look for a `## Product North Star` heading in the repo-root `CLAUDE.md`.
-The **heading** is the stable contract — its marker comment / parenthetical owner may read `what-to-do`
-or `find-goal`, both count.
+**North Star detection.** Look for a `## Product North Star` heading at the top of
+`.claude/ccharness/roadmap.md`. The **heading** is the stable contract — its marker comment /
+parenthetical owner may read `what-to-do` or `find-goal`, both count.
 
 | State       | Path                                                                                                                                                                                                                                                                      |
 | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Absent**  | **Not grounded — route to `/find-goal` and stop.** Say _"No North Star yet — run `/find-goal` to set the goal, then re-issue this."_ If a prompt was given, tell the human it didn't run and to re-issue `/what-to-do <theme>` after — **never silently discard the prompt.** |
 | **Present** | **Read it = the goal.** A prompt (if given) scopes the run to a theme/area; no prompt = full survey. Then read the roadmap (below) and proceed to Phase 1.                                                                                                                |
 
-**Read the roadmap (if any).** Look for `.claude/ccharness/roadmap.md`. If present, read it and derive
-the **frontier** = the **first unchecked `[ ]` box** (the roadmap is a flat ordered list; tracking is
-checkboxes only — no separate pointer). The frontier biases Phase 2 and Phase 3. If absent, what-to-do
-runs exactly as before (unbiased) — you may emit a one-line nudge _("no roadmap yet — `/find-goal`
-charts the route far ahead")_, then proceed.
+**Read the feature list.** The roadmap (`.claude/ccharness/roadmap.md`, located above) holds the North
+Star at the top and the feature list below it. Derive the **frontier** = the **first unchecked `[ ]`
+box** (the list is flat and ordered; tracking is checkboxes only — no separate pointer). The frontier
+biases Phase 2 and Phase 3. If there are no feature lines yet (goal set, route not charted), what-to-do
+runs unbiased — you may nudge _("no feature list yet — `/find-goal` charts the route far ahead")_, then
+proceed.
 
 ---
 
@@ -191,8 +192,8 @@ what-to-do's.
 
 ## Quick reference
 
-`0` Ground — `## Product North Star` heading? no → **route to `/find-goal`**, stop; yes → read = goal, then read `.claude/ccharness/roadmap.md` (**frontier** = the
-first unchecked `[ ]` of the flat list) · `1` Survey — repo = where we are
+`0` Ground — `## Product North Star` at the top of `.claude/ccharness/roadmap.md`? no → **route to `/find-goal`**, stop; yes → North Star = goal, feature list below (**frontier** = the
+first unchecked `[ ]`) · `1` Survey — repo = where we are
 now; if roadmap, check the **frontier milestone's** `done when` (interactive: offer to check off ·
 under the musician: auto-mark) · `2` Fan-out — four lenses (ADD / FINISH / REBUILD / REFACTOR), parallel,
 empty-lane valve, **fed the frontier milestone as a steer (not a gate)** · `3`
