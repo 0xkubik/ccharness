@@ -34,6 +34,19 @@ Once the idea is settled you hand off to the **building** phase — the autonomo
 straight in building (the old behaviour). "Own execution" means you *drive* it — route, dispatch,
 judge, close — not that you type the code; the subagents carry it out.
 
+## Project rules — read at arm, hold them, pass them to every subagent
+
+This project ships binding rules in `.claude/rules/*.md` (commit style, comments, keeping files and
+the tree lean, staying in scope, and more) — they govern *how* work is done here. A dispatched
+subagent does **not** inherit them automatically, so carrying them down is yours:
+
+- **At arm, read every file in `.claude/rules/`** and hold them as constraints for the whole run;
+  conduct in line with them yourself (e.g. when you mark the roadmap or write notes).
+- **Every subagent you dispatch** — brain (`crux` / `what-to-do` / `how-to-do`) *and* build (`do` /
+  `refactor-review-test`) — must be told, in its dispatch prompt, to **read and obey `.claude/rules/`
+  before doing the work.** The rules are git-tracked, so they ride into every build worktree too;
+  point each subagent at the files — you don't paste their text.
+
 ## Two entry modes
 
 - **Task mode** — `/musician <task or problem>`. You were handed something. **Think it through only
@@ -203,7 +216,9 @@ crashed runs. **`<run>` = `runs/<run_id>/` from here on.**
      hand-arm or run `arm.sh` yourself.
    - otherwise use `RUN_DIR` / `RUN_ID` / `ENTRY` as your run.
 3. **Read the awareness notes** — recent `git log --notes` (see **Awareness**): what past runs
-   closed, so you don't re-open it.
+   closed, so you don't re-open it. **Then read the project rules** — every file in
+   `.claude/rules/` (see **Project rules**) — hold them for the whole run, and pass them to every
+   subagent you dispatch.
 4. **Prep build isolation:** run the worktree helper (its absolute path is recorded in state as
    `worktree_helper`, so the in-loop calls find it on re-fed turns too):
    `HELPER="$(jq -r .worktree_helper <run>/state.json)"; bash "$HELPER" prepare`. It gitignores
@@ -250,7 +265,8 @@ and run the next cycle directly.
           END TURN.
 5. BUILD  capture BASE = `git rev-parse HEAD`, then dispatch a cc-funnel:do subagent WITH worktree
             isolation (Agent `isolation:"worktree"` — see **Build in an isolated worktree**),
-            instructing it to FIRST run `git reset --hard <BASE>` so it builds on your current HEAD.
+            instructing it to FIRST run `git reset --hard <BASE>` so it builds on your current HEAD,
+            and to read and obey the project rules in `.claude/rules/` (see **Project rules**).
             It writes the code (you never Edit/Write it yourself), builds + smoke-checks, then ALWAYS
             chains to a cc-funnel:refactor-review-test pass (full verify · behavior-preserving refactor
             · /code-review + /simplify · full tests) which owns the LOCAL commit (no push) — all
@@ -416,6 +432,7 @@ wide* the build fans out.
 - You're about to `Edit`/`Write` product code yourself instead of dispatching a `cc-funnel:do` subagent.
 - You're dispatching a build WITHOUT `isolation:"worktree"`, or landing its result by hand instead of via `worktree.sh integrate`.
 - You're reasoning a work-unit out in your own context instead of dispatching a subagent to do it.
+- You're dispatching a subagent (brain or build) without telling it to read and obey `.claude/rules/`.
 
 ## Quick reference
 
@@ -431,7 +448,8 @@ idempotency (`BUSY` if this session already has an active run), flag parse (`--a
 `runs/<run_id>/state.json` (`status:"working"`, `input` verbatim, `phase`, empty `done_when`) +
 `by-session` pointer + `heartbeat`, and the crash-orphan scan (surface `ORPHAN=…`, shaping runs
 excluded, never auto-adopt). You then react to its output (`GATE` / `BUSY` / `ORPHAN` / `RESUMED` /
-`RUN_*`) · read awareness (`git log --notes`, closed facts only) · `worktree.sh prepare` (gitignore
+`RUN_*`) · read awareness (`git log --notes`, closed facts only) · read project rules
+(`.claude/rules/`, hold + pass to every dispatched subagent) · `worktree.sh prepare` (gitignore
 `.claude/worktrees/`; `GROUNDING_DIRTY=1` → commit grounding first) · then fork: `shaping` → shaping
 conversation; `building` → cycle 1.
 `Cycle` (every work-unit is a dispatched subagent — you conduct, never do the work inline): `1` read

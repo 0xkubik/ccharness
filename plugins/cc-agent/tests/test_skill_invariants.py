@@ -167,6 +167,15 @@ class TestMusicianSkill(unittest.TestCase):
         self.assertIn("reset --hard", self.text)
         self.assertIn("STALE", self.text)
 
+    def test_reads_and_passes_project_rules(self):
+        # The musician reads the project rules at arm, holds them for the run, and passes them to
+        # every subagent it dispatches — a dispatched subagent does not inherit .claude/rules.
+        self.assertIn(".claude/rules", self.text)
+        lowered = self.text.lower()
+        self.assertIn("project rules", lowered)
+        # The pass-down to subagents is the load-bearing half (the user's report).
+        self.assertIn("subagent", lowered)
+
     def test_no_autopilot_residue(self):
         # The whole point of the redesign: no autopilot / semipilot / milestone-walking loop left.
         lowered = self.text.lower()
