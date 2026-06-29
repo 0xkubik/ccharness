@@ -56,12 +56,10 @@ or `find-goal`, both count.
 | **Present** | **Read it = the goal.** A prompt (if given) scopes the run to a theme/area; no prompt = full survey. Then read the roadmap (below) and proceed to Phase 1.                                                                                                                |
 
 **Read the roadmap (if any).** Look for `.claude/ccharness/roadmap.md`. If present, read it and derive
-the **frontier** = the unchecked `[ ]` milestones of the **earliest `## Stage` that still has any
-unchecked box** (tracking is checkboxes only — no separate pointer; the frontier is a _set_, often
-just one). A roadmap with **no stage headings** is a legacy line → each milestone its own stage → the
-frontier is exactly the first unchecked box (unchanged behaviour). The frontier biases Phase 2 and
-Phase 3. If absent, what-to-do runs exactly as before (unbiased) — you may emit a one-line nudge _("no
-roadmap yet — `/find-goal` charts the route far ahead")_, then proceed.
+the **frontier** = the **first unchecked `[ ]` box** (the roadmap is a flat ordered list; tracking is
+checkboxes only — no separate pointer). The frontier biases Phase 2 and Phase 3. If absent, what-to-do
+runs exactly as before (unbiased) — you may emit a one-line nudge _("no roadmap yet — `/find-goal`
+charts the route far ahead")_, then proceed.
 
 ---
 
@@ -69,11 +67,12 @@ roadmap yet — `/find-goal` charts the route far ahead")_, then proceed.
 
 Build a short, factual picture of the _current_ product from the repo: `README`, docs, recent commits and scattered `TODO`/`FIXME`/stub markers. Two or three paragraphs, not an audit. This is the "now"; the North Star is the "end"; the distance between them is the working field every lens explores. Hand this picture to all four lenses so none re-reads the whole repo from scratch.
 
-**Milestone check (only if a roadmap exists).** Compare the survey against the `done when:` of **each
-frontier milestone** (there may be several parallel ones). For every one that now appears met:
+**Milestone check (only if a roadmap exists).** Compare the survey against the `done when:` of the
+**frontier milestone** (and any directly following it that also now appear met). For every one that now
+appears met:
 
-- _Interactive run:_ offer to check it off (`[ ]` → `[x]` in `roadmap.md`). When the last
-  unchecked milestone of the current stage gets checked, the frontier advances to the next stage.
+- _Interactive run:_ offer to check it off (`[ ]` → `[x]` in `roadmap.md`). The frontier then advances
+  to the next unchecked box.
 - _Under the musician:_ **auto-mark it** `[x]` (no human mid-loop to confirm). See the musician's
   contract.
 
@@ -83,10 +82,10 @@ frontier milestone** (there may be several parallel ones). For every one that no
 
 Dispatch four subagents in parallel, one per move. Give each: the **North Star block**, the
 **Phase-1 survey**, its **move mandate**, and — **if a roadmap exists** — the **current frontier
-milestones (+ the next stage's)** as _orienting context_. The frontier is a **steer, not a gate**:
+milestone (+ the next few)** as _orienting context_. The frontier is a **steer, not a gate**:
 each lens still scans its whole lane freely, still honours the empty-lane valve, and may still surface
-off-roadmap candidates — it just also actively looks for material that advances _any_ frontier
-milestone. (Ranking in Phase 3 can only reorder what the lenses produce, so the roadmap must reach
+off-roadmap candidates — it just also actively looks for material that advances the **frontier
+milestone (or one soon after)**. (Ranking in Phase 3 can only reorder what the lenses produce, so the roadmap must reach
 them here, not only at ranking.) Each lens may read deeper _in its own lane_ but stays in that lane —
 ADD does not propose refactors, REFACTOR does not propose features.
 
@@ -136,7 +135,7 @@ the North Star (is the product in production?) swings the same candidate:
 | **Yes — move carefully** | REBUILD is expensive (live users); favour FINISH/REFACTOR + careful, incremental ADD | incremental only                         | reversibility is the dominant multiplier |
 
 **3. Roadmap-fit** (only if a roadmap exists). Apply a final adjustment from each candidate's
-`advances`: advances any frontier milestone → **boost**; a next-stage milestone → light boost;
+`advances`: advances the frontier milestone → **boost**; a near-future milestone → light boost;
 **off-roadmap → no boost, but never dropped.** This is _bias, not a gate_ — a strong off-roadmap
 candidate that ranks high on its own merits still ranks high and still appears.
 
@@ -192,11 +191,11 @@ what-to-do's.
 
 ## Quick reference
 
-`0` Ground — `## Product North Star` heading? no → **route to `/find-goal`**, stop; yes → read = goal, then read `.claude/ccharness/roadmap.md` (**frontier** = unchecked
-`[ ]` of the earliest open `## Stage`; no headings = first `[ ]`) · `1` Survey — repo = where we are
-now; if roadmap, check **each frontier milestone's** `done when` (interactive: offer to check off ·
+`0` Ground — `## Product North Star` heading? no → **route to `/find-goal`**, stop; yes → read = goal, then read `.claude/ccharness/roadmap.md` (**frontier** = the
+first unchecked `[ ]` of the flat list) · `1` Survey — repo = where we are
+now; if roadmap, check the **frontier milestone's** `done when` (interactive: offer to check off ·
 under the musician: auto-mark) · `2` Fan-out — four lenses (ADD / FINISH / REBUILD / REFACTOR), parallel,
-empty-lane valve, **fed the frontier milestones as a steer (not a gate)** · `3`
+empty-lane valve, **fed the frontier milestone as a steer (not a gate)** · `3`
 Rank — dedupe + score + **production-caution** (in production → careful; not → carte blanche) +
 **roadmap-fit** → menu (off-roadmap never dropped) · `4` Boundary — interactive: `AskUserQuestion`
 multiSelect per lens → checked **list** → how-to-do; under the musician: emit menu as data, **no

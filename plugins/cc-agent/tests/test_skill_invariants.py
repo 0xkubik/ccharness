@@ -126,8 +126,8 @@ class TestMusicianSkill(unittest.TestCase):
         self.assertIn("no spend flag", self.text.lower())
 
     def test_roadmap_upkeep_route_not_goal(self):
-        # B: the musician may edit the ROUTE (mark done / add sub-step) within the current version,
-        # but the GOAL layer (North Star + version defs) is read-only; future versions are proposals.
+        # B: the musician may edit the ROUTE (mark a feature done) but the GOAL layer (North Star +
+        # the roadmap's feature set / ordering) is read-only; forward ideas are proposals.
         self.assertIn("roadmap-proposals.md", self.text)
         lowered = self.text.lower()
         self.assertIn("route", lowered)       # the musician may edit the route

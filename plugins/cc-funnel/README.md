@@ -38,15 +38,15 @@ Then **ground your product once** — every funnel command depends on it:
 ```
 /find-goal
 ```
-This captures the product's *North Star* (the goal) into `CLAUDE.md` and then offers to chart the
-*roadmap* (the milestone route to it). Until a North Star exists, the other commands route you here.
+This captures the product's *North Star* (the goal) into `CLAUDE.md` and then offers to lay out the
+*roadmap* (the ordered feature list — the route to it). Until a North Star exists, the other commands route you here.
 
 ## The commands
 
 | Command | What it does | When you reach for it |
 |---|---|---|
-| **`/find-goal`** | The **grounding loop** — the front door. Captures the product's *North Star* (goal-setting: vision · core problem · level) into `CLAUDE.md`, then **offers** to chart the *roadmap* — a *layered* route of lightweight milestones (`done when …` + theme): ordered **stages**, with **parallel milestones inside each** (`order → split stages; independent → same stage`), saved to `.claude/ccharness/roadmap.md`. Run once up front; re-run any time to revise — goal or roadmap, no flag. Every other command routes here when no North Star exists. | "Set the goal and plan the project far ahead." |
-| **`/what-to-do [theme]`** | The **direction loop.** Surveys a product and emits a **ranked menu** of where it could go next — across four moves: **add** (new features), **finish** (half-built work), **rebuild** (redo better), **refactor** (tech debt) — each scored against the product's goal, and **biased toward the roadmap's current frontier** (the parallel milestones open now) if one exists. Requires the *North Star* — no North Star → routes you to `/find-goal`. Runs with or without a prompt. Decides nothing — you pick. | "Where should this product go next?" |
+| **`/find-goal`** | The **grounding loop** — the front door. Captures the product's *North Star* (goal-setting: vision · core problem · level) into `CLAUDE.md`, then **offers** to lay out the *roadmap* — a **flat, ordered list of features** (each `done when …`), built top to bottom, saved to `.claude/ccharness/roadmap.md`. Run once up front; re-run any time to revise — goal or roadmap, no flag. Every other command routes here when no North Star exists. | "Set the goal and plan the project far ahead." |
+| **`/what-to-do [theme]`** | The **direction loop.** Surveys a product and emits a **ranked menu** of where it could go next — across four moves: **add** (new features), **finish** (half-built work), **rebuild** (redo better), **refactor** (tech debt) — each scored against the product's goal, and **biased toward the roadmap's current frontier** (the next unbuilt feature) if one exists. Requires the *North Star* — no North Star → routes you to `/find-goal`. Runs with or without a prompt. Decides nothing — you pick. | "Where should this product go next?" |
 | **`/how-to-do <decision>`** | The **decision loop.** Works out HOW to build a picked direction (or resolves a standalone technical fork) — four opposed proposers (MVP / Final / Conventional / Contrarian) argue different ways to build it → cross-examination → synthesis into ONE buildable approach. It decides the *how*, not *whether* (the pick is what-to-do's); a pick that looks wrong it flags rather than overrides. Depth scales to stakes. | "How to build it — and why?" |
 | **`/do <task>`** | The **strict executor.** Runs one well-scoped task through a gated pipeline (below) to a **smoke-checked** finish, then **hands off to `/refactor-review-test`**. Requires the *North Star* (routes to `/find-goal` if missing). Refuses fork-laden or ambiguous tasks instead of guessing — a technical fork goes back to `/how-to-do`, a non-technical (business) one it refuses outright, pure ambiguity to brainstorming; never declares done with work open; **never commits** (that's refactor-review-test's). | "Build this concrete task." |
 | **`/refactor-review-test [target]`** | The **autonomous hardener** — the tail of the funnel. Takes the change `/do` just built (or existing code) and carries it to a *solid* finish: safety-net tests → behavior-preserving refactor (`/simplify` + `code-simplifier`) → review (`/code-review`) with fixes **applied, not reported** → full test coverage → verified **local commit**. Fully autonomous — it **never hands work back to a human**; a genuine behavior/product fork it flags to the conductor, never asks. `/do` always hands off here; also runs standalone. | "Harden this to done." |
@@ -62,12 +62,12 @@ each owning a different kind of thinking:
 
 - **`/find-goal`** *grounds* — the front door. It interviews you for the product's **North Star**
   (vision · core problem · level `1/2/3`) and writes it to `CLAUDE.md`, then offers to chart the
-  **roadmap** — a *layered* route of lightweight milestones to that goal (ordered stages, parallel
-  milestones within each: `.claude/ccharness/roadmap.md`). Every other command depends on the North
+  **roadmap** — a **flat, ordered list of features** toward that goal
+  (`.claude/ccharness/roadmap.md`). Every other command depends on the North
   Star; without it, they route you here.
 - **`/what-to-do`** *diverges* — it generates the agenda. Its menu has **nothing selected**; picking
   is not its job. It reads the North Star and ranks moves *toward it* — **biased toward the roadmap's
-  current frontier** (the parallel milestones open now) if one exists — which keeps the menu from
+  current frontier** (the next unbuilt feature) if one exists — which keeps the menu from
   degenerating into generic feature-list filler.
 - **`/how-to-do`** *converges* — you hand it one picked direction (or any fork) and it works out
   **how** to build it, reasoning the implementation forks down to a single buildable approach, then

@@ -126,17 +126,16 @@ When your work maps to the product's roadmap (`.claude/ccharness/roadmap.md`), k
 current as you finish — but never touch the **goal**. The split is structural, not a matter of being
 careful:
 
-- **You MAY edit the route** — the steps toward an already-agreed goal, within the **current
-  version**: mark a milestone/step `[x]` when it is observably done, and add or split a sub-step your
-  work revealed is missing. That is a truthful state update, not invention.
-- **The goal layer is READ-ONLY to you:** the North Star in `CLAUDE.md`, and the roadmap's version
-  definitions, ordering, and priorities. Never restructure versions, never add a future version,
-  never re-prioritize. That layer is `find-goal`'s — set with the human. Silently rewriting it is the
-  goal-drift you must not cause.
+- **You MAY edit the route** — the progress toward an already-agreed goal: mark a feature `[x]` when it
+  is observably done. That is a truthful state update, not invention.
+- **The goal layer is READ-ONLY to you:** the North Star in `CLAUDE.md`, and the roadmap's feature set,
+  ordering, and priorities. Never reorder features, never add a future feature, never re-prioritize.
+  That layer is `find-goal`'s — set with the human. Silently rewriting it is the goal-drift you must
+  not cause.
 - **Work revealed the goal itself is wrong / misframed?** That is not a roadmap edit — it is the
   `declined` / intent-reframe exit: surface *"the real target looks different — revise via
   `/find-goal`?"* and close. The human decides.
-- **A forward-looking idea** ("v2 might need X", a later version could…) → **propose, don't commit:**
+- **A forward-looking idea** ("a later feature might need X", something further down the list could…) → **propose, don't commit:**
   append a line to `.claude/ccharness/roadmap-proposals.md` (create if missing) and note it in your
   closing report. `find-goal` reads that file on its next run and surfaces it to the human; you never
   fold it into the roadmap yourself.

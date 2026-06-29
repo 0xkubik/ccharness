@@ -2,7 +2,7 @@
 
 Before doing substantive work, you need a real goal to aim at — and in this harness the goal isn't
 something you guess or hand-wave. It's set by running the **`/find-goal`** skill, which captures the
-product's North Star into `CLAUDE.md` and versions the road to it (v0 → v1 → …) in
+product's North Star into `CLAUDE.md` and lays out the road to it as a flat, ordered feature list in
 `.claude/ccharness/roadmap.md`. Building without that produces motion, not progress — plausible
 output that may solve the wrong thing. When the grounding isn't there, **stop and send the user to
 `/find-goal`** instead of inferring a goal yourself.
@@ -12,8 +12,8 @@ output that may solve the wrong thing. When the grounding isn't there, **stop an
   `/find-goal` writes. If it's missing, surface that and ask the user to run `/find-goal` — don't
   infer a goal from thin context and run with it.
 - **A roadmap is required once the work is multi-step.** For anything beyond a small, self-contained
-  change, there must be the versioned roadmap `/find-goal` produces at `.claude/ccharness/roadmap.md`
-  — the versions and their ordered stages — before execution starts. A one-line fix needs only the
+  change, there must be the flat, ordered feature list `/find-goal` produces at
+  `.claude/ccharness/roadmap.md` — before execution starts. A one-line fix needs only the
   goal; a feature needs both, so route to `/find-goal`.
 - **Don't silently fill the gap.** If the goal or the roadmap is missing, say so plainly and point
   the user at `/find-goal` — don't invent one and proceed as though it were given.

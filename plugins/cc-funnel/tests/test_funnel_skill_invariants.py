@@ -18,24 +18,21 @@ class TestFindGoalSkill(unittest.TestCase):
         # find-goal owns the shared North Star contract block.
         self.assertIn("## Product North Star", self.text)
 
-    def test_layered_stage_format(self):
-        # The roadmap is layered into `## Stage` bands — the format every consumer reads.
-        self.assertIn("## Stage", self.text)
+    def test_flat_feature_list_format(self):
+        # The roadmap is a flat, ordered feature list — no stages, no versions.
+        self.assertIn("flat", self.text.lower())
+        self.assertNotIn("## Stage", self.text)
 
     def test_frontier_replaces_pointer(self):
         self.assertIn("frontier", self.text.lower())
 
-    def test_stage_rule(self):
-        # The governing rule: order → split stages; independent → same stage.
-        self.assertIn("same stage", self.text.lower())
+    def test_ordering_rule(self):
+        # The governing rule: need "A before B" → A goes higher; the order is the plan.
+        self.assertIn("a before b", self.text.lower())
 
     def test_document_order_canonical(self):
-        # Doc order = a valid sequential walk, so "first unchecked" stays well-defined.
+        # Doc order = build order, so "first unchecked" stays well-defined.
         self.assertIn("document order", self.text.lower())
-
-    def test_legacy_line_compat(self):
-        # A roadmap with no stage headings must still behave like the old linear one.
-        self.assertIn("legacy", self.text.lower())
 
 
 class TestWhatToDoSkill(unittest.TestCase):
@@ -47,7 +44,7 @@ class TestWhatToDoSkill(unittest.TestCase):
 
     def test_reads_frontier(self):
         self.assertIn("frontier", self.text.lower())
-        self.assertIn("## Stage", self.text)
+        self.assertNotIn("## Stage", self.text)
 
     def test_roadmap_biases_never_gates(self):
         # off-roadmap moves are never dropped.
