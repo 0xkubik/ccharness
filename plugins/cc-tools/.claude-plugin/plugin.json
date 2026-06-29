@@ -1,7 +1,7 @@
 {
   "name": "cc-tools",
-  "version": "0.19.3",
-  "description": "cc-tools — the tools layer of the cc-* harness: philosophy-agnostic helpers usable in any project. /crux unwinds a pain, doubt, or blockage into ONE diagnosis and angle of attack; /slap resets a fix stuck in a rabbit hole; /cc-init onboards a project onto the harness (dependencies, recommended rules, a reminder cheat-sheet, doc reconciliation); plus a set of recommended project rules installed into .claude/rules/. The product funnel lives in cc-funnel; the musician (cc-agent) drives it; cc-maestro supervises.",
+  "version": "0.20.0",
+  "description": "cc-tools — the tools layer of the cc-* harness: philosophy-agnostic helpers usable in any project. /crux unwinds a pain, doubt, or blockage into ONE diagnosis and angle of attack; /slap resets a fix stuck in a rabbit hole; /cc-init is the onboarding orchestrator — it explains the four plugins, installs dependencies and recommended tools, then runs three setup skills (/rules-management installs recommended + project rules, /cheatsheet-management builds the reminder cheat-sheet, /docs-management finds stale prose) and offers /roadmap-management; plus a set of recommended project rules installed into .claude/rules/. The product funnel lives in cc-funnel; the musician (cc-agent) drives it; cc-maestro supervises.",
   "author": {
     "name": "kubik",
     "email": "dev@noxlabs.xyz"

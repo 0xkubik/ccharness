@@ -29,10 +29,10 @@ harness with the plugins the funnel orchestrates (see [What it orchestrates](#wh
 ```
 /cc-init
 ```
-`/cc-init` (from cc-tools) is a 5-stage setup wizard (each stage skippable, driven by your choices): it
-installs missing dependencies, installs the harness's recommended rules into this project's
-`.claude/rules/`, builds the reminder cheat-sheet a hook re-surfaces every few prompts, reconciles your
-docs against reality, and offers to run `/roadmap-management`. Idempotent — re-run any time (e.g. on a new machine).
+`/cc-init` (from cc-tools) is an onboarding orchestrator (each step skippable, driven by your choices):
+it explains the four plugins, installs missing dependencies and recommended tools, then runs three
+skills — `/rules-management`, `/cheatsheet-management`, `/docs-management` — and offers to run
+`/roadmap-management`. Idempotent — re-run any time (e.g. on a new machine).
 
 Then **ground your product** — every funnel command depends on it:
 ```

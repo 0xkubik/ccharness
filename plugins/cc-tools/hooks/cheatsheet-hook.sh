@@ -3,9 +3,9 @@
 # cheat-sheet of the tools and rules available in this project, right before the new prompt
 # where it's most visible — so they don't fade from the model's attention mid-session.
 #
-# Dumb by design: it only prints a file that /cc-init's "Build the reminder cheat-sheet" stage
-# generated. No file → no-op, so shipping the hook is harmless until that stage has run. Delete
-# or rename the file to turn the reminder off.
+# Dumb by design: it only prints a file that the cheatsheet-management skill generated. No file →
+# no-op, so shipping the hook is harmless until that skill has run. Delete or rename the file to turn
+# the reminder off.
 #
 # "Every Nth" is counted from the session transcript, not a counter file, so concurrent sessions
 # in the same repo never clobber each other: each session has its own transcript. Real prompts

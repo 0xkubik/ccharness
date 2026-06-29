@@ -5,6 +5,10 @@ ROOT = Path(__file__).resolve().parent.parent
 RULES_DIR = ROOT / "rules"
 LEAN = RULES_DIR / "keep-files-lean.md"
 CC_INIT = ROOT / "commands" / "cc-init.md"
+SKILLS = ROOT / "skills"
+RULES_SKILL = SKILLS / "rules-management" / "SKILL.md"
+CHEATSHEET_SKILL = SKILLS / "cheatsheet-management" / "SKILL.md"
+DOCS_SKILL = SKILLS / "docs-management" / "SKILL.md"
 
 
 class TestSeedRule(unittest.TestCase):
@@ -107,7 +111,7 @@ class TestDistributableRules(unittest.TestCase):
         self.assertIn("structural fork", low)  # a real layout fork is decided, not guessed
 
 
-class TestCcInitWizard(unittest.TestCase):
+class TestCcInitOrchestrator(unittest.TestCase):
     def setUp(self):
         self.text = CC_INIT.read_text() if CC_INIT.exists() else ""
 
@@ -117,82 +121,132 @@ class TestCcInitWizard(unittest.TestCase):
     def test_uses_askuserquestion(self):
         self.assertIn("AskUserQuestion", self.text)
 
-    def test_five_stages_present(self):
-        low = self.text.lower()
-        for marker in ("## stage 1", "## stage 2", "## stage 3", "## stage 4", "## stage 5"):
-            self.assertIn(marker, low)
-        self.assertNotIn("## stage 6", low)
+    def test_orientation_explains_four_plugins(self):
+        # The new opening: explain the four plugins before doing anything.
+        for plugin in ("cc-tools", "cc-funnel", "cc-agent", "cc-maestro"):
+            self.assertIn(plugin, self.text)
 
-    def test_cheatsheet_stage_builds_width_capped_sheet(self):
-        # Stage 3 generates the reminder cheat-sheet the UserPromptSubmit hook prints.
-        low = self.text.lower()
-        self.assertIn("cheat-sheet", low)
-        self.assertIn(".claude/ccharness/cheatsheet.md", self.text)
-        self.assertIn("80 characters", low)  # the hard per-line width limit
-        self.assertIn("claude mcp list", self.text)  # inventories installed MCP servers
+    def test_orchestrates_three_skills(self):
+        # init is now an orchestrator: Stage 0 installs inline, then it invokes the three skills.
+        self.assertIn("## Stage 0", self.text)
+        for skill in ("rules-management", "cheatsheet-management", "docs-management"):
+            self.assertIn(skill, self.text)
 
-    def test_cheatsheet_has_fixed_marker_structure(self):
-        # cheatsheet.md is wrapped in begin/end markers that frame the injected block.
-        self.assertIn("<cheatsheet>", self.text)
-        self.assertIn("</cheatsheet>", self.text)
-
-    def test_cheatsheet_is_user_selected_paginated_with_justification(self):
-        low = self.text.lower()
-        self.assertIn("multiselect", low)                       # tick lines, not a wall of text
-        self.assertIn("paginated", low)                         # AskUserQuestion page by page
-        self.assertIn("only the ticked lines are written", low)  # no silent write
-        self.assertIn("justification", low)                     # carried per option
-        self.assertIn("what you saw", low)
-
-    def test_cheatsheet_excludes_project_specifics(self):
-        # Hard scope rule: only always-loaded tooling, nothing tied to this project.
-        low = self.text.lower()
-        self.assertIn("nothing project-specific", low)
-        for src in ("plugins", "skills", "agents", "mcp"):
-            self.assertIn(src, low)
-
-    def test_stage1_antihang_preserved(self):
-        # The </dev/null guard on `claude plugin` calls must survive the rewrite.
+    def test_install_stays_inline(self):
+        # Dependency install stays in init (Stage 0), with its anti-hang + user-scope guards.
+        self.assertIn("--scope user", self.text)
         self.assertIn("/dev/null", self.text)
 
-    def test_stage1_user_scope_preserved(self):
-        self.assertIn("--scope user", self.text)
-
     def test_offers_external_codegraph_and_headroom(self):
-        # Stage 1 also offers the two non-marketplace MCP tools, with real repos + install commands.
         self.assertIn("https://github.com/colbymchenry/codegraph", self.text)
         self.assertIn("https://github.com/headroomlabs-ai/headroom", self.text)
         self.assertIn("npm install -g @colbymchenry/codegraph", self.text)
         self.assertIn('pip install "headroom-ai[all]"', self.text)
 
     def test_dropped_plugins_absent_from_install_set(self):
-        # playwright ships with Claude Code, commits/PRs use git directly, gitlab dropped — none installed.
         for name in ("playwright", "commit-commands", "gitlab", "GitLab"):
             self.assertNotIn(name, self.text)
 
-    def test_stage2_from_plugin_root_to_project_rules(self):
-        self.assertIn("CLAUDE_PLUGIN_ROOT", self.text)
-        self.assertIn(".claude/rules/", self.text)
-
-    def test_stage2_batches_rules_under_four_option_cap(self):
-        # rules/ already ships >4 rules, but AskUserQuestion caps a question at 4 options. Stage 2
-        # must batch across several multiSelect questions, not cram every rule into one question.
-        self.assertGreater(len(list(RULES_DIR.glob("*.md"))), 4)
-        self.assertIn("4 options", self.text.lower())
-
-    def test_no_usage_bridge_stage(self):
-        # The usage bridge moved to cc-maestro: cc-init must not reference it any more.
+    def test_no_usage_bridge(self):
         self.assertNotIn("cc-usage-statusline.sh", self.text)
         self.assertNotIn("CC_USAGE_DOWNSTREAM", self.text)
-
-    def test_doc_reconcile_prose_only(self):
-        self.assertIn("Code and tests are out of scope", self.text)
 
     def test_offers_roadmap_management(self):
         self.assertIn("/roadmap-management", self.text)
 
     def test_idempotent_documented(self):
         self.assertIn("idempotent", self.text.lower())
+
+    def test_explains_as_it_goes(self):
+        # The user's requirement: explain what each step does and why, not just execute.
+        self.assertIn("explain as you go", self.text.lower())
+
+
+class TestRulesSkill(unittest.TestCase):
+    def setUp(self):
+        self.text = RULES_SKILL.read_text() if RULES_SKILL.exists() else ""
+
+    def test_exists(self):
+        self.assertTrue(RULES_SKILL.exists(), "rules-management SKILL.md missing")
+
+    def test_resolves_plugin_rules_robustly_into_project_rules(self):
+        # CLAUDE_PLUGIN_ROOT is unreliable in skill context (issue #9354) — the skill must locate
+        # cc-tools' rules/ via installed_plugins.json + cache-glob fallback, then copy into the project.
+        self.assertIn("installed_plugins.json", self.text)
+        self.assertNotIn("CLAUDE_PLUGIN_ROOT", self.text)  # the env-var bet that would silently fail
+        self.assertIn(".claude/rules/", self.text)
+
+    def test_batches_rules_under_four_option_cap(self):
+        # rules/ ships >4 rules; AskUserQuestion caps a question at 4 options → must batch.
+        self.assertGreater(len(list(RULES_DIR.glob("*.md"))), 4)
+        self.assertIn("4 options", self.text.lower())
+
+    def test_captures_project_own_rules(self):
+        # The added step: after the recommended set, capture the project's own rules.
+        self.assertIn("project's own", self.text.lower())
+
+    def test_explains_as_it_goes(self):
+        self.assertIn("explain as you go", self.text.lower())
+
+
+class TestCheatsheetSkill(unittest.TestCase):
+    def setUp(self):
+        self.text = CHEATSHEET_SKILL.read_text() if CHEATSHEET_SKILL.exists() else ""
+
+    def test_exists(self):
+        self.assertTrue(CHEATSHEET_SKILL.exists(), "cheatsheet-management SKILL.md missing")
+
+    def test_builds_width_capped_sheet(self):
+        low = self.text.lower()
+        self.assertIn("cheat-sheet", low)
+        self.assertIn(".claude/ccharness/cheatsheet.md", self.text)
+        self.assertIn("80 characters", low)
+        self.assertIn("claude mcp list", self.text)
+
+    def test_fixed_marker_structure(self):
+        self.assertIn("<cheatsheet>", self.text)
+        self.assertIn("</cheatsheet>", self.text)
+
+    def test_user_selected_paginated_with_justification(self):
+        low = self.text.lower()
+        self.assertIn("multiselect", low)
+        self.assertIn("paginated", low)
+        self.assertIn("only the ticked lines are written", low)
+        self.assertIn("justification", low)
+        self.assertIn("what you saw", low)
+
+    def test_excludes_project_specifics(self):
+        low = self.text.lower()
+        self.assertIn("nothing project-specific", low)
+        for src in ("plugins", "skills", "agents", "mcp"):
+            self.assertIn(src, low)
+
+    def test_explains_as_it_goes(self):
+        self.assertIn("explain as you go", self.text.lower())
+
+
+class TestDocsSkill(unittest.TestCase):
+    def setUp(self):
+        self.text = DOCS_SKILL.read_text() if DOCS_SKILL.exists() else ""
+
+    def test_exists(self):
+        self.assertTrue(DOCS_SKILL.exists(), "docs-management SKILL.md missing")
+
+    def test_prose_only(self):
+        self.assertIn("Code and tests are out of scope", self.text)
+
+    def test_scans_specs_and_plans(self):
+        # The user explicitly asked for specs and plans to be in scope.
+        low = self.text.lower()
+        self.assertIn("specs", low)
+        self.assertIn("plans", low)
+
+    def test_finds_stale(self):
+        # The framing shift: surface what's stale for the human, not a silent reconcile.
+        self.assertIn("stale", self.text.lower())
+
+    def test_explains_as_it_goes(self):
+        self.assertIn("explain as you go", self.text.lower())
 
 
 if __name__ == "__main__":

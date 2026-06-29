@@ -1,36 +1,52 @@
 ---
-description: "5-stage onboarding wizard for the cc-* harness, driven by AskUserQuestion. Stage 1 installs missing marketplace dependencies and offers the recommended external tools (codegraph, headroom); Stage 2 installs the harness's recommended rules into this project's .claude/rules/; Stage 3 builds the reminder cheat-sheet — the always-loaded plugins, skills, agents, and MCP, nothing project-specific — that a UserPromptSubmit hook re-surfaces every few prompts; Stage 4 reconciles the project's prose docs against your current understanding so stale text doesn't mislead later decisions; Stage 5 offers to run /roadmap-management. Every stage is offered and skippable; idempotent — safe to re-run."
+description: "Onboarding orchestrator for the cc-* harness, driven by AskUserQuestion. Opens with an orientation explaining the four plugins (cc-tools, cc-funnel, cc-agent, cc-maestro); Stage 0 installs missing marketplace dependencies and offers the recommended external tools (codegraph, headroom); then it runs three skills behind skip/stop gates — rules-management (recommended + project rules), cheatsheet-management (the reminder cheat-sheet), docs-management (find stale prose) — and finally offers /roadmap-management. Every step is offered and skippable; idempotent — safe to re-run."
 argument-hint: "(no arguments)"
 ---
 
-# cc-init — set up the harness in five guided stages
+# cc-init — onboard the harness, explaining as you go
 
-A guided onboarding wizard. It runs five stages in order, each gated by an `AskUserQuestion` prompt
-so you choose what happens at every step:
-
-1. **Install dependencies** — the marketplace plugins the harness orchestrates.
-2. **Install rules** — the harness's recommended rule files, into this project's `.claude/rules/`.
-3. **Build the reminder cheat-sheet** — inventory the always-loaded tooling (plugins, skills,
-   agents, MCP — nothing project-specific) and write a short cheat-sheet a hook re-surfaces every
-   few prompts so it doesn't fade from context.
-4. **Reconcile docs with reality** — check the project's prose docs against your current
-   understanding so stale text doesn't quietly steer later decisions.
-5. **Offer `/roadmap-management`** — set the product's North Star.
+A guided onboarding **orchestrator**. It opens by explaining the harness, installs dependencies itself,
+then hands the rest to three focused skills, gating every step with `AskUserQuestion`.
+**Explain as you go — don't just run steps.** At each stage, tell the human in plain language what it's
+for and why before you act, so it's always clear what's happening and why — not just files changing.
 
 ## Wizard flow
 
 - The stages run **in order** but are **independent** — skipping one never breaks a later one.
-- Each stage opens with an `AskUserQuestion` gate offering **Do it / Skip this stage / Stop the
-  wizard** ("Skip" → next stage; "Stop" → end cleanly). The final stage's gate is **Run now / Not
-  now**.
-- The command is **idempotent** — re-running re-detects state and acts only on gaps, never silently
-  clobbering anything.
-- Use the `Bash` tool for shell steps. Redirect stdin from `/dev/null` on every `claude plugin …`
-  call so a prompt can never hang the session.
+- Each stage opens with an `AskUserQuestion` gate offering **Do it / Skip this stage / Stop the wizard**
+  ("Skip" → next stage; "Stop" → end cleanly). The final stage's gate is **Run now / Not now**. The
+  gates live here; the skills this orchestrates are gate-free — they just do the work (their own
+  `AskUserQuestion` choices, like *which* rules or *which* cheat-sheet lines, are part of that work).
+- It is **idempotent** — re-running re-detects state and acts only on gaps, never silently clobbering.
+- Use the `Bash` tool for shell steps. Redirect stdin from `/dev/null` on every `claude plugin …` call
+  so a prompt can never hang the session.
 
 ---
 
-## Stage 1 — Install missing dependencies
+## Orientation — what the harness is (the four plugins)
+
+Before doing anything, explain the harness to the human in plain language — what the four plugins are,
+how they work together, and what's in each. Keep it short and concrete:
+
+- **cc-tools** (this plugin) — the **helpers layer**, usable in any project: `/crux` (unwind a pain or
+  doubt into one diagnosis), `/slap` (reset a fix stuck in a rabbit hole), this `/cc-init`, the three
+  setup skills it orchestrates (`rules-management`, `cheatsheet-management`, `docs-management`), and a
+  set of recommended project rules.
+- **cc-funnel** — the **product funnel**: `/roadmap-management` (set the goal + ordered feature list) →
+  `/what-to-do` (rank where to go next) → `/how-to-do` (decide one fork) → `/do` (build one task to a
+  smoke-checked finish) → `/refactor-review-test` (harden it and commit). A ground → diverge → decide →
+  build pipeline.
+- **cc-agent** — the **self-driving layer**: `/musician` carries ONE piece of work end to end — it
+  thinks first (and may decline a bad idea), plays the funnel instruments, builds in an isolated
+  worktree, and closes itself. Bounded, not a never-stop loop.
+- **cc-maestro** — the **conductor**: the `ccmaestro` console (`/maestro`) watches and controls many
+  running agents at once — token burn, stalls, loops, stop/steer.
+
+Then move into the stages.
+
+---
+
+## Stage 0 — Install dependencies & tools
 
 The cc-funnel funnel is glue: `/what-to-do`, `/how-to-do`, and `/do` route to skills from **other**
 plugins. Those plugins are not bundled — this stage installs them.
@@ -52,8 +68,8 @@ All of these live in the official marketplace `claude-plugins-official`
 > **Source of truth:** this table mirrors the "What it orchestrates" section of
 > `plugins/cc-funnel/README.md`. If you add or drop a dependency, update **both**.
 
-Missing plugins are not fatal — the harness simply skips those routes. This stage just makes the
-full set available.
+Missing plugins are not fatal — the harness simply skips those routes. This stage just makes the full
+set available.
 
 **1. Check the CLI is available**
 
@@ -61,9 +77,9 @@ full set available.
 claude --version < /dev/null
 ```
 
-If `claude` is not found, **stop** and tell the user the harness must be installed/run via the
-Claude Code CLI for this command to work — then print the manual install commands below so they can
-run them by hand.
+If `claude` is not found, **stop** and tell the user the harness must be installed/run via the Claude
+Code CLI for this command to work — then print the manual install commands below so they can run them by
+hand.
 
 **2. Detect current state**
 
@@ -72,21 +88,20 @@ claude plugin marketplace list < /dev/null
 claude plugin list < /dev/null
 ```
 
-From the output determine:
-- whether the `claude-plugins-official` marketplace is already configured, and
-- which of the six plugins above are already installed (any scope counts).
+From the output determine whether the `claude-plugins-official` marketplace is already configured, and
+which of the six plugins above are already installed (any scope counts).
 
-**3. Gate + show the plan.** If nothing is missing, report "all six dependencies already installed
-— nothing to do" and move straight on to the recommended external tools below (no gate needed). Otherwise print a short plan
-listing the marketplace add (only if not configured) and the **missing** plugins, noting the
-already-installed ones will be **skipped**, and state that installation is **user scope**
+**3. Gate + show the plan.** If nothing is missing, report "all six dependencies already installed —
+nothing to do" and move straight on to the recommended external tools below (no gate needed). Otherwise
+print a short plan listing the marketplace add (only if not configured) and the **missing** plugins,
+noting the already-installed ones will be **skipped**, and state that installation is **user scope**
 (`--scope user`) — it changes global Claude Code config, not just this repo. Then gate with
 `AskUserQuestion`:
 
 - question: "Install the missing harness dependencies?"
 - options: **Install missing** / **Skip this stage** / **Stop the wizard**
 
-On **Skip** → go to Stage 2. On **Stop** → end the wizard.
+On **Skip** → go to Stage 1. On **Stop** → end the wizard.
 
 **4. Install (on "Install missing").** Add the marketplace if it was missing:
 
@@ -100,14 +115,12 @@ Then install each **missing** plugin (skip the ones already present):
 claude plugin install <name>@claude-plugins-official --scope user < /dev/null
 ```
 
-…where `<name>` is each missing entry from the table. Capture the exit code of every install. A
-non-zero exit means that install failed (e.g. an unexpected prompt that hit EOF) — do **not** report
-it as installed; collect it for the failure list instead.
+…where `<name>` is each missing entry from the table. Capture the exit code of every install. A non-zero
+exit means that install failed (e.g. an unexpected prompt that hit EOF) — do **not** report it as
+installed; collect it for the failure list instead.
 
-**5. Report honestly.** Summarize what actually happened:
-- ✅ newly installed (with the names),
-- ⏭️  already present (skipped),
-- ❌ failed, if any — show the command and its output so the user can run it by hand.
+**5. Report honestly.** Summarize what actually happened: ✅ newly installed (with names), ⏭️ already
+present (skipped), ❌ failed, if any — show the command and its output so the user can run it by hand.
 
 > Newly installed plugins load on the **next** Claude Code session. Restart Claude Code (or start a
 > fresh session) for the harness to pick them up.
@@ -117,176 +130,72 @@ Do not claim success for any plugin whose install you did not see exit `0`.
 **6. Offer the recommended external tools.** Two tools the harness benefits from don't live in the
 marketplace — they install through their own tooling, not `claude plugin install`:
 
-- **codegraph** — indexed code intelligence: an MCP that searches and explores a codebase, far
-  better than raw `grep`/`Read` for "where is X / what calls Y". Repo:
+- **codegraph** — indexed code intelligence: an MCP that searches and explores a codebase, far better
+  than raw `grep`/`Read` for "where is X / what calls Y". Repo:
   https://github.com/colbymchenry/codegraph
-  - `npm install -g @colbymchenry/codegraph` → `codegraph install` (wires the MCP into Claude
-    Code) → `codegraph init` per project to build the index.
-- **headroom** — compresses tool outputs, logs, and files before they reach the model (60–95%
-  fewer tokens, same answers). Repo: https://github.com/headroomlabs-ai/headroom
+  - `npm install -g @colbymchenry/codegraph` → `codegraph install` (wires the MCP into Claude Code) →
+    `codegraph init` per project to build the index.
+- **headroom** — compresses tool outputs, logs, and files before they reach the model (60–95% fewer
+  tokens, same answers). Repo: https://github.com/headroomlabs-ai/headroom
   - `pip install "headroom-ai[all]"` → `headroom mcp install`.
 
-Gate with `AskUserQuestion` (`multiSelect: true`): **codegraph** / **headroom** / **Skip both**.
-Install only what's picked; **capture each exit code** and report honestly (✅ installed / ❌ failed,
-with the command and output) — never claim an install you didn't see exit `0`. Both register an MCP
-server that loads on the **next** session. If the user later asks to set up or troubleshoot either
-tool, start from its repo link above.
+Gate with `AskUserQuestion` (`multiSelect: true`): **codegraph** / **headroom** / **Skip both**. Install
+only what's picked; **capture each exit code** and report honestly (✅ installed / ❌ failed, with the
+command and output) — never claim an install you didn't see exit `0`. Both register an MCP server that
+loads on the **next** session. If the user later asks to set up or troubleshoot either tool, start from
+its repo link above.
 
 ---
 
-## Stage 2 — Install recommended rules
+## Stage 1 — Set up the rules
 
-The harness ships rule files (the `.claude/rules/` instructions Claude reads every session). This
-stage copies the ones you pick into **this project's** `.claude/rules/` (committed to your repo).
+Explain why first: rules are the always-loaded guidance Claude reads every session. Gate with
+`AskUserQuestion`:
 
-**1. Gate** with `AskUserQuestion`:
-- question: "Install the harness's recommended rules into this project?"
-- options: **Install rules** / **Skip this stage** / **Stop the wizard**
+- question: "Set up this project's rules now?"
+- options: **Set up rules** / **Skip this stage** / **Stop the wizard**
 
-On **Skip** → go to Stage 3. On **Stop** → end the wizard.
-
-**2. List the available rules.**
-
-```
-ls "${CLAUDE_PLUGIN_ROOT}/rules/"*.md < /dev/null
-```
-
-For each file, read its first heading line (`# …`) to use as a human-readable label.
-
-**3. Let the user choose** which to install with `AskUserQuestion`, `multiSelect: true` — one
-option per rule file (label = its heading) — so the user can install any subset. The tool caps each
-question at **4 options**; when there are more than four rules, split them across several
-`multiSelect` questions of ≤4 options each (up to 4 questions ride in one `AskUserQuestion` call;
-balance the batches so no question holds fewer than 2 options). Union the picks across all questions.
-
-**4. Copy each selected rule** to `.claude/rules/<filename>` in the current project (create
-`.claude/rules/` if it doesn't exist). **Before copying, check for a collision:** if
-`.claude/rules/<filename>` already exists, gate with `AskUserQuestion` (**Overwrite** / **Skip**) —
-never overwrite silently. Then:
-
-```
-mkdir -p .claude/rules
-cp "${CLAUDE_PLUGIN_ROOT}/rules/<file>" .claude/rules/<file>
-```
-
-**5. Report** which rules were installed, skipped, or overwritten. Note they load on the next
-session.
+On **Skip** → go to Stage 2. On **Stop** → end the wizard. On **Set up rules** → **invoke the
+`rules-management` skill**: it installs the recommended rules you pick into `.claude/rules/`, then offers
+to capture the project's own. It explains itself as it goes.
 
 ---
 
-## Stage 3 — Build the reminder cheat-sheet
+## Stage 2 — Build the reminder cheat-sheet
 
-Over a long session the model's attention to the capabilities it loaded at startup fades — it
-drifts back to its habitual moves (raw `grep`/`Read` instead of an indexed code search, forgetting
-a skill or agent it could dispatch). This stage writes a short cheat-sheet that a shipped
-`UserPromptSubmit` hook re-surfaces **every third prompt**, near the end of the context where it's
-most visible. The hook is dumb — it just prints this file; all the intelligence happens here, once.
+Explain why first: over a long session the model forgets the tooling it loaded at startup; a small
+cheat-sheet, re-surfaced by a hook, keeps it in view. Gate with `AskUserQuestion`:
 
-**The cheat-sheet only ever reminds of the always-loaded tooling** — the plugins, skills, agents,
-and MCP servers that come into *every* session automatically. **Nothing project-specific goes in
-it** — not the project's rules, code, conventions, or roadmap. Those already live in `CLAUDE.md` /
-`.claude/rules`; what the model forgets is the *capabilities* it has, so the sheet reminds of only
-those.
-
-**1. Gate** with `AskUserQuestion`:
-- question: "Build the reminder cheat-sheet for this project?"
+- question: "Build the reminder cheat-sheet?"
 - options: **Build it** / **Skip this stage** / **Stop the wizard**
 
-On **Skip** → go to Stage 4. On **Stop** → end the wizard.
-
-**2. Inventory the always-loaded capabilities** — the things that come into *every* session
-automatically, NOT anything tied to this project:
-- **Plugins** — `claude plugin list < /dev/null` (the installed set).
-- **Skills** — the slash-skills this session exposes (e.g. `/crux`, `/slap`, the funnel).
-- **Agents** — the subagent types available to dispatch (e.g. `Explore`, `Plan`).
-- **MCP servers** — `claude mcp list < /dev/null`; flag the ones worth preferring over a built-in
-  (an indexed code search over raw `grep`, a docs fetcher over memory).
-
-**Do not** read `.claude/rules`, the codebase, or the roadmap for this — project specifics never
-belong in the cheat-sheet.
-
-**3. Turn each into a candidate line** — shape *situation → preferred move*, plain, one capability
-per line. Keep the pool tight; a long sheet becomes wallpaper the model also learns to skip.
-
-**4. Enforce the width limit — strictly ≤ 80 characters per line.** Models miscount, so check the
-candidates mechanically and fix any offender — re-run until it prints nothing:
-
-```
-printf '%s\n' "<each candidate line>" | awk 'length > 80 {print NR": "length" chars"}'
-```
-
-**5. Let the user pick the lines — `AskUserQuestion`, `multiSelect: true`, paginated.** Don't
-dump a wall of text for approval; present the candidates as **tickable options** so the user keeps
-only what they want. One option per candidate line, and its **description carries the
-justification** — *what you saw* (which plugin / skill / agent / MCP) and *why it earned a line*.
-The tool caps a question at **4 options**, so split the candidates across several `multiSelect`
-questions of ≤4 options each (up to 4 questions per call; more than that → further calls, page by
-page). **Only the ticked lines are written**; `Other` lets the user add a line you didn't list.
-
-**6. Write the picked lines** to `.claude/ccharness/cheatsheet.md` (create `.claude/ccharness/` if
-needed), in this fixed structure — the `<cheatsheet>` / `</cheatsheet>` markers frame the block the
-hook injects, one line per line between them:
-
-```
-<cheatsheet>
-Search code: use the codegraph MCP, not raw grep/Read
-Lib/API docs: use the context7 MCP, not memory
-Stuck on a fix: /slap; murkier doubt: /crux
-Broad multi-file search: dispatch the Explore agent
-</cheatsheet>
-```
-
-**7. Report** what you wrote and how it behaves: active from the **next** session, injected on
-every third of your prompts; to turn it off, delete or rename `.claude/ccharness/cheatsheet.md`
-(the hook is a no-op without it).
+On **Skip** → go to Stage 3. On **Stop** → end the wizard. On **Build it** → **invoke the
+`cheatsheet-management` skill**: it inventories the always-loaded tooling, lets you pick the lines, and
+writes `.claude/ccharness/cheatsheet.md`. It explains itself as it goes.
 
 ---
 
-## Stage 4 — Reconcile docs with reality
+## Stage 3 — Check the docs for stale prose
 
-Stale prose quietly steers later decisions wrong. This stage checks the project's **descriptive
-docs** against your current understanding. It reads only prose — **Code and tests are out of
-scope.**
+Explain why first: prose drifts out of date and quietly misleads later decisions; this finds what's no
+longer true. Gate with `AskUserQuestion`:
 
-**1. Detect whether this is a working project.** It qualifies if any of these holds: there is at
-least one commit —
+- question: "Check this project's docs for stale prose?"
+- options: **Check docs** / **Skip this stage** / **Stop the wizard**
 
-```
-git rev-list --count HEAD 2>/dev/null
-```
-
-— or there are source files beyond `.claude/` config, or descriptive docs exist. If none of these
-hold → print "fresh project, nothing described yet — skipping" and go to Stage 5 (no gate).
-
-**2. Gate** with `AskUserQuestion`:
-- question: "Reconcile this project's docs against your current understanding?"
-- options: **Reconcile** / **Skip this stage** / **Stop the wizard**
-
-On **Skip** → go to Stage 5. On **Stop** → end the wizard.
-
-**3. Read the descriptive prose only** — `README*`, `docs/**`, `CLAUDE.md`, `.claude/rules/*.md`,
-`AGENTS.md`, `CHANGELOG*`, `.claude/ccharness/roadmap.md`, and other top-level descriptive `*.md`.
-**Code and tests are out of scope.**
-
-**4. Distill the load-bearing facts and invariants** the prose asserts into a concise,
-plain-language **digest** — a bulleted list of claims, each tagged with its source doc. Not a
-verbatim retelling; the load-bearing assertions only. Print the digest into the chat.
-
-**5. Ask, in plain prose (not `AskUserQuestion`):** "Does this match your current understanding, or
-is anything off? Write what doesn't match." Wait for the user's free-text reply.
-
-**6. Fix the mismatches.** For each one, apply a **minimal** edit to the affected doc (the smallest
-diff that fixes it — follow the `keep-files-lean` rule), or remove the obsolete with confirmation.
-Report what changed.
+On **Skip** → go to Stage 4. On **Stop** → end the wizard. On **Check docs** → **invoke the
+`docs-management` skill**: it reads the project's prose, surfaces what looks stale for you to confirm,
+and fixes the confirmed ones. (On a fresh project with nothing described yet, the skill says so and does
+nothing.) It explains itself as it goes.
 
 ---
 
-## Stage 5 — Set the product's direction
+## Stage 4 — Set the product's direction
 
 **Gate** with `AskUserQuestion`:
 - question: "Run /roadmap-management now to set the product's North Star?"
 - options: **Run /roadmap-management now** / **Not now**
 
-On **Run /roadmap-management now**, hand off to `/roadmap-management` (it owns the North Star write). Note for the user:
-plugins installed in Stage 1 only activate on the next session, but `/roadmap-management` does not
-hard-require them, so running it now is safe.
+On **Run /roadmap-management now**, hand off to `/roadmap-management` (it owns the North Star write).
+Note for the user: plugins installed in Stage 0 only activate on the next session, but
+`/roadmap-management` does not hard-require them, so running it now is safe.
