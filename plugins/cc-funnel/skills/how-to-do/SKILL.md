@@ -219,7 +219,7 @@ can't be checked and protects nothing; a sharp one ("the library buffers instead
 catches the drift the moment it surfaces. This is why Phase 4 carries them into the build hand-off.
 
 Keep `decision`'s plan sketch **thin** — _what_ approach won and _why_. The ordered build
-checklist (and any written plan) is **do's** Stage 1, not synthesis's job: how-to-do
+checklist (and any written plan) is **do's** Stage 2, not synthesis's job: how-to-do
 decides the *how* (the approach), do plans and builds it. Don't do its work here.
 
 ---

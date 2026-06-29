@@ -4,6 +4,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 ROADMAP_MANAGEMENT = ROOT / "skills" / "roadmap-management" / "SKILL.md"
 WHAT_TO_DO = ROOT / "skills" / "what-to-do" / "SKILL.md"
+DO = ROOT / "skills" / "do" / "SKILL.md"
 RRT = ROOT / "skills" / "refactor-review-test" / "SKILL.md"
 
 
@@ -64,6 +65,24 @@ class TestWhatToDoSkill(unittest.TestCase):
         self.assertIn("cc-funnel:how-to-do", self.text)
 
 
+class TestDoSkill(unittest.TestCase):
+    def setUp(self):
+        self.text = DO.read_text() if DO.exists() else ""
+        self.lower = self.text.lower()
+
+    def test_exists(self):
+        self.assertTrue(DO.exists(), "do SKILL.md missing")
+
+    def test_maps_codebase_in_dedicated_step(self):
+        # A dedicated codebase-study step: codegraph when indexed, else grep, and ALWAYS the full
+        # folder tree — so a fresh executor understands the whole project before it builds.
+        self.assertIn("codegraph", self.lower)
+        self.assertIn("grep", self.lower)
+        self.assertIn("folder tree", self.lower)
+        # The tree is mandatory (the user's emphatic ask), not skippable for small changes.
+        self.assertIn("always", self.lower)
+
+
 class TestRefactorReviewTestSkill(unittest.TestCase):
     def setUp(self):
         self.text = RRT.read_text() if RRT.exists() else ""
@@ -71,6 +90,14 @@ class TestRefactorReviewTestSkill(unittest.TestCase):
 
     def test_exists(self):
         self.assertTrue(RRT.exists(), "refactor-review-test SKILL.md missing")
+
+    def test_maps_codebase_in_dedicated_step(self):
+        # Same dedicated codebase-study step as do: codegraph when indexed, else grep, and ALWAYS
+        # the full folder tree, before the hardening pass touches the change.
+        self.assertIn("codegraph", self.lower)
+        self.assertIn("grep", self.lower)
+        self.assertIn("folder tree", self.lower)
+        self.assertIn("always", self.lower)
 
     def test_never_to_a_human(self):
         # The load-bearing discipline: it fixes everything itself and never escalates to a human.

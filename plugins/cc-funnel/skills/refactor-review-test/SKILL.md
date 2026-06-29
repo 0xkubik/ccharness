@@ -45,35 +45,49 @@ refactor doesn't make you rewrite them. But you never refactor blind:
 ```dot
 digraph order {
   rankdir=LR;
-  net   [label="0 safety net\n(pin core logic)"];
-  refac [label="1 refactor\n(behavior-preserving)"];
-  rev   [label="2 review\n(find bugs → fix)"];
-  test  [label="3 full tests\n(once, final shape)"];
+  net   [label="1 safety net\n(pin core logic)"];
+  refac [label="2 refactor\n(behavior-preserving)"];
+  rev   [label="3 review\n(find bugs → fix)"];
+  test  [label="4 full tests\n(once, final shape)"];
   net -> refac -> rev -> test;
 }
 ```
 
 ---
 
-## Phase 0 — Understand the change + lay the safety net
+## Phase 0 — Map the codebase (understand the whole project first)
+
+Before you touch the change, build a complete picture of the project — you harden code well only
+once you can see where it sits. Two parts, both mandatory:
+
+- **Study the code.** If **codegraph** is indexed for this workspace (its MCP tools are available,
+  or a `.codegraph/` index exists), use it to read the structure — modules, dependencies, call
+  relationships. If it isn't, fall back to **grep / search** across the tree. Do **not** run
+  `codegraph init` yourself — indexing is the user's call; use codegraph when it's already there,
+  else grep.
+- **Build the full folder tree — always.** Print the whole tree with its folders (`tree`, or
+  `git ls-files` / `find` if `tree` is absent) so you can see *everything* in the project: module
+  boundaries, where the changed code sits, the naming and file conventions. This is mandatory
+  regardless of how small the change is. Phase 2 refactors against this map: it shows whether the
+  change is *well-placed* or wants to move, split, or regroup. Seeing the whole tree is to place
+  **this** change well — not a licence to refactor the repo.
+
+---
+
+## Phase 1 — Understand the change + lay the safety net
 
 - **Pin the remit:** identify exactly what changed (the diff `/do` produced). That is what you
   harden — nothing wider unless a later phase earns it.
-- **Map the whole layout:** print the full folder tree (`tree`, or `git ls-files` / `find` if it's
-  absent) and read how the code is organised — module boundaries, where the changed code sits, the
-  naming and file conventions. Phase 1 refactors against this map: it shows whether the change is
-  *well-placed* or wants to move, split, or regroup. Seeing the whole tree is to place **this**
-  change well — not a licence to refactor the repo.
 - **Get the existing tests green** (whatever is already there, including anything `/do` wrote
-  with TDD). A red baseline is a Phase-4 problem you fix *now*, before touching anything.
+  with TDD). A red baseline is a Phase-5 problem you fix *now*, before touching anything.
 - **Write tests on the CORE LOGIC of the change** to pin its *current* behavior (characterization
   tests). This net is what lets you refactor without silently breaking behavior.
-- This is **not** the full coverage pass — just the net. Full coverage comes last (Phase 3), once
+- This is **not** the full coverage pass — just the net. Full coverage comes last (Phase 4), once
   the shape is final, so you write it **once**.
 
 ---
 
-## Phase 1 — Refactor (behavior-preserving)
+## Phase 2 — Refactor (behavior-preserving)
 
 - **Decide structural work against the Phase-0 layout map.** With the whole tree in view, judge
   whether *this* change is well-placed, then reshape toward **SOLID** — each file and function with
@@ -89,7 +103,7 @@ digraph order {
 
 ---
 
-## Phase 2 — Review (find bugs → fix them yourself)
+## Phase 3 — Review (find bugs → fix them yourself)
 
 - Run **`/code-review`** on the diff to **find** correctness bugs. (`/simplify` is quality-only;
   `/code-review` is the bug-finder.)
@@ -108,7 +122,7 @@ digraph order {
 
 ---
 
-## Phase 3 — Tests (full coverage, once)
+## Phase 4 — Tests (full coverage, once)
 
 - The code is now final — clean and correct. **Write/deepen comprehensive coverage against this
   shape:** edge cases, error paths, the behaviors the change introduced, the bugs you just fixed.
@@ -117,16 +131,16 @@ digraph order {
 
 ---
 
-## Phase 4 — Verify (mandatory)
+## Phase 5 — Verify (mandatory)
 
 Prove it, don't assert it. Run build + the full suite + smoke + linters, all green; for UI, drive
 it and observe. Use **`superpowers:verification-before-completion`**: show the evidence. On any
-failure, switch to **`superpowers:systematic-debugging`** — fix the root cause. Loop Phase 3 ↔ 4
+failure, switch to **`superpowers:systematic-debugging`** — fix the root cause. Loop Phase 4 ↔ 5
 until green. **3 strikes on one problem → `cc-tools:slap`, then pick the fresh approach yourself.**
 
 ---
 
-## Phase 5 — Commit (local only)
+## Phase 6 — Commit (local only)
 
 The verified **local commit lives here** — it moved out of `/do`, which now hands you
 un-committed, un-hardened code. You commit only once it is hardened and green.
@@ -164,7 +178,7 @@ report** — you note it and close. You never pause mid-run to ask whoever ran y
 | "The behavior's ambiguous — I'll ask the human / open a PR with questions." | Never the human, never mid-run questions. Fix what's a clear bug; a true "what should it do" fork goes to the **conductor** in your closing report — you don't block on it. |
 | "I'll write the full tests first, then refactor." | Then the refactor rewrites them. Net first (core logic) → refactor → review → THEN full coverage, written **once** on the final shape. |
 | "While I'm here, I'll clean up the neighbouring module too." | Out of remit. You harden the change you were handed; structural work needs a reason rooted in **this** change, not "tidy the repo". |
-| "This refactor also improves the behavior a little." | A refactor preserves behavior. If behavior must change, it's a bug-fix (Phase 2) or a product fork (not yours) — never a silent side effect of cleanup. |
+| "This refactor also improves the behavior a little." | A refactor preserves behavior. If behavior must change, it's a bug-fix (Phase 3) or a product fork (not yours) — never a silent side effect of cleanup. |
 | "The net went red after my refactor, but the change is obviously fine." | Red net = you changed behavior. Revert, redo behavior-preserving. The net is the proof, not a nuisance. |
 | "I can't fully decide it, so I'll stop and wait for input." | You never block on a human. Finish everything you can, flag the one true fork to the conductor, close. |
 
@@ -184,13 +198,13 @@ report** — you note it and close. You never pause mid-run to ask whoever ran y
 ## Quick reference
 
 Grounding — from `do`/musician → gate already passed; standalone → behavior-preserving, **no
-gate**. `0` Understand + **map layout** + **net** (full folder tree read; core-logic tests pin
-current behavior; existing tests green) · `1` **Refactor** (behavior-preserving; `/simplify` +
-`code-simplifier`; justified SOLID structural moves OK, tied to the change; net stays green =
-proof) · `2` **Review** (`/code-review` finds bugs → fix yourself,
-apply-not-report; true behavior fork → conductor, never a human) · `3` **Tests** (full coverage,
-once, on the final shape) · `4` **Verify** (evidence; debug to green; slap at 3 strikes) · `5`
-**Commit** (local only, then offer push).
+gate**. `0` **Map the codebase** (codegraph if indexed, else grep; always print the full folder
+tree) · `1` Understand + **net** (core-logic tests pin current behavior; existing tests green) ·
+`2` **Refactor** (behavior-preserving; `/simplify` + `code-simplifier`; justified SOLID structural
+moves OK, tied to the change; net stays green = proof) · `3` **Review** (`/code-review` finds bugs
+→ fix yourself, apply-not-report; true behavior fork → conductor, never a human) · `4` **Tests**
+(full coverage, once, on the final shape) · `5` **Verify** (evidence; debug to green; slap at 3
+strikes) · `6` **Commit** (local only, then offer push).
 
 **Invariant:** never to a human · apply, don't report · behavior-preserving refactor · bounded to
 the change. Stuck fix → slap; HOW-fork → how-to-do; behavior/product fork → conductor. You carry

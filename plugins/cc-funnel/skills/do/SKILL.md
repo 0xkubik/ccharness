@@ -9,13 +9,13 @@ You are running the **do** pipeline: take ONE concrete task from understood →
 built → smoke-checked, then **hand it off to `refactor-review-test`** — stopping with nothing
 half-done. It is the foot of the build funnel (what-to-do → how-to-do → do → refactor-review-test)
 and also runs standalone on any concrete task. **You own execution; the human owns direction.**
-Drive the stages below in order. Do not skip a stage. Do not declare done while the Stage-1
+Drive the stages below in order. Do not skip a stage. Do not declare done while the Stage-2
 checklist has open items. **You do not verify-to-green, review, simplify, or commit — that is
 `refactor-review-test`'s pass, and `do` always hands off to it.**
 
 **Core invariants — non-negotiable:**
-- **Refuse, don't guess** (Stage 0 — and the fork-test stays armed all the way through Stage 3). A technical fork goes to how-to-do; a business / non-technical one it refuses outright; a vague task goes to brainstorming — never a guessed default.
-- **Smoke-check before you hand off** (Stage 4). Prove it *runs* — compile / boot / a smoke test — evidence, not assertion. The full verify is `refactor-review-test`'s, not yours.
+- **Refuse, don't guess** (Stage 0 — and the fork-test stays armed all the way through Stage 4). A technical fork goes to how-to-do; a business / non-technical one it refuses outright; a vague task goes to brainstorming — never a guessed default.
+- **Smoke-check before you hand off** (Stage 5). Prove it *runs* — compile / boot / a smoke test — evidence, not assertion. The full verify is `refactor-review-test`'s, not yours.
 - **You never commit.** `do` hands off un-committed code; `refactor-review-test` owns the verified local commit.
 - **3 strikes on one problem → reset, don't keep patching** (slap) — then pick the fresh approach yourself; **implementation never hands back to the human.**
 
@@ -81,41 +81,55 @@ Re-enter do only once the task comes back clear and fork-free.
 
 ---
 
-## Stage 1 — Scope the work
+## Stage 1 — Map the codebase (understand the whole project first)
 
-**Map the layout and place the change cleanly — first.** Print the full folder tree (`tree`, or
-`git ls-files` / `find` if it's absent) and read how the code is organised — module boundaries,
-where this change belongs, the naming and file conventions. Work out how to fit the change **into
-the existing structure** rather than dropping files wherever is easiest: which module it extends,
-what to name things, where new files go. If clean placement needs a **small, obvious structural
-move** — e.g. a lone module at the root gains a sibling, so the two move into their own folder —
-you **may** make it as part of this change to keep the tree tidy; fold it into the checklist below
-as an explicit deliverable. Bound it: it must be warranted by *this* change, not a licence to
-refactor the repo — the wider hardening refactor stays `refactor-review-test`'s. A genuine
-**structural fork** (materially different layouts, no clear winner, costly to reverse) is not a
-routine move — route it to how-to-do like any other fork. **Scale to the change:** a one-line or
-in-place edit to existing files needs only a glance, not a full tree dump; the mapping earns its
-keep when the change *adds* files or modules.
+Before scoping the change, build a complete picture of the project — a fresh executor that hasn't
+seen this codebase places nothing well until it can see where things live. Two parts, both
+mandatory:
+
+- **Study the code.** If **codegraph** is indexed for this workspace (its MCP tools are available,
+  or a `.codegraph/` index exists), use it to read the structure — modules, dependencies, call
+  relationships. If it isn't, fall back to **grep / search** across the tree. Do **not** run
+  `codegraph init` yourself — indexing is the user's call; use codegraph when it's already there,
+  else grep.
+- **Build the full folder tree — always.** Print the whole tree with its folders (`tree`, or
+  `git ls-files` / `find` if `tree` is absent) so you can see *everything* in the project: module
+  boundaries, where code lives, the naming and file conventions. This is mandatory regardless of
+  how small the change is — you place the change against this map in Stage 2.
+
+---
+
+## Stage 2 — Scope the work
+
+**Place the change cleanly into the structure you mapped in Stage 1.** Work out how to fit it
+**into the existing structure** rather than dropping files wherever is easiest: which module it
+extends, what to name things, where new files go. If clean placement needs a **small, obvious
+structural move** — e.g. a lone module at the root gains a sibling, so the two move into their own
+folder — you **may** make it as part of this change to keep the tree tidy; fold it into the
+checklist below as an explicit deliverable. Bound it: it must be warranted by *this* change, not a
+licence to refactor the repo — the wider hardening refactor stays `refactor-review-test`'s. A
+genuine **structural fork** (materially different layouts, no clear winner, costly to reverse) is
+not a routine move — route it to how-to-do like any other fork.
 
 **If you arrived here from how-to-do**, its decision is your starting point: the fork is already
 resolved and the approach chosen — turn that decided approach into the checklist, do not
 re-litigate the decision or bounce it back up. Produce an explicit, **ordered checklist** of the
-concrete deliverables — this is your definition of done for Stage 3 and must stay visible. Then
+concrete deliverables — this is your definition of done for Stage 4 and must stay visible. Then
 size the task:
 
 - **trivial / small** → keep the checklist inline.
 - **medium / large** → invoke `superpowers:writing-plans` to produce a written plan first.
 
-While scoping, note the signals that drive Stage 2: Is there UI? Is browser/E2E behavior
+While scoping, note the signals that drive Stage 3: Is there UI? Is browser/E2E behavior
 involved? Is this a long, repetitive grind (many similar edits) or a few targeted changes?
 Is there a test harness?
 
 ---
 
-## Stage 2 — Select tools
+## Stage 3 — Select tools
 
-Pick the execution machinery from the Stage-1 signals, then **say your choice out loud**
-("Using X because Y") before you start Stage 3.
+Pick the execution machinery from the Stage-2 signals, then **say your choice out loud**
+("Using X because Y") before you start Stage 4.
 
 | Signal | Tool |
 |---|---|
@@ -127,7 +141,7 @@ Pick the execution machinery from the Stage-1 signals, then **say your choice ou
 | Web behavior to drive or verify | `playwright` MCP |
 | Large, structured fan-out you can justify | a **Workflow** (the Workflow tool) — *autonomous, see note* |
 | Inherently sequential work that splits into a clean, repeated iteration step | `ralph-loop` — *see note* |
-| Anything else | your own in-session goal-loop (Stage 3) |
+| Anything else | your own in-session goal-loop (Stage 4) |
 
 **Workflow note:** launch a Workflow when you can **justify** it — a large, structured fan-out
 where deterministic orchestration (staged fan-out, per-item verify) earns its token cost. You
@@ -140,29 +154,29 @@ lighter; reserve Workflows for genuine scale.
 parallelize) **and** it decomposes into a clean, repeatable iteration step the same loop can
 grind to completion. ralph-loop is a session-level while-true on a fixed prompt, so make each
 iteration **verify its own step**; once the loop finishes, return here for the whole-result
-Stage 4 smoke-check and the hand-off to `refactor-review-test`.
+Stage 5 smoke-check and the hand-off to `refactor-review-test`.
 
 ---
 
-## Stage 3 — Implement (goal-loop to done)
+## Stage 4 — Implement (goal-loop to done)
 
-Execute with the chosen tools. **Your own loop is the engine:** work the Stage-1 checklist top
+Execute with the chosen tools. **Your own loop is the engine:** work the Stage-2 checklist top
 to bottom and do not stop while any item is open. Use TDD where a test harness exists. This is
 where the strike counter and the still-armed fork-test live — see Escalation.
 
 ---
 
-## Stage 4 — Smoke-check (does it run?)
+## Stage 5 — Smoke-check (does it run?)
 
 Prove the change **runs** — never assert it. Compile / boot it and run a smoke check (or the
 quick happy-path test); for UI, load it and see it render. This is the *does-it-even-run* gate
 before hand-off — **not** the full verify-to-green, the coverage pass, or review. Those belong to
-`refactor-review-test`. If the smoke check fails, fix it here (Stage 3 ↔ 4, root cause via
+`refactor-review-test`. If the smoke check fails, fix it here (Stage 4 ↔ 5, root cause via
 `superpowers:systematic-debugging`) until the change runs; then hand off.
 
 ---
 
-## Stage 5 — Hand off to refactor-review-test
+## Stage 6 — Hand off to refactor-review-test
 
 The change runs. **Now hand it off — `do` always ends here.** Invoke
 **`cc-funnel:refactor-review-test`** on the change you just built; it owns the rest — the full
@@ -185,7 +199,7 @@ commits). Two things still route *upward to the right machinery*, and neither is
 
 ### A serious technical fork surfaces mid-build → `how-to-do`
 
-The Stage-0 fork-test **does not expire at the gate — it stays armed through Stage 3.** As you
+The Stage-0 fork-test **does not expire at the gate — it stays armed through Stage 4.** As you
 learn the terrain you will hit technical choices that weren't visible at the start. For each,
 apply the same test: it is a **serious fork** only when it has **(a)** materially different
 consequences, **(b)** no obvious winner, **and (c)** is costly to reverse. All three → stop and
@@ -219,9 +233,10 @@ and deciding the next move yourself. Keep driving until the work is done and ver
 ## Quick reference
 
 Grounding — no `## Product North Star` → **route to `/roadmap-management`**, stop · `0` Gate — technical fork → how-to-do, business → refuse,
-vague → brainstorming · `1` Scope — **map layout + place the change cleanly** (small structural
-moves OK, tied to this change; structural fork → how-to-do) · checklist + size · `2` Tools — route & announce · `3` Build —
-goal-loop to done · `4` Smoke-check — does it run? · `5` Hand off → **refactor-review-test** (it owns
+vague → brainstorming · `1` Map the codebase — **codegraph if indexed, else grep; always print the
+full folder tree** · `2` Scope — place the change cleanly (small structural moves OK, tied to this
+change; structural fork → how-to-do) · checklist + size · `3` Tools — route & announce · `4` Build —
+goal-loop to done · `5` Smoke-check — does it run? · `6` Hand off → **refactor-review-test** (it owns
 verify, review/simplify, full tests, and the commit). `do` never commits.
 
 Mid-build, a serious technical fork (material · no clear winner · costly to reverse) → **how-to-do**; routine/reversible calls you make yourself.
