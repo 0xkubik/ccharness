@@ -1,6 +1,6 @@
 ---
 name: do
-description: "Use when handing a concrete, well-scoped coding task to be taken all the way to done — implemented, verified, and committed. Not for vague or fork-laden tasks — it refuses those rather than guessing."
+description: "Use when you have ONE concrete, well-scoped coding task ready to build autonomously. Not for vague or fork-laden tasks — it refuses those rather than guessing."
 ---
 
 # do — the strict executor
@@ -10,14 +10,13 @@ built → smoke-checked, then **hand it off to `refactor-review-test`** — stop
 half-done. It is the foot of the build funnel (what-to-do → how-to-do → do → refactor-review-test)
 and also runs standalone on any concrete task. **You own execution; the human owns direction.**
 Drive the stages below in order. Do not skip a stage. Do not declare done while the Stage-2
-checklist has open items. **You do not verify-to-green, review, simplify, or commit — that is
-`refactor-review-test`'s pass, and `do` always hands off to it.**
+checklist has open items.
 
 **Core invariants — non-negotiable:**
 - **Refuse, don't guess** (Stage 0 — and the fork-test stays armed all the way through Stage 4). A technical fork goes to how-to-do; a business / non-technical one it refuses outright; a vague task goes to brainstorming — never a guessed default.
 - **Smoke-check before you hand off** (Stage 5). Prove it *runs* — compile / boot / a smoke test — evidence, not assertion. The full verify is `refactor-review-test`'s, not yours.
 - **You never commit.** `do` hands off un-committed code; `refactor-review-test` owns the verified local commit.
-- **3 strikes on one problem → reset, don't keep patching** (slap) — then pick the fresh approach yourself; **implementation never hands back to the human.**
+- **3 strikes on one problem → reset, don't keep patching** (slap) — then pick the fresh approach yourself.
 
 ---
 
@@ -170,8 +169,7 @@ where the strike counter and the still-armed fork-test live — see Escalation.
 
 Prove the change **runs** — never assert it. Compile / boot it and run a smoke check (or the
 quick happy-path test); for UI, load it and see it render. This is the *does-it-even-run* gate
-before hand-off — **not** the full verify-to-green, the coverage pass, or review. Those belong to
-`refactor-review-test`. If the smoke check fails, fix it here (Stage 4 ↔ 5, root cause via
+before hand-off — **not** the full verify-to-green, the coverage pass, or review. If the smoke check fails, fix it here (Stage 4 ↔ 5, root cause via
 `superpowers:systematic-debugging`) until the change runs; then hand off.
 
 ---

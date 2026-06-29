@@ -1,6 +1,6 @@
 ---
 name: refactor-review-test
-description: "Use when working code from /do (or any just-written change) must be hardened to done and carried there fully autonomously — never handing bugs, findings, or decisions back to a human. /do always hands off here at its end; also runs standalone to harden existing code. Triggers: \"make it production-ready\", \"harden this\", \"clean up and add tests\", \"refactor and review\"."
+description: "Use when working code from /do (or any just-written change) must be hardened to done and carried there fully autonomously. /do always hands off here at its end; also runs standalone to harden existing code. Triggers: \"make it production-ready\", \"harden this\", \"clean up and add tests\", \"refactor and review\"."
 ---
 
 # refactor-review-test — the autonomous hardener
@@ -24,8 +24,7 @@ fix yourself, you NEVER hand work back to a human, and you close when the code i
 - **Bounded to the change.** Your remit is what you were handed — the diff `/do` produced — plus
   structural work that *this* change genuinely warrants. Not "improve the whole repo". No
   gold-plating.
-- **3 strikes on one problem → slap, then pick the fresh approach yourself.** Hardening never
-  hands back to a human.
+- **3 strikes on one problem → slap, then pick the fresh approach yourself.**
 
 ---
 
@@ -39,38 +38,25 @@ code is built, never *what* the product does, so you cannot drift product direct
 
 ## Order — net first, then refactor → review → test (and why)
 
-The order is load-bearing. You write the heavy tests **once**, against the final shape — so the
-refactor doesn't make you rewrite them. But you never refactor blind:
-
-```dot
-digraph order {
-  rankdir=LR;
-  net   [label="1 safety net\n(pin core logic)"];
-  refac [label="2 refactor\n(behavior-preserving)"];
-  rev   [label="3 review\n(find bugs → fix)"];
-  test  [label="4 full tests\n(once, final shape)"];
-  net -> refac -> rev -> test;
-}
-```
+The order is load-bearing: **net** (pin core logic) → **refactor** (behavior-preserving) → **review**
+(find bugs → fix) → **full tests** (once, on the final shape). You write the heavy tests once, against
+the final shape, so the refactor doesn't force a rewrite — but you never refactor blind, so the net
+comes first.
 
 ---
 
 ## Phase 0 — Map the codebase (understand the whole project first)
 
-Before you touch the change, build a complete picture of the project — you harden code well only
-once you can see where it sits. Two parts, both mandatory:
+Before touching the change, see where it sits — you harden code well only once you can place it.
+Both mandatory:
 
-- **Study the code.** If **codegraph** is indexed for this workspace (its MCP tools are available,
-  or a `.codegraph/` index exists), use it to read the structure — modules, dependencies, call
-  relationships. If it isn't, fall back to **grep / search** across the tree. Do **not** run
-  `codegraph init` yourself — indexing is the user's call; use codegraph when it's already there,
-  else grep.
-- **Build the full folder tree — always.** Print the whole tree with its folders (`tree`, or
-  `git ls-files` / `find` if `tree` is absent) so you can see *everything* in the project: module
-  boundaries, where the changed code sits, the naming and file conventions. This is mandatory
-  regardless of how small the change is. Phase 2 refactors against this map: it shows whether the
-  change is *well-placed* or wants to move, split, or regroup. Seeing the whole tree is to place
-  **this** change well — not a licence to refactor the repo.
+- **Study the code.** Use **codegraph** if it's indexed (its MCP tools are available, or a
+  `.codegraph/` index exists) to read modules, dependencies, and call relationships; else fall back
+  to **grep / search**. Don't run `codegraph init` yourself — indexing is the user's call.
+- **Print the full folder tree — always** (`tree`, or `git ls-files` / `find` if `tree` is absent),
+  to see module boundaries, where the changed code sits, and the naming conventions. Phase 2
+  refactors against this map — seeing the whole tree is to place *this* change well, not a licence
+  to refactor the repo.
 
 ---
 
@@ -118,7 +104,9 @@ once you can see where it sits. Two parts, both mandatory:
   **not** take it to a human and do **not** stop. **Surface it to the conductor (the musician)** —
   flag it in your closing report — and keep going on everything else. *(A fix with a genuine HOW
   fork — materially different ways to fix it, no clear winner, costly to reverse — goes to
-  `cc-funnel:how-to-do`, exactly like `/do` routes one.)*
+  `cc-funnel:how-to-do`, exactly like `/do` routes one.)* Running standalone with no conductor above
+  you, that same fork goes in your closing report — you note it and close, never pausing to ask
+  whoever ran you.
 
 ---
 
@@ -150,23 +138,6 @@ un-committed, un-hardened code. You commit only once it is hardened and green.
 
 **Scale to the change.** Docs-only, config-only, or trivial changes → most phases are no-ops:
 say which you skipped and why, then verify and commit. Don't manufacture work to look thorough.
-
----
-
-## Escalation — route sideways, never to a human
-
-Past intake you carry this alone, and **hardening never escalates to a human.** Three things route
-*sideways to funnel machinery*, and none of them is the user:
-
-- **A fix won't take after 3 tries** → **`cc-tools:slap`**, then pick the fresh approach yourself.
-- **A genuine HOW-fork in a fix** (materially different ways to fix · no clear winner · costly to
-  reverse) → **`cc-funnel:how-to-do`**, which rules it and flows the approach back.
-- **A behavior/product fork** (what the code *should* do, no clear intent) → **surface to the
-  conductor (musician)** in your closing report. Not decided silently, not asked of a human, not a
-  reason to stop — you finish everything else and close.
-
-Standalone (no conductor above you): the one behavior/product fork still goes in your **closing
-report** — you note it and close. You never pause mid-run to ask whoever ran you.
 
 ---
 
