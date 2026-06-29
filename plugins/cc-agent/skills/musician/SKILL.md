@@ -185,7 +185,7 @@ crashed runs. **`<run>` = `runs/<run_id>/` from here on.**
    duplicate (`BUSY`), but don't even try — read the output that's already there.
 2. **React to the arm `KEY=VALUE` output:**
    - `GATE=no-north-star` (open mode, no `## Product North Star` in `.claude/ccharness/roadmap.md`) → no run
-     was created; tell the user _"No North Star yet — run `/roadmap-management` once to set it, then
+     was created; tell the user _"No North Star yet — run `/roadmap-management` to set it, then
      `/musician`."_ END TURN. (Task mode does **not** hard-gate: a fuzzy pain can go to `crux`, which
      is grounding-free, and the `do` build enforces its own North Star gate.)
    - `BUSY=<run-id>` → this session already has an ACTIVE run, so arm created nothing. Tell the user

@@ -7,7 +7,7 @@ WHAT_TO_DO = ROOT / "skills" / "what-to-do" / "SKILL.md"
 RRT = ROOT / "skills" / "refactor-review-test" / "SKILL.md"
 
 
-class TestFindGoalSkill(unittest.TestCase):
+class TestRoadmapManagementSkill(unittest.TestCase):
     def setUp(self):
         self.text = ROADMAP_MANAGEMENT.read_text() if ROADMAP_MANAGEMENT.exists() else ""
 
@@ -33,6 +33,16 @@ class TestFindGoalSkill(unittest.TestCase):
     def test_document_order_canonical(self):
         # Doc order = build order, so "first unchecked" stays well-defined.
         self.assertIn("document order", self.text.lower())
+
+    def test_four_modes_exist(self):
+        # The skill is no longer run-once: it dispatches to four lifecycle modes.
+        for mode in ("Mode 1", "Mode 2", "Mode 3", "Mode 4"):
+            self.assertIn(mode, self.text)
+
+    def test_force_still_shows_and_confirms(self):
+        # --force skips the discussion but NEVER the confirm — no silent autowrite.
+        self.assertIn("--force", self.text)
+        self.assertIn("shown and confirmed", self.text.lower())
 
 
 class TestWhatToDoSkill(unittest.TestCase):

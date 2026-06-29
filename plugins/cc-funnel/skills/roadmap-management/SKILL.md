@@ -1,149 +1,136 @@
 ---
 name: roadmap-management
-description: Use when setting up or revising a product's long-horizon direction — the grounding loop that sets the goal and lays out the road to it as an ordered feature list.
+description: Use to create OR maintain a product's roadmap (the North Star goal + ordered feature list in .claude/ccharness/roadmap.md) at any point in its life — set it up the first time, rethink it freely on a re-run, or fold in a single new feature (pass --force to formulate and write that feature after one confirm, skipping the discussion).
 ---
 
-# roadmap-management — set the goal, then lay out the road to it
+# roadmap-management — own the product's roadmap across its life
 
-You are the harness's grounding front door: you guide a human to **set the product's goal** (the
-**North Star**) and **lay out the route to it** as a **flat, ordered list of features** — both written
-to `.claude/ccharness/roadmap.md`, the goal at the top and the features below it, built top to bottom. This is a
-**high-stakes conversation**, not a form — every later step builds on it: what-to-do ranks moves
-against the goal, the musician builds straight from the roadmap, so a sloppy goal or vague feature
-aims every automated step at the wrong target. Run once up front (other product skills route here
-when no goal exists); re-run to revise.
+You own `.claude/ccharness/roadmap.md`: the product's **North Star** (the goal) at the top, and a
+**flat, ordered list of features** (the route to it) below. Every later step builds on this file —
+what-to-do ranks moves against the goal, the musician builds straight off the list — so a sloppy goal
+or vague feature aims every automated step at the wrong target.
 
-**Tell the human this up front, plainly:** this defines what we're building and the order we build it;
-many later steps (manual and automated) depend on it; it's worth slowing down for. Then run a real
-guided interview — lead with questions, one decision at a time, until the picture is sharp.
+**This is not a run-once form.** You charter the roadmap the first time, and then you keep it honest as
+the product changes: rethink it, or fold in a new feature, whenever the human comes back. So you run in
+one of **four modes** — pick the right one before you do anything else.
 
-**How you ask:**
-
-- **The global goal: ask open questions — do NOT offer pre-baked options.** The goal must come from
-  the human's own head, so use plain conversational questions, one at a time. Never hand them a menu
-  of product visions to pick from.
-- **The features: use `AskUserQuestion`** to ask leading questions with concrete options (plus the
-  free-text fallback). This is where you actively steer — "which feature is the core, the very first
-  to build?", "does X come before Y, or are they independent?".
-- **One decision at a time** (borrow `superpowers:brainstorming`'s technique). The terminal is
-  `.claude/ccharness/roadmap.md` — not `writing-plans`.
+**How you work (all modes):** lead with questions, **one decision at a time** (borrow
+`superpowers:brainstorming`'s technique), in plain language. The terminal is
+`.claude/ccharness/roadmap.md` — never `writing-plans`. You own the North Star write and lay out the
+route; you never decide a fork (how-to-do) or build a task (do).
 
 ---
 
-## Phase 0 — The global goal (the North Star) — ask, don't offer
+## Pick the mode first (dispatch)
 
-**Detect first.** Look for a `## Product North Star` heading at the top of `.claude/ccharness/roadmap.md`.
+Look at three things: is there already a `## Product North Star` at the top of
+`.claude/ccharness/roadmap.md`? did the human bring **one concrete feature to add**, or just a general
+"let's revise"? was **`--force`** passed?
 
-| State       | Path                                                                     |
-| ----------- | ------------------------------------------------------------------------ |
-| **Absent**  | Run the goal-setting questions below, then **write the block yourself**. |
-| **Present** | This run is a revision — read it = the current goal, then see below.     |
+| What you see                                                          | Mode                                                        |
+| -------------------------------------------------------------------- | ---------------------------------------------------------- |
+| **No North Star yet** (first run)                                    | **Mode 1 — Charter**: goal → features → review             |
+| Goal exists · **no concrete feature** (empty prompt, or "rethink X") | **Mode 2 — Open revision**: free-form, no pipeline         |
+| Goal exists · **one concrete feature** to add · no `--force`         | **Mode 3 — Add a feature**: think it through, record one line |
+| Goal exists · one concrete feature · **`--force`**                   | **Mode 4 — Add a feature, fast**: formulate, show, one confirm, write |
 
-When the goal already exists, treat the run as a revision, not a fresh start: show the current North
-Star back and ask whether to **keep it or rework it** — rework → re-run the questions and overwrite the
-North Star block (**leaving the feature list below it intact**); keep → leave it untouched. Either way
-you then enter the feature loop, which revises the existing list rather than building from scratch.
-**No flag for any of this** — re-running roadmap-management is always safe: it reads what exists and adapts.
-
-The goal-setting dialogue — open questions only, no multiple-choice. Draw out, one question at a
-time, in plain language: what does the finished product look like at the very end — who is it for, and
-what does success look like? And **is it already in production (real users), or not yet?** Don't move
-on until the answer is concrete. The durable artifact is this stable block — write it as the **opening
-of `.claude/ccharness/roadmap.md`** (create the file if needed; full file shape in the format block
-below), keeping the vision to **one to three sentences**:
-
-```markdown
-## Product North Star
-
-<!-- managed by roadmap-management · edit freely, the harness re-reads this · captured: <YYYY-MM-DD> -->
-
-<one to three sentences — how the finished product looks at the end, who it's for, what success is>
-
-- **In production?** <yes — live users, move carefully · no — full carte blanche>
-```
-
-Confirm the written block back in one line. The goal is **mandatory**; it's what every other skill
-detects (the `## Product North Star` heading). Then move into the feature loop.
+**When you can't tell Mode 2 from Mode 3** — a prompt like "rethink the export flow" could be a general
+revision *or* a single feature to add — **ask the human which**, don't guess and run the wrong pipeline.
+`--force` only means anything with a concrete feature (Mode 4); passed with no feature, ignore it.
 
 ---
 
-## Phase 1 — Survey "now"
+## Mode 1 — Charter (first run): goal → features → review
 
-Build a short, factual picture of the current product from the repo: `README`, docs, recent
-commits, scattered `TODO`/`FIXME`/stub markers. Two or three paragraphs, not an audit. This is the
-"now"; the North Star is the "end"; the ordered features are the steps between them.
+The roadmap doesn't exist yet. This is the full grounding interview — a **high-stakes conversation**,
+not a form. Tell the human up front, plainly: this defines what we're building and the order we build
+it; many later steps depend on it; it's worth slowing down for. Then run it in three steps. (If the
+human arrived with a specific feature in mind, **don't discard it** — acknowledge it and fold it into
+the charter; it becomes one of the features in Step 2, placed where it belongs.)
 
----
+**Step 1 — Set the North Star (the goal). Ask open questions; do NOT offer pre-baked options** — the
+goal must come from the human's own head. One question at a time, in plain language: what does the
+finished product look like at the very end — who is it for, what does success look like? And **is it
+already in production (real users), or not yet?** Don't move on until the answer is concrete. Then write
+the North Star block (shape in **The roadmap file** below), keeping the vision to **one to three
+sentences**, as the opening of `.claude/ccharness/roadmap.md` (create the file if needed). Confirm it
+back in one line. The goal is **mandatory** — it's what every other skill detects.
 
-## Read the musician's proposals first (if any)
+**Step 2 — List the features in order.** First build a short, factual picture of the current product
+from the repo (`README`, docs, recent commits, `TODO`/`FIXME`/stub markers) — two or three paragraphs,
+the "now"; the North Star is the "end"; the ordered features are the steps between. Also check
+`.claude/ccharness/roadmap-proposals.md` (the musician's forward-looking ideas, if any) and surface each
+as a candidate — never auto-apply. Then loop, a few features at a time, with `AskUserQuestion`:
 
-Before laying out the features, check `.claude/ccharness/roadmap-proposals.md`. As the musician works it
-appends **forward-looking observations** there ("a later feature might need X") — it is barred from
-editing the roadmap's goal/ordering layer itself, so this file is how its ideas reach you. Read it and
-**surface each as a candidate input** to the feature loop below — never auto-apply; the human decides
-what (if anything) lands. Once integrated or dismissed, clear/archive the file. Absent → skip.
+1. **Elicit the next feature(s).** Lead: "What's the very first thing to build?", then "what comes
+   after that?" Keep asking (options + free-text), one decision at a time, until the feature's shape is
+   clear: what it is and the observable outcome that means it's done. Ordering rule: **need "A before B"
+   → A goes higher in the list**; genuinely independent features can sit in any order — pick a sensible one.
+2. **Write it in, then urge a review.** Append the feature(s) (format below) and **strongly suggest the
+   human read it back** — "the musician builds straight off this, top to bottom. Look right before we
+   keep going?" Don't steamroll past their review.
+3. **Continue / rethink / finish?** Offer three paths: **Continue** (next feature) · **Rethink** (re-open
+   and revise earlier features, their order, or the goal — always offer this) · **Finish** (only once the
+   list credibly spans the route from "now" to the North Star).
 
----
-
-## Phase 2 — List the features in order (the heart — a loop)
-
-Build the route as a **flat, ordered list of features** — first to build at the top, last at the bottom.
-Each feature is a lightweight milestone with a stable global id (`M1`, `M2`, … — continuous, assigned in
-order) and `name + done when: <observable outcome>`. The `done when:` must be **observable** — that's
-what later lets the musician judge it complete. There are no versions and no stages: **the order _is_ the
-plan.** Work the list a few features at a time:
-
-**1. Elicit the next feature(s) with `AskUserQuestion`.** Lead the human: "What's the very first thing
-to build?", then "what comes after that?" Keep asking leading questions (with options + free-text), one
-decision at a time, until the next feature's shape is clear: what it is, and the observable outcome that
-means it's done. The single ordering rule: **need "A before B" → A goes higher in the list**; genuinely
-independent features can sit in any order relative to each other — pick a sensible one.
-
-**2. Write it into the roadmap, then urge a review.** Append the feature(s) to
-`.claude/ccharness/roadmap.md` (format below) and **strongly suggest the human read it back before you
-continue** — "Here's the list so far. Please check it — the musician will build straight off this, top to
-bottom. Look right before we keep going?" Don't steamroll past their review.
-
-**3. At each step, ask: continue, rethink, or finish?** Use `AskUserQuestion` to offer three paths:
-
-- **Continue** → elicit the next feature(s) (back to step 1).
-- **Rethink already-decided work** → **always offer this.** The human may have spotted a contradiction
-  or changed their mind about an earlier feature (or the goal itself). Let them describe what they found,
-  then **re-open and revise** the affected features and their order — and the North Star, if the goal
-  moved — one decision at a time, rewrite `roadmap.md`, urge a fresh review, then resume. Better to
-  re-examine now than build off a roadmap the human no longer believes.
-- **Finish** → offered once the list credibly spans the route from "now" to the North Star; goes to
-  Phase 3. Before that, only Continue / Rethink.
-
-Iterate until the human is satisfied; reorder, split, or merge features as they react.
+**Step 3 — Independent review.** When the human finishes, **dispatch one read-only reviewer subagent** to
+pressure-test the roadmap as a skeptic. Give it the North Star block and the full `roadmap.md`. Ask it
+to judge: does the ordered list form a **credible path** to the North Star, with no missing feature?
+does the **order respect real dependencies**? is every **`done when:` observable**? what are the
+contradictions, gaps, over- or under-scoped features? Relay it plainly and offer to act — the review is
+**advice, not a gate**: the human decides. Then stop.
 
 ---
 
-## Phase 3 — Independent review (a fresh pair of eyes)
+## Mode 2 — Open revision (re-run, no fixed pipeline)
 
-When the human chooses to finish, don't just stop — **dispatch one independent reviewer subagent
-(read-only)** to pressure-test the finished roadmap as a skeptic. Give it: the **North Star block** and
-the **full `.claude/ccharness/roadmap.md`**. Ask it to judge:
+The roadmap exists and the human wants to **rethink something** — not add one specific feature, just
+look at what's there and change their mind. **No phases, no pipeline — the human drives; help them see
+what they actually want.** Re-survey "now", then show them the current state: the North Star, the
+feature list, and **progress** — which `done when:` now hold, where the frontier (first unchecked box)
+sits. Then revise whatever they raise — rework the goal, reorder, reword a feature, split or merge,
+check off what's done, drop the obsolete — **one decision at a time**, writing each agreed change to
+`roadmap.md`.
 
-- Does the ordered list form a **credible path** from "now" to the North Star — does building it top to
-  bottom actually converge on the goal, with no missing feature in between?
-- Does the **order respect real dependencies** — is anything placed before something it needs, or
-  needlessly held back behind work it doesn't depend on?
-- Is every **`done when:` observable**, and does it truly mean that feature is done?
-- Name the **contradictions, gaps, and over- or under-scoped features** it finds.
-
-Relay its assessment to the human in plain language and offer to act on it — re-open the loop to
-revise the flagged features or the goal, or accept as-is. The review is **advice, not a gate**: the
-human decides. Then stop.
+**Reason about impact before you rewrite.** A revision ripples: reworking the goal can strand features
+that no longer serve it; reordering or dropping a feature shifts the frontier and what downstream skills
+aim at. Say plainly what each change touches. Keep `Mn` ids stable. Urge a read-back once you've changed
+much. Stop when the human is satisfied — no forced review, no minimum.
 
 ---
 
-## The roadmap format (the contract — keep it exact)
+## Mode 3 — Add a feature (think it through, then record one line)
 
-Write `.claude/ccharness/roadmap.md` (create the directory if needed). The file **opens with the North
-Star** (the goal — Phase 0's block), followed by a **flat, ordered checklist of features** — no
-versions, no stages. **Document order is build order**: top to bottom. The **frontier** = the **first
-unchecked `[ ]` box** — derived from the checkboxes, no separate pointer.
+The human brought **one concrete feature** to add. Don't just append it — help them see it clearly first:
+
+- **Why** — does it actually move the product toward the North Star? If it doesn't, say so plainly.
+- **How** — the rough shape of building it, enough to phrase an observable outcome (not a plan).
+- **When** — where in the ordered list it belongs: what must come before it, what it unblocks.
+
+Then, **only if the human approves it**, write **one line** at the right position: a new stable `Mn` id
++ `done when: <observable outcome>`. Confirm the line back. If the thinking shows it's premature or
+off-goal, don't force it into the list — land it as a note in `.claude/ccharness/roadmap-proposals.md`,
+or drop it. The human decides.
+
+---
+
+## Mode 4 — Add a feature, fast (`--force`)
+
+Same target as Mode 3 — add one feature — but the human wants it written **without the discussion. Skip
+the why/how/when.** Formulate the feature yourself into one well-phrased line: a new `Mn` id + observable
+`done when:`, placed at a sensible position in the order. **Then show the exact line and where it will
+go, and ask "write this? (ok / not ok)".** Write it only on **ok**; on "not ok", take their correction.
+
+`--force` skips the *discussion*, **never the confirm** — you formulate and propose, but you never
+silently autowrite. One show-and-confirm gate always stands.
+
+---
+
+## The roadmap file (the contract — keep it exact)
+
+`.claude/ccharness/roadmap.md` (create the directory if needed). The file **opens with the North Star**
+(the goal), then a **flat, ordered checklist of features** — no versions, no stages. **Document order is
+build order**: top to bottom. The **frontier** = the **first unchecked `[ ]` box** (no separate pointer).
 
 ```markdown
 # Roadmap — <product>
@@ -152,7 +139,7 @@ unchecked `[ ]` box** — derived from the checkboxes, no separate pointer.
 
 <!-- managed by roadmap-management · edit freely, roadmap-management re-reads this · captured: <YYYY-MM-DD> -->
 
-<one to three sentences — the vision>
+<one to three sentences — the vision: how the finished product looks, who it's for, what success is>
 
 - **In production?** <yes — live users, move carefully · no — full carte blanche>
 
@@ -165,33 +152,23 @@ unchecked `[ ]` box** — derived from the checkboxes, no separate pointer.
 - [ ] M3 — <feature> · done when: <observable outcome>
 ```
 
-Ids stay **stable across re-runs** (the musician references them) and are independent of where a feature
-sits in the list — reordering a feature never renumbers it.
-
----
-
-## Re-run = revise (the roadmap is a living artifact)
-
-Re-running roadmap-management on a product that already has a goal or roadmap is a revision, not a restart —
-and it needs no flag. A re-run: **re-survey** "now" (Phase 1) → **show the current goal, roadmap, and
-progress** (which features' `done when:` now hold, where the frontier sits) → **propose adjustments**
-one decision at a time (rework the goal, check off completed, add/split/reorder features, drop the
-obsolete) → **rewrite** the affected parts of `roadmap.md`, urging a review. Keep ids stable.
-
-**Reason about impact before you rewrite.** A revision ripples: reworking the goal can strand features
-that no longer serve it; reordering or dropping a feature shifts the frontier and what the downstream
-skills aim at. For each change the human proposes, say plainly what it touches and what follows — so
-they revise with eyes open.
+The `done when:` must be **observable** — that's what lets the musician judge a feature complete. Ids
+stay **stable across re-runs** (the musician references them) and are independent of where a feature
+sits — reordering never renumbers it. Every other skill detects grounding by the `## Product North Star`
+heading.
 
 ---
 
 ## Quick reference
 
-`0` Goal — detect `## Product North Star`; absent → **open questions, no options** → write the block
-yourself · `1` Survey — repo = "now" · `2` Feature loop — `AskUserQuestion`-led "what's the next thing to
-build?", one decision at a time, in build order (_need A before B → A higher_) with stable `Mn` ids +
-observable `done when:` → **write to `roadmap.md` and urge a review** → next feature or finish (once the
-list credibly reaches the North Star) · re-run = revise the living roadmap.
+`dispatch` — no North Star → **Mode 1**; goal + no feature → **Mode 2**; goal + one feature → **Mode 3**
+(or **Mode 4** with `--force`); can't tell 2 vs 3 → **ask** · **Mode 1** Charter — open-question goal
+(1–3 sentences) → survey + feature loop (`AskUserQuestion`, one at a time, _need A before B → A higher_,
+stable `Mn` + observable `done when:`, urge review) → independent reviewer · **Mode 2** Open revision —
+show goal + list + progress, revise free-form, one decision at a time, reason about ripple · **Mode 3**
+Add a feature — why / how / when → one line if approved · **Mode 4** `--force` — formulate → **show +
+"ok?"** → write (never silent).
 
-**Invariant:** roadmap-management owns the North Star write and lays out the route; it never decides a fork
-(how-to-do) or builds a task (do). The roadmap only _biases_ what-to-do — it never gates it.
+**Invariant:** roadmap-management owns the North Star write and lays out the route; it never decides a
+fork (how-to-do) or builds a task (do). The roadmap only _biases_ what-to-do — it never gates it. Even
+under `--force`, a feature is shown and confirmed before it's written.
