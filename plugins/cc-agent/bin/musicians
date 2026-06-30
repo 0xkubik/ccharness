@@ -120,12 +120,9 @@ do_ls() {
 do_info() {
   local rid; rid="$(resolve_id "$1")"
   [ -n "$rid" ] || { echo "musicians: no run matches '$1' (try: musicians ls)" >&2; exit 2; }
-  local d="$RUNS/$rid" st="$RUNS/$rid/state.json" sid ns blocked
+  local d="$RUNS/$rid" st="$RUNS/$rid/state.json" sid ns
   sid="$(json_field "$st" session_id)"
   if [ -n "$sid" ] && ns_on "$sid"; then ns="on"; else ns="off"; fi
-  blocked=0
-  [ -f "$d/blocked.jsonl" ] && blocked="$(grep -c . "$d/blocked.jsonl" 2>/dev/null)"
-  [ -n "$blocked" ] || blocked=0
   printf '%-12s %s\n' "id"        "$rid"
   printf '%-12s %s\n' "mode"      "$(json_field "$st" entry)"
   printf '%-12s %s\n' "task"      "$(run_task "$d")"
@@ -133,7 +130,6 @@ do_info() {
   printf '%-12s %s\n' "nonstop"   "$ns"
   printf '%-12s %s\n' "started"   "$(json_field "$st" started_at)"
   printf '%-12s %s\n' "cycle"     "$(json_field "$st" cycle)"
-  printf '%-12s %s\n' "blocked"   "$blocked"
   printf '%-12s %s\n' "session"   "$sid"
   printf '%-12s %s\n' "dir"       "$d"
 }

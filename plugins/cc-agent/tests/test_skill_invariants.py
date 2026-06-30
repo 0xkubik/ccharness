@@ -16,11 +16,14 @@ class TestMusicianSkill(unittest.TestCase):
         self.assertIn("DONE", self.text)
         self.assertIn("done_when", self.text)
 
-    def test_three_exits_no_giveup_or_cap(self):
-        # The doors out: achieved (done), declined (smart no BEFORE building), blocked
-        # (do tried and couldn't — business blocker or exhausted technical path).
-        for token in ("achieved", "declined", "blocked"):
+    def test_exits_are_achieved_empty_cancelled(self):
+        # The doors out: achieved (done), empty (open mode found nothing to build — nonstop's stop
+        # signal), cancelled (the manual brake). The model writes these exact outcome strings.
+        for token in ('outcome:"achieved"', 'outcome:"empty"', "cancelled"):
             self.assertIn(token, self.text)
+        # The refusal exits were removed — the model must never be told to write them.
+        self.assertNotIn('outcome:"declined"', self.text)
+        self.assertNotIn('outcome:"blocked"', self.text)
         # The give-up / cycle-cap machinery was removed — it must not creep back.
         for gone in ("gave-up", "capped", "max_cycles", "no_progress_streak"):
             self.assertNotIn(gone, self.text)

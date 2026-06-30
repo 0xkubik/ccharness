@@ -47,13 +47,6 @@ def _read_state(cwd, session_id=None):
         return rd, None
 
 
-def _count_lines(p):
-    try:
-        return sum(1 for ln in p.read_text().splitlines() if ln.strip())
-    except OSError:
-        return 0
-
-
 def _tail(p, n):
     try:
         lines = [ln for ln in p.read_text().splitlines() if ln.strip()]
@@ -88,7 +81,6 @@ def musician_info(cwd, session_id=None):
         "awaiting": st.get("awaiting"),
         "ultracode": bool(st.get("ultracode")),
         "started_at": st.get("started_at"),
-        "blocked_count": _count_lines(rd / "blocked.jsonl"),
         "last_action": (_tail(rd / "live.log", 1) or [None])[0],
     }
 

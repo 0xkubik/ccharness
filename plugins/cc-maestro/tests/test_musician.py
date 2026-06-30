@@ -7,7 +7,7 @@ RID = "20260626-120000-test"
 
 
 class TestMusician(unittest.TestCase):
-    def _repo(self, state=None, session=None, live=None, blocked=0):
+    def _repo(self, state=None, session=None, live=None):
         """Lay a run out the new way: runs/<rid>/state.json (+ optional pointer / live feed)."""
         repo = tempfile.mkdtemp()
         base = Path(repo) / ".claude" / "ccharness" / "musician"
@@ -20,9 +20,6 @@ class TestMusician(unittest.TestCase):
                 (base / "by-session" / session).write_text(RID)
             if live:
                 (run / "live.log").write_text("\n".join(live) + "\n")
-            if blocked:
-                (run / "blocked.jsonl").write_text(
-                    "\n".join(json.dumps({"direction": f"d{i}", "reason": "r"}) for i in range(blocked)) + "\n")
         return repo
 
     # --- detection (fallback scan: no session id) ---
@@ -54,15 +51,13 @@ class TestMusician(unittest.TestCase):
              "entry": "task", "ultracode": True,
              "input": "fix the flaky login test", "done_when": "test passes 10x in a row"},
             session="s1",
-            live=["12:00:01 cycle 4   $ npm test", "12:00:09 cycle 4   ▶ cc-funnel:do"],
-            blocked=2)
+            live=["12:00:01 cycle 4   $ npm test", "12:00:09 cycle 4   ▶ cc-funnel:do"])
         info = musician.musician_info(repo, "s1")
         self.assertEqual(info["status"], "working")
         self.assertEqual(info["input"], "fix the flaky login test")
         self.assertEqual(info["done_when"], "test passes 10x in a row")
         self.assertEqual(info["cycle"], 4)
         self.assertTrue(info["ultracode"])
-        self.assertEqual(info["blocked_count"], 2)
         self.assertEqual(info["last_action"], "12:00:09 cycle 4   ▶ cc-funnel:do")
 
     def test_info_none_when_inactive(self):

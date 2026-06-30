@@ -16,9 +16,9 @@ into the fully autonomous build loop. **`--auto` skips the shaping** and starts 
 first turn (the old behaviour; this is what `nonstop` passes to walk the roadmap hands-off).
 
 - **With a prompt** (`/musician <task / problem / idea>`): it **thinks first**, sized to the input
-  (a fuzzy pain → `crux`; an idea → North-Star fit; a clear task → straight to build). The brain may
-  come back **declined** ("not worth it / wrong problem") or reframed, instead of blindly building.
-  If it clears, it forges a falsifiable definition of done and builds to it.
+  (a fuzzy pain → `crux`; an idea → North-Star fit; a clear task → straight to build). The brain
+  **sharpens a misaimed target** instead of blindly building, but handed work is never refused — it
+  forges a falsifiable definition of done and builds to it.
 - **Without a prompt** (`/musician`): it **finds the work itself** via `what-to-do` (picking the top
   direction *with* you in shaping, or autonomously under `--auto`), then builds that one direction to done.
 
@@ -27,12 +27,13 @@ one piece of work, to its end, then stop. Want another — launch it again.
 
 - **Exits (the only doors out):**
   - **achieved** — the done-check is met.
-  - **declined** — the brain ruled the work shouldn't happen (leave-it / wrong problem / an
-    intent-changing reframe, or — in open mode — nothing worth doing). A smart "no" is a success,
-    not a failure; it is distinct from `blocked`.
-  - **blocked** — *tried and couldn't build it*: the `do` subagent hit a business / non-technical
-    blocker it refuses, or the technical path is exhausted (how-to-do has no new buildable approach
-    left). There is no try-count and no cycle cap — one real blocker closes the run.
+  - **empty** — *open mode only:* `what-to-do` found nothing worth building (the roadmap frontier is
+    exhausted), so there's no direction to pick. Not a refusal of handed work — it's the autonomous
+    walker's natural floor, and the signal `nonstop` reads to stop.
+  - **cancelled** — `/musician-cancel`. The **only brake on a genuine dead-end**: there is no
+    `blocked`/`declined` exit and no give-up. Handed work is always carried toward a build — a `do`
+    handback (business blocker or stuck technical path) loops back to `how-to-do` for a different
+    approach, never a self-close. If the loop truly can't get past a wall, the human cancels it.
 - **Open mode requires a roadmap's North Star** (it leans on `what-to-do`). None → `/roadmap-management` first.
 - `/musician-cancel` is the manual brake.
 - `--auto` skips the collaborative shaping phase and arms straight into the autonomous build loop.
@@ -52,17 +53,16 @@ Each run gets its OWN folder so many runs in one repo never collide:
                               entry:"task"|"open", phase:"shaping"|"building",
                               input (the original prompt, verbatim), done_when,
                               cycle, ultracode, awaiting, outcome, worktree_helper, …}
-      blocked.jsonl          directions handed back during this run
-      log.jsonl              one line per cycle
+      log.jsonl              one line per cycle (carries which approaches failed this run)
       live.log               live action feed — one line per tool call (see "Watching a run live")
       heartbeat              touched by the hooks each turn/tool call (crash detection)
     by-session/<session-id>  pointer → the active run-id for that session (how the hooks find it)
 ```
 
-`status` is the human-readable lifecycle label — `working` / `suspended` / `achieved` / `declined`
-/ `blocked` / `cancelled`. `outcome` carries the same terminal value (or `null` while
+`status` is the human-readable lifecycle label — `working` / `suspended` / `achieved` / `empty`
+/ `cancelled`. `outcome` carries the same terminal value (or `null` while
 running); `active` + `awaiting` are what the hooks gate on. A non-null `awaiting` object means the
-loop is **suspended** on async work or a transient outage — not done, not blocked; the awaited
+loop is **suspended** on async work or a transient outage — not done, not given up; the awaited
 task's completion notification resumes it.
 
 ## Arm & crash recovery
@@ -99,7 +99,7 @@ The hook finds THIS session's run via the `by-session/<session-id>` pointer (see
 | this session's run active, `phase:"building"` | blocks (re-feeds one cycle) |
 | active but `phase:"shaping"` | yields (collaborating with the human — normal conversation, no re-feed) |
 | active but `awaiting` set | yields (suspended — terminal frees, no turn burned) |
-| `active:false` (achieved / declined / blocked / cancelled) | yields (session ends) |
+| `active:false` (achieved / empty / cancelled) | yields (session ends) |
 | no pointer for this session | yields (the common case — most Stops have no musician) |
 
 It fails **closed** where it matters: if this session has a run pointer but its `state.json` is
@@ -132,13 +132,13 @@ The harness cuts the worktree from a base you don't control (it can be a stale `
 conductor doesn't trust it: it captures `BASE = git rev-parse HEAD` and tells the build subagent to
 `git reset --hard BASE` as its first action. That — plus the ff-only integrate that refuses anything
 not on `BASE` — is what makes "the build always starts from your latest commit" reliable without
-depending on any settings file. A second consecutive `STALE` is treated as an infra failure and
-closes `blocked`. The build sees **committed state only** — uncommitted working-tree changes are not
-visible to it (the musician builds from your last commit).
+depending on any settings file. A persistent `STALE` the loop can't get past is an infra failure —
+the human's cue to `/musician-cancel` (there's no self-close). The build sees **committed state
+only** — uncommitted working-tree changes are not visible to it (the musician builds from your last commit).
 
 Isolation is **per build dispatch**, so a multi-step piece cuts a fresh worktree each build and
 integrates as it goes; a single-build piece is exactly "cut a worktree → build → integrate →
-remove". A `declined` run never builds, so it creates no worktree. Its absolute path is recorded in
+remove". An `empty` run never builds, so it creates no worktree. Its absolute path is recorded in
 `state.json` as `worktree_helper` so the in-loop calls find it on re-fed turns (where
 `${CLAUDE_PLUGIN_ROOT}` isn't set).
 

@@ -1,5 +1,5 @@
 ---
-description: "Hand the project ONE thing to carry to a real finish — a task, problem, or idea. The musician thinks it through (and may DECLINE or reframe a bad idea), forges its own definition of done, builds to that done via the cc-funnel pipeline, then closes. With a prompt: think → build. Without one: find a direction itself via what-to-do → build. Bounded and self-closing."
+description: "Hand the project ONE thing to carry to a real finish — a task, problem, or idea. The musician thinks it through (sharpening a misaimed idea), forges its own definition of done, builds to that done via the cc-funnel pipeline, then closes. With a prompt: think → build. Without one: find a direction itself via what-to-do → build. Bounded and self-closing."
 argument-hint: "[task / problem / idea — or nothing to let it find the work] [--auto] [--ultracode]"
 ---
 
@@ -33,9 +33,9 @@ The musician is the project's brain for ONE piece of work. It plays the cc-funne
 (`what-to-do` → `how-to-do` → `do` → `refactor-review-test`) plus cc-tools's `crux`/`slap`, and drives
 the work to a REAL finish, then **closes**.
 
-- **With a prompt** (a task/problem/idea): it **thinks first** — sized to the input — and may come
-  back **declined** ("not worth it / wrong problem") or reframed, rather than blindly building. If it
-  clears, it forges a falsifiable definition of done and builds to it.
+- **With a prompt** (a task/problem/idea): it **thinks first** — sized to the input — and **sharpens
+  a misaimed target** rather than blindly building, but handed work is always carried to a build, never
+  refused. It forges a falsifiable definition of done and builds to it.
 - **Without a prompt:** it **finds the work itself** via `what-to-do` (auto-picking the top
   direction), then builds that one direction to done.
 
@@ -47,9 +47,10 @@ your approval) or just go. Only after that does it flip into the fully autonomou
 this is what `nonstop` uses to walk the roadmap hands-off).
 
 It is **bounded and self-closing**: one piece of work, to its end, then stop — there is no
-never-stop loop above it. Exits: **achieved** (done), **declined** (the brain said no — a success,
-not a failure), **blocked** (tried, couldn't build it — a business blocker or an exhausted technical
-path; no try-count, no cycle cap). Open mode
+never-stop loop above it. Exits: **achieved** (done), **empty** (open mode only — nothing left worth
+building, the roadmap frontier is exhausted), and **cancelled** (`/musician-cancel`). Handed work is
+never refused: a build that can't get past a wall keeps trying a different approach, and a genuine
+dead-end is yours to stop with `/musician-cancel` — there is no try-count and no give-up. Open mode
 needs the North Star — with none it routes you to **`/roadmap-management`**.
 
 `--ultracode` forces maximum parallelism in the build step (mandatory Workflow + parallel subagents +

@@ -63,7 +63,7 @@ class TestMusicianHook(unittest.TestCase):
         self.assertIn("block", out)
 
     def test_inactive_allows_stop(self):
-        # active:false — the musician self-closed (achieved/declined/blocked).
+        # active:false — the musician self-closed (achieved / empty) or was cancelled.
         repo = repo_with({"active": False, "session_id": SESSION})
         rc, out = run_hook(repo, {"session_id": SESSION})
         self.assertEqual(rc, 0)
@@ -229,10 +229,15 @@ class TestMusicianRefeedContent(unittest.TestCase):
         _, out = run_hook(repo, {"session_id": SESSION})
         return out
 
-    def test_refeed_mentions_brain_and_decline(self):
+    def test_refeed_mentions_brain_and_empty_exit(self):
         out = self._refeed()
         self.assertIn("BRAIN", out)
-        self.assertIn("declined", out)
+        # the open-mode "nothing to build" close is the only self-close besides achieved
+        # (the hook output is JSON, so its embedded quotes are escaped — match the bare word)
+        self.assertIn("empty", out)
+        # the refusal exits are gone — the re-feed must not reintroduce them
+        self.assertNotIn("declined", out)
+        self.assertNotIn("blocked", out)
 
     def test_refeed_done_check_leads_build(self):
         out = self._refeed()

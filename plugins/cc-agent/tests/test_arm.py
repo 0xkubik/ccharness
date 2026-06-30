@@ -49,8 +49,10 @@ class TestArmTaskMode(unittest.TestCase):
         ptr = (Path(repo) / MUS / "by-session" / SESSION).read_text()
         self.assertEqual(ptr, rid)
         # heartbeat + record files exist
-        for f in ("heartbeat", "log.jsonl", "blocked.jsonl"):
+        for f in ("heartbeat", "log.jsonl"):
             self.assertTrue((Path(repo) / MUS / "runs" / rid / f).exists())
+        # blocked.jsonl is no longer created — the blocked exit was removed.
+        self.assertFalse((Path(repo) / MUS / "runs" / rid / "blocked.jsonl").exists())
 
     def test_records_worktree_helper(self):
         # The in-loop build integrate/discard calls need the helper's path on re-fed turns (no
@@ -205,7 +207,7 @@ class TestArmResume(unittest.TestCase):
         first, _, _ = run_arm(repo, "long task")
         rid = first["RUN_ID"]
         # simulate a close, then a resume from a different (new) session
-        st = state_of(repo, rid); st["active"] = False; st["status"] = "blocked"
+        st = state_of(repo, rid); st["active"] = False; st["status"] = "achieved"
         (Path(repo) / MUS / "runs" / rid / "state.json").write_text(json.dumps(st))
         out, _, _ = run_arm(repo, f"--resume {rid}", session="new-9999")
         self.assertEqual(out.get("RESUMED"), rid)

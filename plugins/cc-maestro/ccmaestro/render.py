@@ -111,7 +111,6 @@ def render_musician_detail(row, now=None):
         f"  entry    {m.get('entry')}",
         f"  asked    {m.get('input') or '(open mode — found its own direction)'}",
         f"  goal     {m.get('done_when') or '(not forged yet)'}",
-        f"  blocked  {m.get('blocked_count')} handed back",
         f"  verdict  {row.get('verdict')}" + (f" — {row['reason']}" if row.get("reason") else ""),
     ]
     tail = mus.live_tail(row.get("cwd"), row.get("sessionId"), 20)

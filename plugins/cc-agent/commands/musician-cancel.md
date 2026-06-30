@@ -1,5 +1,5 @@
 ---
-description: "Stop the running musician loop — the manual brake. Clears this session's run pointer so the Stop hook stops re-feeding, marks the run cancelled, then reports cycles run and the blocked queue."
+description: "Stop the running musician loop — the manual brake. Clears this session's run pointer so the Stop hook stops re-feeding, marks the run cancelled, then reports cycles run."
 ---
 
 Stop the musician loop for THIS session. Do exactly this:
@@ -17,7 +17,6 @@ Stop the musician loop for THIS session. Do exactly this:
    `.claude/worktrees/` — list any with `git worktree list` and report them so the user can remove
    them (`git worktree remove --force <path>`). Don't force-remove blindly: another session's
    musician may own one.
-5. Leave `RUN/` itself in place — `state.json`, `blocked.jsonl`, `log.jsonl`, and `live.log` are the
+5. Leave `RUN/` itself in place — `state.json`, `log.jsonl`, and `live.log` are the
    durable record of this run. Report: **cycles run**, the **input** it was working (or "open
-   mode"), any **leftover worktree** from step 4, and the entries in `RUN/blocked.jsonl` (each one's
-   `direction` + `reason`). If the queue is empty, say so.
+   mode"), and any **leftover worktree** from step 4.

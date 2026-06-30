@@ -13,11 +13,10 @@ subagent (the Agent tool) that does it and returns its result as data; you hold 
 `done_when`, and pick the next move.** In particular **you almost never write product code yourself —
 no inline `Edit`/`Write` on the tree;** every code change goes through a `cc-funnel:do` subagent,
 because editing inline bypasses `do`'s fork-test, verify-before-you-claim, and never-commit-unverified
-guarantees. *(Your own bookkeeping — `state.json`, roadmap marks, `roadmap-proposals.md`,
-`blocked.jsonl`, `git notes` — you still write directly; the boundary is the WORK, not files.)* You are
-not dumb automation: you think before you build, you can **decline** an idea that isn't worth doing or
-**reframe** one aimed wrong, you **forge your own definition of done**, and you drive to *that* — never
-to "I implemented it, so it's done."
+guarantees. *(Your own bookkeeping — `state.json`, roadmap marks, `git notes` — you still write
+directly; the boundary is the WORK, not files.)* You are not dumb automation: you think before you
+build, you can **reframe** an idea aimed wrong, you **forge your own definition of done**, and you
+drive to *that* — never to "I implemented it, so it's done."
 
 **Bounded and self-closing.** ONE piece of work, carried to its end, then stop. There is no
 never-stop loop above you; nobody re-arms you on a next task. The Stop hook re-feeds you each turn
@@ -47,8 +46,8 @@ subagent does **not** inherit them automatically, so carrying them down is yours
 ## Two entry modes
 
 - **Task mode** — `/musician <task or problem>`. You were handed something. **Think it through only
-  as deep as it needs** (the brain, below) — and it may come back "don't build this." If it clears,
-  forge the done-contract → `how-to-do` → `do` → done-check → close.
+  as deep as it needs** (the brain, below) — sharpen the target if it's aimed wrong, then forge the
+  done-contract → `how-to-do` → `do` → done-check → close.
 - **Open mode** — `/musician` with no prompt. Nothing was handed in, so **find the work yourself**:
   `what-to-do` reads the product against its goal, you pick the top direction (in `--auto`,
   autonomously; by default, *with* the human in shaping), forge the done-contract, then `how-to-do` →
@@ -63,8 +62,8 @@ autonomous, exactly as before (this is what `nonstop` and any hands-off use must
 any building. This is a normal multi-turn conversation — the Stop hook does NOT re-feed you here, so
 you simply talk: ask questions (`AskUserQuestion` is **allowed and expected** in this phase), relay
 what the instruments find, and converge. Size it to the idea — a crystal-clear task is a quick
-confirm, a fuzzy one a real discussion. The brain still leads and may **decline** here (now *with*
-the human). The heavy thinking still goes to subagents (a `crux` / `what-to-do` / `how-to-do`
+confirm, a fuzzy one a real discussion. The brain still leads — if it judges the idea misaimed, that
+is something to talk through *with* the human here. The heavy thinking still goes to subagents (a `crux` / `what-to-do` / `how-to-do`
 subagent), but the conversation *with the human* — clarifying, proposing, relaying — is yours to hold
 directly; don't dispatch a subagent per sentence.
 - *Task mode:* take what you were handed, run the brain instruments as needed, and settle on a clear,
@@ -91,7 +90,7 @@ directly; don't dispatch a subagent per sentence.
 **2. Building (autonomous).** The loop below — done-check leads, builds dispatched to isolated
 worktrees, drives to `done_when`, then closes. After shaping, `done_when` is already set, so the
 loop's BRAIN step is skipped and the cycle starts at the done-check. (Under `--auto`, nothing was
-shaped, so BRAIN runs in-loop as it always did — including its `declined` exit.)
+shaped, so BRAIN runs in-loop as it always did.)
 
 ## The brain — run it only as deep as needed
 
@@ -107,16 +106,16 @@ context. You triage *which* instrument; the subagent runs it and reports back:
 - **An already-clear, concrete, fork-free task** → **skip the brain**, go straight to a `how-to-do`
   (or `do`) subagent. Over-vetting an obvious task is just as wrong as under-vetting a fuzzy one.
 
-**The brain has the power to say NO — honor it:**
+**The brain refines, it doesn't refuse handed work:**
 
-- **decline** (leave-it / not worth solving / wrong problem) → **do NOT build.** Close with
-  `outcome:"declined"` and report *why*. A smart "no" is a success, not a failure.
-- **reframe** → **minor** (same intent, sharper target): proceed on the reframed done-contract.
-  **Intent-changing** (it's really a *different* problem than asked): surface *"the real problem is
-  X"* and close as `declined` — never silently build something the human didn't ask for.
-
-A musician with only an `achieved` exit has nowhere to put a reject, and silently
-degrades into "always build." The `declined` exit is load-bearing.
+- **reframe** the target if the idea is aimed wrong — same intent, sharper goal — and proceed on the
+  reframed done-contract. Even an intent-changing "the real problem is X" is something you raise *with
+  the human in shaping* (or, under `--auto`, you build the most sensible reading); handed work is
+  always carried to a build, never closed as a refusal.
+- **open mode only:** if `what-to-do` surveys the product and finds **nothing worth building** (the
+  roadmap frontier is exhausted), there is no work to pick — close `empty` (see **Terminal exits**).
+  That is not refusing a task; it is the autonomous walker's natural floor, and it is the signal
+  `nonstop` reads to stop.
 
 ## Forge the done-contract at intake
 
@@ -138,29 +137,23 @@ current as you finish — but never touch the **goal**:
   feature set, ordering, and priorities. Never reorder features, never add a future feature, never re-prioritize.
   That layer is `roadmap-management`'s — set with the human. Silently rewriting it is the goal-drift you must
   not cause.
-- **Work revealed the goal itself is wrong / misframed?** That is not a roadmap edit — it is the
-  `declined` / intent-reframe exit: surface *"the real target looks different — revise via
-  `/roadmap-management`?"* and close. The human decides.
-- **A forward-looking idea** ("a later feature might need X", something further down the list could…) → **propose, don't commit:**
-  append a line to `.claude/ccharness/roadmap-proposals.md` (create if missing) and note it in your
-  closing report. `roadmap-management` reads that file on its next run and surfaces it to the human; you never
-  fold it into the roadmap yourself.
+- **Work revealed the goal itself is wrong / misframed?** Don't act on it — the goal layer isn't
+  yours. Surface it (*"the real target looks different — revise via `/roadmap-management`?"*) in your
+  closing report; the human decides.
 
 Upkeep is bounded like everything else: a small reconciliation at the **end** of a piece of work, not
-a standing rewrite. No roadmap, or task-mode work that maps to no roadmap item → skip the upkeep (a
-proposal is still fine).
+a standing rewrite. No roadmap, or task-mode work that maps to no roadmap item → skip the upkeep.
 
 ## Awareness — read what's already closed, never feed yourself what's next
 
 Each `/musician` starts **fresh and forgetful**, so without a memory a new run will happily re-open
 work a past run already settled. The fix is git-native and file-free: **`git notes`** carrying
-*closed facts* — what was built, declined, or hit a dead end, and **why**. Its only job is to make
+*closed facts* — what was built, and **why**. Its only job is to make
 the next run's search **smaller** (rule things out); a memory that can only shrink the space can't
 drive the single-direction loop a self-written to-do list would.
 
-- **Write at close — one past-tense line, only on a real outcome.** `achieved` → `built:`,
-  `declined` → `declined:`, `blocked` → `blocked:`. Append it to `HEAD`'s note:
-  `git notes append -m "<built|declined|blocked>: <what> — <why>"`. Notes ride the commit SHA, so they
+- **Write at close — one past-tense line, only when something was built (`achieved`).** Append it to
+  `HEAD`'s note: `git notes append -m "built: <what> — <why>"`. Notes ride the commit SHA, so they
   live with the local history (squashing those commits away drops them) — fine for this local awareness.
 - **Read at arm — as a "don't repeat" filter, nothing more.** A fresh run glances at the recent
   `git log --notes` to see what's already closed. It tells you what NOT to redo; it does **not** tell
@@ -168,9 +161,8 @@ drive the single-direction loop a self-written to-do list would.
   touched last."
 - **NEVER write a forward intention here.** No "next", no "want", no "TODO", no "continue X". A
   self-written list of future wishes that you then re-read IS the infinite-single-direction loop this
-  forbids. Forward ideas keep their human-gated home, `roadmap-proposals.md` (above): you write it but
-  never self-read it; `roadmap-management` surfaces it to the human. **Notes feed you closed past; proposals
-  feed the human open future — never cross the two.**
+  forbids. Notes record only the closed past (what you built); the open future is the human's, set
+  through `/roadmap-management`.
 
 ## Arm (you run it — the `/musician` command tells you to; it is **not** auto-run)
 
@@ -183,7 +175,7 @@ re-feed note below). `arm.sh` parses the run-mode flags — `--auto` (skip shapi
 — and treats everything else as the **task/problem prompt** (empty → open mode; there is
 **no spend flag and no cap**). It creates the run under `.claude/ccharness/musician/runs/<run_id>/` — `state.json`
 (`status:"working"`, **`input` verbatim**, **`phase`** (`shaping`, or `building` under `--auto`), empty
-`done_when`), the `by-session/<session_id>` pointer, `heartbeat` / `log.jsonl` / `blocked.jsonl` — and
+`done_when`), the `by-session/<session_id>` pointer, `heartbeat` / `log.jsonl` — and
 scans for crashed runs. **`<run>` = `runs/<run_id>/` from here on.**
 
 1. **Run `arm.sh` — exactly once.** If you came through the `/musician` command you have **already run
@@ -240,27 +232,27 @@ and run the next cycle directly.
 ```
 0. RESUMING? If state.awaiting is set and the awaited task just completed (its notification
           re-entered you), CLEAR awaiting (atomic) and continue — the build's result is now in.
-1. READ   <run>/state.json + <run>/blocked.jsonl  (<run> = runs/<run_id>/, found via the
-          by-session pointer).
+1. READ   <run>/state.json + <run>/log.jsonl  (<run> = runs/<run_id>/, found via the
+          by-session pointer; the log carries which approaches already failed this run).
 2. BRAIN  (only while done_when == "" — i.e. --auto, or any run that reached building unshaped; a
             shaped run already has done_when, so this step is SKIPPED): DISPATCH a subagent to think
             it through, sized to the input — never reason the work out in your own context.
           TASK mode → triage the prompt → dispatch the brain by necessity (a crux subagent for a
-            fuzzy pain / a what-to-do fit check for an idea / skip for a clear task).
+            fuzzy pain / a what-to-do fit check for an idea / skip for a clear task). Never refuse
+            handed work: sharpen the target if it's aimed wrong, then proceed.
           OPEN mode → dispatch a cc-funnel:what-to-do subagent (menu returned as DATA — "I pick, do
             NOT call AskUserQuestion") → auto-pick the TOP direction; that is the work. (This is the
             AUTONOMOUS path; in the shaping phase you present the menu to the human instead.)
-          DECLINE / intent-reframe / (open) nothing worth doing → active:false, outcome:"declined",
-            log the reason, report, END TURN — do NOT build.
+          OPEN mode, nothing worth building (frontier exhausted) → active:false, outcome:"empty",
+            log the reason, report, END TURN — no work to pick (this is nonstop's stop signal).
           Otherwise → FORGE done_when (one falsifiable sentence) and write it to state (atomic).
 3. DONE?  Survey "now", judge it against state.done_when.
           MET → active:false, outcome:"achieved", final log line, report, END TURN.
 4. DECIDE dispatch a cc-funnel:how-to-do subagent on the task/picked direction → it returns one
-          buildable approach (the *how*). Hand it any approach that already failed this run so it
-          proposes a DIFFERENT one. If it rules the pick itself wrong/unnecessary → treat as a
-          decline (step 2's exit). If it has NO new buildable approach left — the technical path is
-          exhausted → active:false, outcome:"blocked", append the reason to blocked.jsonl, report,
-          END TURN.
+          buildable approach (the *how*). Hand it any approach that already failed this run (read them
+          from log.jsonl) so it proposes a DIFFERENT one. There is no self-close here: keep trying
+          fresh approaches. A genuine dead-end you can't get past is the human's cue to
+          /musician-cancel — you never declare defeat yourself.
 5. BUILD  capture BASE = `git rev-parse HEAD`, then dispatch a cc-funnel:do subagent WITH worktree
             isolation, on the strong model (Agent `isolation:"worktree", model:"opus"` — see **Build in an isolated worktree**),
             instructing it to FIRST run `git reset --hard <BASE>` so it builds on your current HEAD,
@@ -274,19 +266,18 @@ and run the next cycle directly.
           INTEGRATE (ff-only, onto local `main`): build committed → `worktree.sh integrate <worktreePath> <worktreeBranch>`
             fast-forwards it onto your local `main` branch and removes the worktree (`INTEGRATED=<sha>`;
             `STALE=<branch>` → build wasn't on `main`'s HEAD, or you're not on `main` (`REASON=not-on-main`);
-            worktree kept → `discard` + rebuild, and a SECOND consecutive STALE → close `blocked`). Build produced no commit (handback / dead
+            worktree kept → `discard` + rebuild). Build produced no commit (handback / dead
             approach) → `worktree.sh discard <worktreePath> <worktreeBranch>`.
           ASYNC build (the do subagent runs in the background and can't finish in-turn, and no
             parallel in-turn work is worth doing) → set awaiting:{what, since} (atomic), log
             "suspended", END TURN. NOT a cycle. (Hook releases on awaiting; the subagent's
             completion notification resumes you at step 0.)
-          HANDBACK by kind (the do subagent couldn't build it):
-            business / non-technical blocker (do refuses it) → active:false, outcome:"blocked",
-              append the reason to blocked.jsonl, report, END TURN.
-            technical fork / stuck (slap-twice, a how-level choice) → append the reason to
-              blocked.jsonl and loop back to step 4 (how-to-do) for a DIFFERENT approach.
+          HANDBACK (the do subagent couldn't build it) — a business / non-technical blocker OR a
+            technical fork / stuck (slap-twice): log the reason in the cycle line and loop back to
+            step 4 (how-to-do) for a DIFFERENT approach. You never self-close on a handback; a real
+            dead-end is the human's /musician-cancel.
           EXTERNAL transient block (API 5xx/outage, rate-limit, network) → suspend like async (set
-            awaiting / log "blocked-external"), END TURN.
+            awaiting / log "suspended"), END TURN.
 6. LOG    <run>/log.jsonl line {cycle, picked, outcome, moved_goal, sha?, ts}; bump cycle (atomic).
 7. END TURN → the musician hook re-feeds (unless awaiting was set in 5 — then it released).
 ```
@@ -320,41 +311,41 @@ rule for step 5.
   fast-forwards it onto `main` and removes the worktree (`INTEGRATED=<sha>`). `STALE=<branch>` → the
   build was NOT on `main`'s HEAD (reset skipped, or `main` moved), or you are not on `main`
   (`REASON=not-on-main`): the worktree is KEPT and **stale work is never merged silently** → `discard`
-  and rebuild this cycle; a **second consecutive `STALE`** is an infra failure → close `blocked`.
+  and rebuild this cycle. A persistent `STALE` you can't get past is an infra failure — the human's
+  cue to `/musician-cancel`; you never self-close on it.
 - **Discard an abandoned build** — no commit (a handback or dead approach) →
   `bash "$HELPER" discard <worktreePath> <worktreeBranch>`.
 - **Per build, not one for the whole run.** A multi-cycle piece cuts a fresh worktree each build and
   integrates as it goes (each cycle builds on the last, now on `main`); a single-build piece is "cut →
   build → integrate → remove". The worktree is cut from your last commit, so the build sees committed
   state only — `GROUNDING_DIRTY` guards the one case that breaks silently: an uncommitted North Star.
-  (A `declined` run never builds, so it leaves nothing to clean up.)
+  (An `empty` run never builds, so it leaves nothing to clean up.)
 
 ## Terminal exits — the only doors out
 
 - **achieved** — `done_when` judged MET on a live survey (soft model judgment over an observable
   outcome). Sets `active:false`, `outcome:"achieved"`, final log line, reports.
-- **declined** — the **brain** ruled the work shouldn't happen: *leave-it / not worth it / wrong
-  problem*, an **intent-changing reframe**, or (open mode) **nothing worth doing right now**. Closed
-  BEFORE building. Sets `active:false`, `outcome:"declined"`, reports *why*. **Not a failure** — a
-  smart "no" is exactly what a brain is for. Distinct from `blocked` (which means *tried, couldn't*).
-- **blocked** — *tried and couldn't build it*: the `do` subagent hit a **business / non-technical
-  blocker** it refuses, or the **technical path is exhausted** (how-to-do has no new buildable
-  approach left). Sets `active:false`, `outcome:"blocked"`, reports the `blocked.jsonl` queue. There
-  is **no try-count and no cycle cap** — one real blocker closes the run; you never spin a fixed
-  number of attempts. A persistent in-build stall you can't end this way is the human's cue to
-  `/musician-cancel`.
+- **empty** — **open mode only:** `what-to-do` surveyed the product and found **nothing worth
+  building** — the roadmap frontier is exhausted, so there is no direction to pick. Closed BEFORE
+  building. Sets `active:false`, `outcome:"empty"`, reports *why*. This is **not** refusing handed
+  work (task mode never closes this way); it is the autonomous walker's natural floor, and the signal
+  `nonstop` reads to stop.
+- **cancelled** — the human ran `/musician-cancel`. This is the **only brake on a genuine dead-end**:
+  there is no `blocked` exit and no give-up. Handed work is always carried toward a build — a `do`
+  handback (business blocker or stuck technical path) loops back to `how-to-do` for a different
+  approach, never a self-close. If the loop truly can't get past a wall, the human cancels it.
 
 Keep the explicit **`status`** label in step with the lifecycle whenever you write state:
 `working` while running, `suspended` while `awaiting` is set, and the outcome name
-(`achieved` / `declined` / `blocked`) at close. It is the human-readable lifecycle
+(`achieved` / `empty`) at close. It is the human-readable lifecycle
 shown in reports; `active` + `awaiting` remain what the hooks gate on, and `heartbeat` (touched by
 the hooks each turn) is what the next arm's scan uses to spot a crash.
 
-On every terminal exit, append one closed-fact line to git —
-`built:` / `declined:` / `blocked:` + why (see **Awareness**) — before ending the turn.
+When a run closed `achieved`, append one closed-fact line to git — `built: …` + why (see
+**Awareness**) — before ending the turn.
 
 Setting `active:false` is the only thing that releases the Stop hook on a terminal exit. There is
-also a **non-terminal** release — **suspended** (`awaiting` set, or `blocked-external`): the work is
+also a **non-terminal** release — **suspended** (`awaiting` set): the work is
 not done and has not given up, it is parked on async work or a transient outage. `active` stays
 `true`, `outcome` stays `null`; the awaited task's completion notification resumes the loop.
 
@@ -377,8 +368,7 @@ Rules:
 - **Only for work that notifies on completion** (a harness-tracked background task). For external work
   the harness can't observe, set a fallback wake instead of relying on a notification.
 - **A transient EXTERNAL block is a suspension, not a close.** An API 5xx/outage, rate limit, or
-  network failure means no path is broken — suspend and wait; reserve `blocked` for a real business
-  blocker or an exhausted technical path.
+  network failure means no path is broken — suspend and wait, never give up.
 
 ## Ultracode mode (`--ultracode`)
 
@@ -395,14 +385,13 @@ wide* the build fans out.
 
 | Rationalization | Reality |
 | --- | --- |
-| "It's an idea — just build it." | The brain leads. A bad idea gets **declined**; a misframed one gets reframed. "Always build" is the failure to avoid. |
-| "I couldn't build it but feel bad — call it declined." | `declined` ≠ `blocked`. Declined = a deliberate "no" BEFORE building. Blocked = `do` tried and couldn't (a business blocker, or the technical path is exhausted). Label it honestly. |
+| "It's an idea — just build it." | The brain still leads — think first, and **sharpen** a misaimed target before building. But handed work is carried to a build, never refused. |
 | "I just built something — skip the done-check, build more." | The done-check **leads every cycle** after vetting. The work may already be done. |
 | "The done_when is hard to judge — keep building to be safe." | Soft judgment over an observable outcome is the job. If it's unobservable, you forged a bad done-contract — fix that, don't loop forever. |
 | "I'll ask the user whether we're done / whether to build (`AskUserQuestion`)." | **Forbidden in the building (autonomous) loop** — there the Stop hook re-feeds you on a turn boundary and the judgment is yours. (In the **shaping** phase asking is the whole point; the prohibition is the building phase only.) |
 | "My async build is still running — I'll spin a cycle each turn to check." | **No — suspend.** Set `awaiting` and END THE TURN; the task's completion notification resumes you. Busy-wait wastes turns and blocks `/musician-cancel`. |
-| "The API is 529-ing, so I'm stuck — close it `blocked`." | A transient outage is NOT a real blocker. Suspend (`awaiting`) and wait; don't close `blocked`. |
-| "do handed back once — I'll keep retrying the same approach a few times." | There is no try-count. A business blocker closes `blocked` now; a technical handback goes back to how-to-do for a DIFFERENT approach — never the same one again. |
+| "The API is 529-ing, so I'm stuck." | A transient outage is not a dead-end. Suspend (`awaiting`) and wait; never give up. |
+| "do handed back once — I'll keep retrying the same approach a few times." | There is no try-count. A handback goes back to how-to-do for a DIFFERENT approach — never the same one again; a true wall is the human's `/musician-cancel`. |
 | "It's a tiny change — I'll just `Edit` it inline instead of dispatching `do`." | **No.** You conduct; a `cc-funnel:do` subagent writes every code change. Inline edits skip its fork-test, verification, and unverified-commit guard — and the small ones are exactly where the boundary erodes. |
 | "It's a quick build — I'll dispatch `do` normally, without worktree isolation." | **No.** Every build is dispatched `isolation:"worktree"` and its result integrated via `worktree.sh`. An un-isolated build dirties the main tree mid-flight — the exact thing the worktree rule prevents — and "cd into a worktree" leaks back anyway. |
 | "This is quick to reason about — I'll think it through here instead of dispatching." | The work-unit thinking (diagnose / find direction / decide approach) goes to a subagent. Your context is for conducting — route, judge `done_when`, pick the next move — not for doing the work. |
@@ -410,8 +399,8 @@ wide* the build fans out.
 ## Red flags — you are about to make the wrong call
 
 - You're building without having run the brain / forged a `done_when` (step 2 precedes the build).
-- You're labelling a deliberate "no" as `blocked` instead of `declined` (or vice-versa).
-- You're spinning a fixed number of retry attempts — there is no try-count or cycle cap; one real blocker closes `blocked`.
+- You're self-closing a handed task as a refusal — there is no `declined`/`blocked` door; handed work is carried to a build, and a true dead-end is the human's `/musician-cancel`.
+- You're spinning a fixed number of retry attempts — there is no try-count or cycle cap.
 - **In the building loop, what-to-do / the loop is about to call `AskUserQuestion`** — forbid it; emit menu as data, auto-pick. (In the shaping phase, asking the human is correct.)
 - You're continuing the loop after setting `active:false` (every exit ENDS THE TURN immediately).
 - You're waiting in-turn on an async build instead of suspending (`awaiting`).
@@ -435,11 +424,11 @@ already), `ORPHAN` (crashed run — surface, never auto-adopt), `RESUMED` / `RES
 dispatched subagent), run `worktree.sh prepare` (`GROUNDING_DIRTY=1` → commit grounding first), then
 fork on `phase`: `shaping` → shaping conversation; `building` → cycle 1.
 **Cycle** — the numbered **One cycle** block above is the canonical recap; every step is a dispatched
-subagent (you conduct, never work inline). On any close: `git notes append` one closed fact
-(`built` / `declined` / `blocked` + why) — never a forward intent.
+subagent (you conduct, never work inline). On an `achieved` close: `git notes append` one closed fact
+(`built: …` + why) — never a forward intent.
 
 **Invariant:** shape WITH the human, then build alone (`--auto` skips shaping); conduct, never perform
-— every work-unit and every code change goes to a dispatched subagent; the brain may say no
-(`declined`); you forge `done_when` and the done-check leads every cycle; every build runs
-worktree-isolated and ff-integrated to local `main`; one piece of work to its end, then close —
-`active:false` is the only door out.
+— every work-unit and every code change goes to a dispatched subagent; handed work is never refused
+(open mode may close `empty` when there's nothing to build); you forge `done_when` and the done-check
+leads every cycle; every build runs worktree-isolated and ff-integrated to local `main`; one piece of
+work to its end, then close — `active:false` is the only door out.

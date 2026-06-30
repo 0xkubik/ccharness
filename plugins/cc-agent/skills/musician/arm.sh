@@ -109,7 +109,7 @@ jq -n \
   > "$tmp" && mv "$tmp" "$RUN_DIR/state.json"
 
 [ -n "$SID" ] && printf '%s' "$RUN_ID" > "$MUS/by-session/$SID"
-: > "$RUN_DIR/blocked.jsonl"; : > "$RUN_DIR/log.jsonl"; : > "$RUN_DIR/heartbeat"
+: > "$RUN_DIR/log.jsonl"; : > "$RUN_DIR/heartbeat"
 
 # --- crash-orphan scan: a run still "working", not parked on async, whose heartbeat went stale.
 #     Surface it (the user decides whether to /musician --resume <id>); never auto-adopt. ---

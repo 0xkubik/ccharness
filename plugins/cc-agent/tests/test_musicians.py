@@ -19,7 +19,6 @@ def repo_with_run(active=False, outcome="achieved", session=SESSION, input_="har
         "entry": "task", "input": input_, "cycle": 2,
         "started_at": "2026-06-27T08:00:00Z", "outcome": outcome,
     }))
-    (run / "blocked.jsonl").write_text("")
     (run / "live.log").write_text("a tool call\n")
     (base / "by-session").mkdir(parents=True, exist_ok=True)
     (base / "by-session" / session).write_text(RUN_ID)
@@ -93,9 +92,8 @@ class TestMusicians(unittest.TestCase):
         _, out, _ = run_bin(repo, RUN_ID, "info")
         for token in (RUN_ID, "achieved", SESSION, "harden the thing"):
             self.assertIn(token, out)
-        # blocked count renders as a single 0 (empty blocked.jsonl must not print "0\n0").
-        self.assertRegex(out, r"(?m)^blocked\s+0$")
-        self.assertNotIn("0\n0", out)
+        # the blocked-count line was removed with the blocked exit
+        self.assertNotRegex(out, r"(?m)^blocked\b")
 
     def test_unknown_id_errors(self):
         repo = repo_with_run()
