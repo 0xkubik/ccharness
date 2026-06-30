@@ -81,7 +81,8 @@ appears met:
 
 ## Phase 2 — Fan-out (four move-lenses, parallel)
 
-Dispatch four subagents in parallel, one per move. Give each: the **North Star block**, the
+Dispatch four subagents in parallel, one per move — each on the **`sonnet` model** (the lenses are
+breadth run in parallel; the Phase-3 ranking you do yourself stays on your stronger model). Give each: the **North Star block**, the
 **Phase-1 survey**, its **move mandate**, and — **if a roadmap exists** — the **current frontier
 milestone (+ the next few)** as _orienting context_. The frontier is a **steer, not a gate**:
 each lens still scans its whole lane freely, still honours the empty-lane valve, and may still surface

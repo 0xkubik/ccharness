@@ -255,7 +255,7 @@ and run the next cycle directly.
           exhausted → active:false, outcome:"blocked", append the reason to blocked.jsonl, report,
           END TURN.
 5. BUILD  capture BASE = `git rev-parse HEAD`, then dispatch a cc-funnel:do subagent WITH worktree
-            isolation (Agent `isolation:"worktree"` — see **Build in an isolated worktree**),
+            isolation, on the strong model (Agent `isolation:"worktree", model:"opus"` — see **Build in an isolated worktree**),
             instructing it to FIRST run `git reset --hard <BASE>` so it builds on your current HEAD,
             and to read and obey the project rules in `.claude/rules/` (see **Project rules**).
             It writes the code (you never Edit/Write it yourself), builds + smoke-checks, then ALWAYS
@@ -290,8 +290,10 @@ Every build runs in its own throwaway **git worktree**: the autonomous building 
 working tree mid-flight, and only the finished, committed result lands on local `main`. The one hard
 rule for step 5.
 
-- **Isolate at dispatch.** Dispatch the build subagent (`cc-funnel:do`, or `cc-funnel:refactor-review-test`
-  directly) with the Agent tool's **`isolation:"worktree"`** — the ONLY reliable containment: the
+- **Isolate at dispatch, on the strong model.** Dispatch the build subagent (`cc-funnel:do`, or `cc-funnel:refactor-review-test`
+  directly) with the Agent tool's **`isolation:"worktree"`** and **`model:"opus"`** (building and bug-finding are the
+  high-stakes work — keep them on the strong model; the funnel's own panels and codebase-mapping pick cheaper
+  models inside). `isolation:"worktree"` is the ONLY reliable containment: the
   subagent, its nested tools, AND any sub-agents it spawns all run inside one worktree under
   `.claude/worktrees/`. A plain "cd into a worktree" leaks back to the main tree (a dispatched agent
   starts at the main root, `cd` doesn't persist between commands, and its sub-agents reset to root).

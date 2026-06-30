@@ -118,7 +118,9 @@ needs building.
 
 ## Phase 1 — Compass (4 partisan proposers, parallel)
 
-Dispatch four subagents in parallel, one per pole. Hand each the framed decision and its pole's
+Dispatch four subagents in parallel, one per pole — each on the **`sonnet` model**, and likewise the
+Phase-2 grill (the proposers are partisan breadth run in parallel; the Phase-3 synthesis you do
+yourself stays on your stronger model). Hand each the framed decision and its pole's
 mandate. **Each proposer runs this internal pipeline before answering:**
 
 1. **Propose** the strongest plan under its locked stance.

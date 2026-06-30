@@ -88,7 +88,9 @@ The panel is the expensive case, not the default — a pain with one plain cause
 
 ## Phase 1 — The panel (4 partisan lenses, parallel)
 
-Dispatch four subagents in parallel, one per Jungian function. Hand each the pinned pain and its
+Dispatch four subagents in parallel, one per Jungian function — each on the **`sonnet` model**, and
+likewise the Phase-2 grill (the lenses are partisan breadth run in parallel; the deciding synthesis
+in Phase 3 you do yourself, on your stronger model). Hand each the pinned pain and its
 lens mandate. **Each lens runs this internal pipeline:** propose its sharpest read → self-attack
 (where does *this* read break?) → repair → emit the contract. **Each lens stays partisan** — it
 pulls hard in its own direction and never balances. Objectivity is synthesis's job alone.

@@ -83,8 +83,10 @@ Re-enter do only once the task comes back clear and fork-free.
 ## Stage 1 — Map the codebase (understand the whole project first)
 
 Before scoping the change, build a complete picture of the project — a fresh executor that hasn't
-seen this codebase places nothing well until it can see where things live. Two parts, both
-mandatory:
+seen this codebase places nothing well until it can see where things live. This mapping is
+mechanical, so **dispatch it to a subagent on the `haiku` model** (fast and cheap — the same way
+Claude Code's own Explore subagents map a repo) and scope the change from the map it returns. The
+two parts below are that subagent's brief; both mandatory:
 
 - **Study the code.** If **codegraph** is indexed for this workspace (its MCP tools are available,
   or a `.codegraph/` index exists), use it to read the structure — modules, dependencies, call

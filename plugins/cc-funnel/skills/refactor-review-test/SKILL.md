@@ -48,7 +48,8 @@ comes first.
 ## Phase 0 — Map the codebase (understand the whole project first)
 
 Before touching the change, see where it sits — you harden code well only once you can place it.
-Both mandatory:
+This mapping is mechanical, so **dispatch it to a subagent on the `haiku` model** (fast and cheap)
+and work from the map it returns. The two parts below are that subagent's brief; both mandatory:
 
 - **Study the code.** Use **codegraph** if it's indexed (its MCP tools are available, or a
   `.codegraph/` index exists) to read modules, dependencies, and call relationships; else fall back
