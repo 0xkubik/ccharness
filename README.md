@@ -5,19 +5,19 @@ product from "what's the goal?" all the way to committed code, and then run that
 unsupervised across a whole fleet of agents.
 
 ```
-cc-tools + cc-funnel   ──►   cc-agent   ──►   cc-maestro
-the helpers & funnel         the musician      the console
+cc-instruments + cc-script   ──►   cc-musician   ──►   cc-conductor
+the helpers & script         the musician      the console
 you run                      that runs them    that watches them
 by hand                      for you           all at once
 ```
 
-- **cc-tools** — the *helpers layer*. Philosophy-agnostic side doors (`/crux`, `/slap`), the
+- **cc-instruments** — the *helpers layer*. Philosophy-agnostic side doors (`/crux`, `/slap`), the
   `/cc-init` setup wizard, and the harness's recommended project rules. Usable in any project.
-- **cc-funnel** — the *funnel layer*. Single-purpose skills that form a thinking funnel:
-  `ground → diverge → decide → build`. You drive them by hand, one step at a time. Depends on cc-tools.
-- **cc-agent** — the *self-driving layer*. The **musician**: a single agent that takes one piece of
-  work, runs the cc-funnel funnel to drive it to its own definition of done, then closes itself.
-- **cc-maestro** — the *conductor layer*. A console (`ccmaestro`) that watches and controls many
+- **cc-script** — the *script layer*. Single-purpose skills that form a thinking script:
+  `ground → diverge → decide → build`. You drive them by hand, one step at a time. Depends on cc-instruments.
+- **cc-musician** — the *self-driving layer*. The **musician**: a single agent that takes one piece of
+  work, runs the cc-script to drive it to its own definition of done, then closes itself.
+- **cc-conductor** — the *conductor layer*. A console (`ccconductorctl`) that watches and controls many
   agents and musicians at once — token burn, stalls, loops, stop/steer.
 
 Everything here is plain Markdown + JSON (instructions for Claude Code) plus a small Python/shell
@@ -25,13 +25,13 @@ CLI for the console — no app to build, no compile step.
 
 ## The layers
 
-### 1. cc-tools & cc-funnel — what you drive by hand
+### 1. cc-instruments & cc-script — what you drive by hand
 
-**cc-tools** gives you two reasoning side doors that work in any project — **`/crux`** (unwind a pain
+**cc-instruments** gives you two reasoning side doors that work in any project — **`/crux`** (unwind a pain
 or doubt into one diagnosis) and **`/slap`** (reset a fix stuck in a rabbit hole) — plus the
 **`/cc-init`** setup wizard and the harness's recommended project rules.
 
-**cc-funnel** is a product funnel that refuses to skip the thinking:
+**cc-script** is a product script that refuses to skip the thinking:
 
 ```
 /roadmap-management  ──►  /what-to-do  ──►  /how-to-do  ──►  /do     (/slap = reset when stuck)
@@ -47,15 +47,15 @@ or doubt into one diagnosis) and **`/slap`** (reset a fix stuck in a rabbit hole
 - **`/how-to-do`** — work out **how** to build the direction you picked (it converges the
   implementation forks into one buildable approach; it doesn't re-pick the direction).
 - **`/do`** — take one concrete task to a verified local commit through a gated pipeline.
-- **`/slap`** — when a fix is stuck in a rabbit hole, force a step back and a fresh angle (cc-tools).
+- **`/slap`** — when a fix is stuck in a rabbit hole, force a step back and a fresh angle (cc-instruments).
 
-Full details: [`plugins/cc-funnel/README.md`](plugins/cc-funnel/README.md) (the funnel) and
-[`plugins/cc-tools/README.md`](plugins/cc-tools/README.md) (the helpers).
+Full details: [`plugins/cc-script/README.md`](plugins/cc-script/README.md) (the script) and
+[`plugins/cc-instruments/README.md`](plugins/cc-instruments/README.md) (the helpers).
 
-### 2. cc-agent — the musician that runs the funnel for you
+### 2. cc-musician — the musician that runs the script for you
 
 One autonomous loop — the **musician** — the project's brain for **one piece of work**. It plays the
-cc-funnel instruments (what-to-do → how-to-do → do → refactor-review-test) plus cc-tools's crux/slap, forges its own falsifiable definition of
+cc-script instruments (what-to-do → how-to-do → do → refactor-review-test) plus cc-instruments's crux/slap, forges its own falsifiable definition of
 done, drives to it, then **closes itself**. Bounded and self-closing: one piece of work, to its end,
 then stop. There is no never-stop loop above it.
 
@@ -64,26 +64,26 @@ then stop. There is no never-stop loop above it.
 - **`/musician`** (no prompt) — find a direction itself (via what-to-do), then build it.
 - **`/musician-cancel`** — the manual brake.
 
-Full details: [`plugins/cc-agent/README.md`](plugins/cc-agent/README.md).
+Full details: [`plugins/cc-musician/README.md`](plugins/cc-musician/README.md).
 
-### 3. cc-maestro — the console that supervises the fleet
+### 3. cc-conductor — the console that supervises the fleet
 
-The `ccmaestro` CLI watches and controls many coding agents and musicians at once:
+The `ccconductorctl` CLI watches and controls many coding agents and musicians at once:
 
 ```bash
-ccmaestro ls                      # dashboard: tokens, last activity, watchdog verdict
-ccmaestro start "fix flaky test" --repo ~/app
-ccmaestro logs <id> --tail 50
-ccmaestro stop <id> / steer <id> "do X now" / pause <id> / resume <id>
-ccmaestro check --notify          # detect stalled/looping/died; POST changes to a webhook
+ccconductorctl ls                      # dashboard: tokens, last activity, watchdog verdict
+ccconductorctl start "fix flaky test" --repo ~/app
+ccconductorctl logs <id> --tail 50
+ccconductorctl stop <id> / steer <id> "do X now" / pause <id> / resume <id>
+ccconductorctl check --notify          # detect stalled/looping/died; POST changes to a webhook
 ```
 
 It reads the native `claude agents` registry plus each session's transcript, and adds a
 **watchdog** for verdicts the native status doesn't give (stalled, looping, over-budget, died).
 Usable both by a human in a terminal and by an external supervising agent. Inside a session,
-`/maestro` runs the dashboard.
+`/conductor` runs the dashboard.
 
-Full details: [`plugins/cc-maestro/README.md`](plugins/cc-maestro/README.md).
+Full details: [`plugins/cc-conductor/README.md`](plugins/cc-conductor/README.md).
 
 ## Install
 
@@ -91,13 +91,13 @@ Add this repo as a plugin marketplace, then install the layers you want:
 
 ```
 /plugin marketplace add /Users/kubik/nox/misc/claude-code-harness
-/plugin install cc-tools@cc-harness
-/plugin install cc-funnel@cc-harness     # the product funnel (depends on cc-tools)
-/plugin install cc-agent@cc-harness      # optional — the musician
-/plugin install cc-maestro@cc-harness    # optional — the fleet console
+/plugin install cc-instruments@cc-harness
+/plugin install cc-script@cc-harness     # the product script (depends on cc-instruments)
+/plugin install cc-musician@cc-harness      # optional — the musician
+/plugin install cc-conductor@cc-harness    # optional — the fleet console
 ```
 
-The cc-funnel funnel is glue: it routes to skills/plugins you already have (`superpowers`, `frontend-design`,
+The cc-script is glue: it routes to skills/plugins you already have (`superpowers`, `frontend-design`,
 `playwright`, `code-review`, `commit-commands`, and more). To install those dependencies in one
 shot:
 
@@ -116,11 +116,11 @@ Then **ground your product once** — every command depends on it:
 
 ## How the layers depend on each other
 
-- **cc-tools** stands alone — the `/crux`, `/slap`, and `/cc-init` helpers work on their own.
-- **cc-funnel** depends on cc-tools (it routes stuck fixes to `/slap`); the funnel skills are otherwise self-contained.
-- **cc-agent** depends on cc-funnel (it invokes the funnel skills) and cc-tools (`/crux`, `/slap`), and writes its loop state under
+- **cc-instruments** stands alone — the `/crux`, `/slap`, and `/cc-init` helpers work on their own.
+- **cc-script** depends on cc-instruments (it routes stuck fixes to `/slap`); the script skills are otherwise self-contained.
+- **cc-musician** depends on cc-script (it invokes the script skills) and cc-instruments (`/crux`, `/slap`), and writes its loop state under
   `.claude/ccharness/`.
-- **cc-maestro** observes and controls cc-agent (and any other Claude Code agent); it needs neither
+- **cc-conductor** observes and controls cc-musician (and any other Claude Code agent); it needs neither
   of the others installed to watch a fleet, but it's most useful supervising musicians.
 
 ## Repository layout
@@ -128,10 +128,10 @@ Then **ground your product once** — every command depends on it:
 ```
 .claude-plugin/marketplace.json   the marketplace manifest (lists the 4 plugins)
 plugins/
-  cc-tools/      /crux + /slap + /cc-init + rules          (README.md)
-  cc-funnel/     funnel skills + commands                  (README.md)
-  cc-agent/      the musician loop + Stop hooks            (README.md)
-  cc-maestro/    the ccmaestro CLI + /maestro              (README.md)
+  cc-instruments/      /crux + /slap + /cc-init + rules          (README.md)
+  cc-script/     script skills + commands                  (README.md)
+  cc-musician/      the musician loop + Stop hooks            (README.md)
+  cc-conductor/    the ccconductorctl CLI + /conductor              (README.md)
 docs/
   research/      background notes on agentic loops
   superpowers/   design specs + implementation plans

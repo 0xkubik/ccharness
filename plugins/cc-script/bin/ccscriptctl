@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+# ccscriptctl — small terminal helpers for the cc-script harness.
+# Today it opens the project's roadmap or cheat-sheet in your editor, so you don't
+# have to dig into .claude/ccharness/ by hand. More helpers may be added over time.
+set -eu
+
+usage() {
+  cat <<'EOF'
+ccscriptctl — small helpers for the cc-script harness
+
+Usage: ccscriptctl <command>
+
+Commands:
+  roadmap      Open .claude/ccharness/roadmap.md in your editor
+  cheatsheet   Open .claude/ccharness/cheatsheet.md in your editor
+  help         Show this help
+
+The file opens with $VISUAL, else $EDITOR, else your OS default app
+(open / xdg-open). ccscriptctl finds .claude/ccharness/ in the current
+directory or any parent, so it works from anywhere inside a project.
+EOF
+}
+
+# Walk up from the current directory to the nearest ancestor holding .claude/ccharness/.
+find_ccharness() {
+  local dir="$PWD"
+  while :; do
+    if [ -d "$dir/.claude/ccharness" ]; then
+      printf '%s\n' "$dir/.claude/ccharness"
+      return 0
+    fi
+    [ "$dir" = "/" ] && return 1
+    dir="$(dirname "$dir")"
+  done
+}
+
+open_in_editor() {
+  local file="$1"
+  if [ -n "${VISUAL:-}" ]; then
+    exec ${VISUAL} "$file"
+  elif [ -n "${EDITOR:-}" ]; then
+    exec ${EDITOR} "$file"
+  elif command -v open >/dev/null 2>&1; then
+    exec open "$file"
+  elif command -v xdg-open >/dev/null 2>&1; then
+    exec xdg-open "$file"
+  fi
+  echo "ccscriptctl: no editor found — set \$EDITOR or \$VISUAL." >&2
+  exit 1
+}
+
+case "${1:-help}" in
+  roadmap)    target="roadmap.md";    skill="/roadmap-management" ;;
+  cheatsheet) target="cheatsheet.md"; skill="/cheatsheet-management" ;;
+  -h|--help|help) usage; exit 0 ;;
+  *) echo "ccscriptctl: unknown command '$1'" >&2; echo >&2; usage >&2; exit 2 ;;
+esac
+
+if ! ccdir="$(find_ccharness)"; then
+  echo "ccscriptctl: no .claude/ccharness/ found in '$PWD' or any parent." >&2
+  echo "Run $skill in your project to create it." >&2
+  exit 1
+fi
+
+file="$ccdir/$target"
+if [ ! -f "$file" ]; then
+  echo "ccscriptctl: $file does not exist yet." >&2
+  echo "Run $skill to create it." >&2
+  exit 1
+fi
+
+open_in_editor "$file"

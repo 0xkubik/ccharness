@@ -1,0 +1,15 @@
+{
+  "description": "cc-instruments reminder. UserPromptSubmit: cheatsheet-hook.sh re-surfaces a short cheat-sheet of the tools and rules available in this project every third real user prompt, near the end of the context where it's most visible, so they don't fade from the model's attention mid-session. The hook is dumb — it just prints the cheat-sheet that the cheatsheet-management skill generates (run it via /cheatsheet-management or /cc-init); it is a no-op until that file exists (.claude/ccharness/cheatsheet.md), and turning the reminder off is just deleting or renaming that file.",
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/cheatsheet-hook.sh\""
+          }
+        ]
+      }
+    ]
+  }
+}

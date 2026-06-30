@@ -1,9 +1,0 @@
-{
-  "name": "cc-maestro",
-  "version": "0.4.0",
-  "description": "cc-maestro — the conductor layer: the `ccmaestro` console observes and controls many coding agents and musicians at once (token burn, stalls, loops, stop/steer), usable by a human in a terminal and by an external agent. Also carries the maestro brain (`/conduct`, the `conducting-the-product` skill): an autonomous product conductor that discovers a product's repos, reasons about cross-repo dependencies, sequences the work, and assigns musicians selectively.",
-  "author": {
-    "name": "kubik",
-    "email": "dev@noxlabs.xyz"
-  }
-}

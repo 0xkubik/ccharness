@@ -1,8 +1,0 @@
-{
-  "description": "ccmaestro push reporter — forwards Stop/SubagentStop/Notification to the configured report_endpoint.",
-  "hooks": {
-    "Stop": [{ "hooks": [{ "type": "command", "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/report-hook.sh\"" }] }],
-    "SubagentStop": [{ "hooks": [{ "type": "command", "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/report-hook.sh\"" }] }],
-    "Notification": [{ "hooks": [{ "type": "command", "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/report-hook.sh\"" }] }]
-  }
-}

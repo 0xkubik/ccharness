@@ -1,0 +1,45 @@
+import os, sys, tempfile, unittest
+from pathlib import Path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+
+class TestPaths(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        os.environ["CCCONDUCTOR_HOME"] = self.tmp
+        self.claude = tempfile.mkdtemp()
+        os.environ["CLAUDE_CONFIG_DIR"] = self.claude
+        import importlib, ccconductor.config, ccconductor.paths
+        importlib.reload(ccconductor.config); importlib.reload(ccconductor.paths)
+        self.p = ccconductor.paths
+
+    def test_transcript_found_by_session_id(self):
+        proj = Path(self.claude) / "projects" / "-Some-Encoded-Cwd"
+        proj.mkdir(parents=True)
+        sid = "abc-123"
+        (proj / f"{sid}.jsonl").write_text("{}")
+        found = self.p.transcript_path(sid)
+        self.assertIsNotNone(found)
+        self.assertEqual(found.name, f"{sid}.jsonl")
+
+    def test_transcript_missing_returns_none(self):
+        self.assertIsNone(self.p.transcript_path("does-not-exist"))
+
+    def test_atomic_write_roundtrip(self):
+        target = Path(self.tmp) / "x" / "f.txt"
+        self.p.atomic_write(target, "hello")
+        self.assertEqual(target.read_text(), "hello")
+
+    def test_find_transcript_by_prefix(self):
+        proj = Path(self.claude) / "projects" / "-X"
+        proj.mkdir(parents=True)
+        full_uuid = "abcdef12-0000-0000-0000-000000000000"
+        (proj / f"{full_uuid}.jsonl").write_text("{}")
+        found = self.p.find_transcript("abcdef12")
+        self.assertIsNotNone(found)
+        self.assertEqual(found.name, f"{full_uuid}.jsonl")
+
+    def test_find_transcript_missing_returns_none(self):
+        self.assertIsNone(self.p.find_transcript("nope"))
+
+if __name__ == "__main__":
+    unittest.main()

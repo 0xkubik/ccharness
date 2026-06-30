@@ -1,39 +1,39 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
   "name": "cc-harness",
-  "description": "cc-harness — a layered harness for Claude Code: cc-tools (philosophy-agnostic helpers: crux, slap, cc-init, rules) + cc-funnel (the ground -> diverge -> decide -> build product funnel) -> cc-agent (the musician, one self-driving agent) -> cc-maestro (the ccmaestro console that watches and controls many agents at once).",
+  "description": "cc-harness — a layered harness for Claude Code: cc-instruments (philosophy-agnostic helpers: crux, slap, cc-init, rules) + cc-script (the ground -> diverge -> decide -> build product script) -> cc-musician (the musician, one self-driving agent) -> cc-conductor (the ccconductorctl console that watches and controls many agents at once).",
   "owner": {
     "name": "kubik",
     "email": "dev@noxlabs.xyz"
   },
   "plugins": [
     {
-      "name": "cc-tools",
+      "name": "cc-instruments",
       "description": "The tools layer: philosophy-agnostic helpers usable in any project — /crux unwinds a pain or doubt into one diagnosis, /slap resets a stuck fix, /cc-init onboards a project onto the harness, plus a set of recommended project rules. Zero-config.",
       "author": { "name": "kubik" },
       "category": "workflow",
-      "source": "./plugins/cc-tools"
+      "source": "./plugins/cc-instruments"
     },
     {
-      "name": "cc-funnel",
-      "description": "The product funnel: /roadmap-management grounds the North Star and charts a roadmap, /what-to-do ranks where to go next, /how-to-do decides one fork, /do builds one task to a smoke-checked finish, /refactor-review-test hardens it and commits — a ground -> diverge -> decide -> build pipeline. Depends on cc-tools.",
+      "name": "cc-script",
+      "description": "The product script: /roadmap-management grounds the North Star and charts a roadmap, /what-to-do ranks where to go next, /how-to-do decides one fork, /do builds one task to a smoke-checked finish, /refactor-review-test hardens it and commits — a ground -> diverge -> decide -> build pipeline. Depends on cc-instruments.",
       "author": { "name": "kubik" },
       "category": "workflow",
-      "source": "./plugins/cc-funnel"
+      "source": "./plugins/cc-script"
     },
     {
-      "name": "cc-agent",
-      "description": "The self-driving agent layer: the musician (/musician) drives one piece of work through the cc-tools funnel to its own falsifiable definition of done, then closes itself — bounded and self-closing, not a never-stop loop. By default it shapes the idea with you first, then builds alone (--auto for full autonomy from the start). With a prompt it thinks the task through first (and may decline a bad idea); without one it finds a direction itself. /musician-cancel is the manual brake. Depends on cc-tools.",
+      "name": "cc-musician",
+      "description": "The self-driving agent layer: the musician (/musician) drives one piece of work through the cc-instruments script to its own falsifiable definition of done, then closes itself — bounded and self-closing, not a never-stop loop. By default it shapes the idea with you first, then builds alone (--auto for full autonomy from the start). With a prompt it thinks the task through first (and may decline a bad idea); without one it finds a direction itself. /musician-cancel is the manual brake. Depends on cc-instruments.",
       "author": { "name": "kubik" },
       "category": "workflow",
-      "source": "./plugins/cc-agent"
+      "source": "./plugins/cc-musician"
     },
     {
-      "name": "cc-maestro",
-      "description": "The conductor layer: the ccmaestro console observes and controls many coding agents and musicians at once (tokens, stalls, loops, stop/steer).",
+      "name": "cc-conductor",
+      "description": "The conductor layer: the ccconductorctl console observes and controls many coding agents and musicians at once (tokens, stalls, loops, stop/steer).",
       "author": { "name": "kubik" },
       "category": "workflow",
-      "source": "./plugins/cc-maestro"
+      "source": "./plugins/cc-conductor"
     }
   ]
 }
