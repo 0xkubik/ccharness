@@ -268,10 +268,13 @@ and run the next cycle directly.
             `STALE=<branch>` → build wasn't on `main`'s HEAD, or you're not on `main` (`REASON=not-on-main`);
             worktree kept → `discard` + rebuild). Build produced no commit (handback / dead
             approach) → `worktree.sh discard <worktreePath> <worktreeBranch>`.
-          ASYNC build (the do subagent runs in the background and can't finish in-turn, and no
-            parallel in-turn work is worth doing) → set awaiting:{what, since} (atomic), log
-            "suspended", END TURN. NOT a cycle. (Hook releases on awaiting; the subagent's
-            completion notification resumes you at step 0.)
+          ASYNC — decide this AT DISPATCH, not after the turn ends: will the build return its result
+            IN THIS TURN, or run past it (backgrounded, or a long do→refactor-review-test with no
+            parallel in-turn work worth doing)? Runs past the turn → set awaiting:{what, since}
+            (atomic), log "suspended", and END TURN on the SAME turn you dispatched. NOT a cycle.
+            NEVER end a turn active-and-not-awaiting while a build is still running — the Stop hook
+            then re-feeds you one wasted, empty turn before you suspend. (Hook releases on awaiting;
+            the subagent's completion notification resumes you at step 0.)
           HANDBACK (the do subagent couldn't build it) — a business / non-technical blocker OR a
             technical fork / stuck (slap-twice): log the reason in the cycle line and loop back to
             step 4 (how-to-do) for a DIFFERENT approach. You never self-close on a handback; a real
@@ -390,6 +393,7 @@ wide* the build fans out.
 | "The done_when is hard to judge — keep building to be safe." | Soft judgment over an observable outcome is the job. If it's unobservable, you forged a bad done-contract — fix that, don't loop forever. |
 | "I'll ask the user whether we're done / whether to build (`AskUserQuestion`)." | **Forbidden in the building (autonomous) loop** — there the Stop hook re-feeds you on a turn boundary and the judgment is yours. (In the **shaping** phase asking is the whole point; the prohibition is the building phase only.) |
 | "My async build is still running — I'll spin a cycle each turn to check." | **No — suspend.** Set `awaiting` and END THE TURN; the task's completion notification resumes you. Busy-wait wastes turns and blocks `/musician-cancel`. |
+| "I dispatched a long build — I'll just end my turn and suspend on the next re-feed." | **No — suspend on the SAME turn.** Decide at dispatch: if the build won't return in-turn, set `awaiting` BEFORE ending. Ending active-and-not-awaiting on a still-running build burns one wasted, empty re-feed first. |
 | "The API is 529-ing, so I'm stuck." | A transient outage is not a dead-end. Suspend (`awaiting`) and wait; never give up. |
 | "do handed back once — I'll keep retrying the same approach a few times." | There is no try-count. A handback goes back to how-to-do for a DIFFERENT approach — never the same one again; a true wall is the human's `/musician-cancel`. |
 | "It's a tiny change — I'll just `Edit` it inline instead of dispatching `do`." | **No.** You conduct; a `cc-funnel:do` subagent writes every code change. Inline edits skip its fork-test, verification, and unverified-commit guard — and the small ones are exactly where the boundary erodes. |
