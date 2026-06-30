@@ -157,14 +157,34 @@ instrument it called (`crux` / `what-to-do` / `how-to-do` / `do` / `refactor-rev
 spawned subagent — tagged with the task progress (`[done/total]`). It is a read-only witness: it
 **never blocks or alters a tool**, and logging is best-effort (skipped if it can't parse the input).
 
-Follow it from another terminal while the musician works (`musicians watch` tails the newest run):
+Follow it from another terminal while the musician works (`ccmusician watch` tails the newest run):
 
 ```
-bin/musicians watch       # or: tail -f .claude/ccharness/musician/runs/<run-id>/live.log
+bin/ccmusician watch      # or: tail -f .claude/ccharness/musician/runs/<run-id>/live.log
 ```
 
 The model's hidden chain-of-thought is not a tool call and is not captured — its spoken narration
 and every action are.
+
+## Driving a run from the shell (`ccmusician`)
+
+`bin/ccmusician` inspects, steers, and launches this repo's musician runs (the machine-wide view
+across every repo is `ccmaestro`). Its grammar is verb-first, shared with `ccmaestro`; `musicians`
+is a thin alias for the same command.
+
+```
+ccmusician ls [--json]                 every run here (id, state, nonstop, age, task)
+ccmusician info <id>                   the full card for one run
+ccmusician logs <id> [--tail N]        the tail of a run's live feed (no follow)
+ccmusician watch [<id>]                follow a run's live feed (newest if no id)
+ccmusician start "<task>" [--repo P]   launch an autonomous musician on the repo (detached)
+ccmusician stop <id>                   soft-cancel a run (the /musician-cancel brake, by id)
+ccmusician nonstop <id> on|off         arm/disarm nonstop for that run's session
+```
+
+`start` spawns `claude -p "/musician --auto <task>"` detached, with bypass permissions so it can
+build unattended. Several musicians can run on one repo at once — each builds in its own worktree
+and keys its state by session, so independent (non-colliding) tasks parallelise freely.
 
 ## Dependencies & supervision
 
