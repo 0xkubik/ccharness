@@ -58,9 +58,8 @@ back in one line. The goal is **mandatory** — it's what every other skill dete
 
 **Step 2 — List the features in order.** First build a short, factual picture of the current product
 from the repo (`README`, docs, recent commits, `TODO`/`FIXME`/stub markers) — two or three paragraphs,
-the "now"; the North Star is the "end"; the ordered features are the steps between. Also check
-`.claude/ccharness/roadmap-proposals.md` (off-goal ideas parked in a past run, if any) and surface each
-as a candidate — never auto-apply. Then loop, a few features at a time, with `AskUserQuestion`:
+the "now"; the North Star is the "end"; the ordered features are the steps between. Then loop, a few
+features at a time, with `AskUserQuestion`:
 
 1. **Elicit the next feature(s).** Lead: "What's the very first thing to build?", then "what comes
    after that?" Keep asking (options + free-text), one decision at a time, until the feature's shape is
@@ -110,8 +109,7 @@ The human brought **one concrete feature** to add. Don't just append it — help
 
 Then, **only if the human approves it**, write **one line** at the right position: a new stable `Mn` id
 naming the feature. Confirm the line back. If the thinking shows it's premature or
-off-goal, don't force it into the list — land it as a note in `.claude/ccharness/roadmap-proposals.md`,
-or drop it. The human decides.
+off-goal, don't force it into the list — drop it. The human decides.
 
 ---
 
