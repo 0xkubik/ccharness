@@ -17,8 +17,7 @@ it belongs, and keep the structure clean as you go.
   separate chore. Keep the move safe: the code still runs and does the same thing afterwards.
 - **Bound it to this change — don't reorganise the repo.** The licence is to place _your_ change
   well, not to reshape structure that has nothing to do with it. A repo-wide reshuffle is its own
-  task; flag it and propose it separately. But if you see that repo need a huge restructuring, flag
-  it and propose it separately.
+  task; flag it and propose it separately.
 - **A real structural fork is a decision, not a guess.** When there are materially different ways to
   lay it out, no clear winner, and the move would be costly to undo, that's a fork — surface it and
   let it be decided, don't silently pick one.

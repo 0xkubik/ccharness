@@ -48,9 +48,35 @@ Explain this, then **offer** to capture them: ask the human, in plain prose, whe
 project-specific rules they want on record — "how we name things", "always run X before committing",
 "never touch Z by hand" — and draw them out **one at a time**. For each one they confirm:
 
-- Phrase it as a proper rule file in the same shape as the recommended ones: a `# <Heading>` first line
-  (the title), then a short, plain-language body that says the rule and, above all, **why** it exists.
-  No `paths:` frontmatter — these load every session.
+- Phrase it as a proper rule file following **What makes a good rule** below — usually always-on
+  (no frontmatter); add `paths:` only if it applies to certain files.
 - Write it to `.claude/rules/<kebab-name>.md`, show it back, and confirm before the next.
 
 If they have none, say so and stop — never invent rules they didn't ask for.
+
+## What makes a good rule
+
+A rule is standing context Claude reads at the start of **every** session, so it has to earn that
+permanent place: short, concrete, about one thing. Hold every rule — whether you're installing a
+recommended one or capturing a project's own — to this shape:
+
+- **One rule, one file, one concern.** Each file carries a single piece of guidance. A second,
+  unrelated point is a second rule, not another bullet bolted onto this one.
+- **Title = an imperative plus the "why" in one clause.** The first line is `# Do X — <when or why>`
+  (e.g. `# Keep files lean — when creating AND when editing`). The heading alone should say what to do
+  and in what case.
+- **Open with the principle and the failure it prevents.** The first paragraph states the rule *and*
+  names the mistake it stops — the why, not just the what. A rule with no why gets ignored or
+  misapplied.
+- **Be concrete and checkable where you can.** Prefer specifics you could verify — "run the tests
+  before committing", "two-space indent" — over vague aims like "write good code". When a rule is a
+  broad principle, still ground it in what to actually do.
+- **Plain language, kept short.** Bullets over prose; lead each point with a **bold imperative**, then
+  the detail. Long rules get followed less, not more.
+- **Make sure a rule is the right tool.** A rule is always-on context — it can't *force* anything. If
+  the guidance must run at a fixed moment (before every commit, after each edit), that's a **hook**,
+  not a rule. If it's a multi-step procedure for one kind of task, that's a **skill**, which loads on
+  demand. A plain rule with no frontmatter loads every session; add `paths:` frontmatter only to scope
+  it to matching files.
+- **Don't contradict an existing rule.** Conflicting standing guidance produces arbitrary behaviour —
+  reconcile the two or replace the old one; don't stack a contradiction.
