@@ -68,9 +68,9 @@ proceed.
 
 Build a short, factual picture of the _current_ product from the repo: `README`, docs, recent commits and scattered `TODO`/`FIXME`/stub markers. Two or three paragraphs, not an audit. This is the "now"; the North Star is the "end"; the distance between them is the working field every lens explores. Hand this picture to all four lenses so none re-reads the whole repo from scratch.
 
-**Milestone check (only if a roadmap exists).** Compare the survey against the `done when:` of the
-**frontier milestone** (and any directly following it that also now appear met). For every one that now
-appears met:
+**Milestone check (only if a roadmap exists).** Judge the survey against the **frontier feature** —
+is it actually built? — (and any directly following it that also now appear met). For every one that
+now appears met:
 
 - _Interactive run:_ offer to check it off (`[ ]` → `[x]` in `roadmap.md`). The frontier then advances
   to the next unchecked box.
@@ -195,7 +195,7 @@ what-to-do's.
 
 `0` Ground — `## Product North Star` at the top of `.claude/ccharness/roadmap.md`? no → **route to `/roadmap-management`**, stop; yes → North Star = goal, feature list below (**frontier** = the
 first unchecked `[ ]`) · `1` Survey — repo = where we are
-now; if roadmap, check the **frontier milestone's** `done when` (interactive: offer to check off ·
+now; if roadmap, check whether the **frontier feature** is built (interactive: offer to check off ·
 under the musician: auto-mark) · `2` Fan-out — four lenses (ADD / FINISH / REBUILD / REFACTOR), parallel,
 empty-lane valve, **fed the frontier milestone as a steer (not a gate)** · `3`
 Rank — dedupe + score + **production-caution** (in production → careful; not → carte blanche) +

@@ -64,7 +64,7 @@ as a candidate — never auto-apply. Then loop, a few features at a time, with `
 
 1. **Elicit the next feature(s).** Lead: "What's the very first thing to build?", then "what comes
    after that?" Keep asking (options + free-text), one decision at a time, until the feature's shape is
-   clear: what it is and the observable outcome that means it's done. Ordering rule: **need "A before B"
+   clear — concretely what it is. Ordering rule: **need "A before B"
    → A goes higher in the list**; genuinely independent features can sit in any order — pick a sensible one.
 2. **Write it in, then urge a review.** Append the feature(s) — **one line each** (format below; never
    wrap a feature onto a second line or add sub-bullets) — and **strongly suggest the
@@ -77,8 +77,8 @@ as a candidate — never auto-apply. Then loop, a few features at a time, with `
 **Step 3 — Independent review.** When the human finishes, **dispatch one read-only reviewer subagent** to
 pressure-test the roadmap as a skeptic. Give it the North Star block and the full `roadmap.md`. Ask it
 to judge: does the ordered list form a **credible path** to the North Star, with no missing feature?
-does the **order respect real dependencies**? is every **`done when:` observable**? what are the
-contradictions, gaps, over- or under-scoped features? Relay it plainly and offer to act — the review is
+does the **order respect real dependencies**? is every feature **stated clearly enough to build**? what
+are the contradictions, gaps, over- or under-scoped features? Relay it plainly and offer to act — the review is
 **advice, not a gate**: the human decides. Then stop.
 
 ---
@@ -88,8 +88,8 @@ contradictions, gaps, over- or under-scoped features? Relay it plainly and offer
 The roadmap exists and the human wants to **rethink something** — not add one specific feature, just
 look at what's there and change their mind. **No phases, no pipeline — the human drives; help them see
 what they actually want.** Re-survey "now", then show them the current state: the North Star, the
-feature list, and **progress** — which `done when:` now hold, where the frontier (first unchecked box)
-sits. Then revise whatever they raise — rework the goal, reorder, reword a feature, split or merge,
+feature list, and **progress** — which features are checked off, where the frontier (first unchecked
+box) sits. Then revise whatever they raise — rework the goal, reorder, reword a feature, split or merge,
 check off what's done, drop the obsolete — **one decision at a time**, writing each agreed change to
 `roadmap.md`.
 
@@ -105,11 +105,11 @@ much. Stop when the human is satisfied — no forced review, no minimum.
 The human brought **one concrete feature** to add. Don't just append it — help them see it clearly first:
 
 - **Why** — does it actually move the product toward the North Star? If it doesn't, say so plainly.
-- **How** — the rough shape of building it, enough to phrase an observable outcome (not a plan).
+- **How** — the rough shape of building it, enough to phrase the feature concretely (not a plan).
 - **When** — where in the ordered list it belongs: what must come before it, what it unblocks.
 
 Then, **only if the human approves it**, write **one line** at the right position: a new stable `Mn` id
-+ `done when: <observable outcome>`. Confirm the line back. If the thinking shows it's premature or
+naming the feature. Confirm the line back. If the thinking shows it's premature or
 off-goal, don't force it into the list — land it as a note in `.claude/ccharness/roadmap-proposals.md`,
 or drop it. The human decides.
 
@@ -118,8 +118,8 @@ or drop it. The human decides.
 ## Mode 4 — Add a feature, fast (`--force`)
 
 Same target as Mode 3 — add one feature — but the human wants it written **without the discussion. Skip
-the why/how/when.** Formulate the feature yourself into one well-phrased line: a new `Mn` id + observable
-`done when:`, placed at a sensible position in the order. **Then show the exact line and where it will
+the why/how/when.** Formulate the feature yourself into one well-phrased line: a new `Mn` id naming the
+feature, placed at a sensible position in the order. **Then show the exact line and where it will
 go, and ask "write this? (ok / not ok)".** Write it only on **ok**; on "not ok", take their correction.
 
 `--force` skips the *discussion*, **never the confirm** — you formulate and propose, but you never
@@ -148,20 +148,20 @@ build order**: top to bottom. The **frontier** = the **first unchecked `[ ]` box
 
 <!-- Flat ordered feature list — build top to bottom. Frontier = the first unchecked [ ] box. -->
 
-- [ ] M1 — <feature> · done when: <observable outcome>
-- [ ] M2 — <feature> · done when: <observable outcome>
-- [ ] M3 — <feature> · done when: <observable outcome>
+- [ ] M1 — <feature>
+- [ ] M2 — <feature>
+- [ ] M3 — <feature>
 ```
 
-**Each feature is exactly one line** — a single `- [ ] Mn — <feature> · done when: <outcome>` and
-nothing else. No wrapping onto a second line, no sub-bullets, no indented notes, no multi-line
-description. If a feature won't fit on one line, it's too big or too wordy: tighten the wording, or
-split it into two features — never spill it across lines.
+**Each feature is exactly one line** — a single `- [ ] Mn — <feature>` and nothing else. No `done
+when:` clause, no wrapping onto a second line, no sub-bullets, no indented notes, no multi-line
+description. State the feature concretely enough to know it when it's built. If it won't fit on one
+line, it's too big or too wordy: tighten the wording, or split it into two features — never spill it
+across lines.
 
-The `done when:` must be **observable** — that's what lets the musician judge a feature complete. Ids
-stay **stable across re-runs** (the musician references them) and are independent of where a feature
-sits — reordering never renumbers it. Every other skill detects grounding by the `## Product North Star`
-heading.
+Ids stay **stable across re-runs** (the musician references them) and are independent of where a
+feature sits — reordering never renumbers it. Every other skill detects grounding by the
+`## Product North Star` heading.
 
 ---
 
@@ -170,7 +170,7 @@ heading.
 `dispatch` — no North Star → **Mode 1**; goal + no feature → **Mode 2**; goal + one feature → **Mode 3**
 (or **Mode 4** with `--force`); can't tell 2 vs 3 → **ask** · **Mode 1** Charter — open-question goal
 (1–3 sentences) → survey + feature loop (`AskUserQuestion`, one at a time, _need A before B → A higher_,
-stable `Mn` + observable `done when:`, urge review) → independent reviewer · **Mode 2** Open revision —
+stable `Mn` naming the feature, one line each, urge review) → independent reviewer · **Mode 2** Open revision —
 show goal + list + progress, revise free-form, one decision at a time, reason about ripple · **Mode 3**
 Add a feature — why / how / when → one line if approved · **Mode 4** `--force` — formulate → **show +
 "ok?"** → write (never silent).
