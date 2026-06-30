@@ -16,7 +16,8 @@ product from "what's the goal?" all the way to committed code — and refuses to
  + the roadmap   next (a menu)   pick (one way)  verified, committed
 ```
 
-Everything here is plain Markdown + JSON (instructions for Claude Code — no app code, no build).
+The funnel itself is plain Markdown + JSON (instructions for Claude Code — no app code, no build),
+plus one small terminal helper, [`ccfunnel`](#ccfunnel--terminal-helper), for chores best done from a shell.
 
 ## Install
 ```
@@ -54,6 +55,21 @@ This captures the product's *North Star* (the goal) and the ordered feature list
 > The funnel leans on two **cc-tools** side doors: **`/slap`** (reset a fix stuck in a rabbit hole — `/do`
 > and `/refactor-review-test` invoke it at three strikes) and **`/crux`** (unwind a pain/doubt into one
 > diagnosis). Both ship in cc-tools, as does the **`/cc-init`** setup wizard.
+
+## `ccfunnel` — terminal helper
+
+A tiny CLI for the chores you'd otherwise do by hand. Today it opens the project's roadmap or
+cheat-sheet in your editor, so you don't have to dig into `.claude/ccharness/` every time:
+
+```
+ccfunnel roadmap      # open .claude/ccharness/roadmap.md
+ccfunnel cheatsheet   # open .claude/ccharness/cheatsheet.md
+```
+
+It finds `.claude/ccharness/` in the current directory or any parent, and opens the file with
+`$VISUAL`, else `$EDITOR`, else your OS default app (`open` / `xdg-open`). Symlink `bin/ccfunnel`
+onto your PATH to type `ccfunnel` directly; inside a Claude Code session use
+`"${CLAUDE_PLUGIN_ROOT}/bin/ccfunnel"`.
 
 ## The funnel
 
@@ -132,3 +148,4 @@ Beyond the marketplace set, `/cc-init` also **offers** two external MCP tools it
 - `skills/how-to-do/SKILL.md` — the decision loop (four proposers → synthesis).
 - `skills/do/SKILL.md` — the gated executor: builds + smoke-checks, then hands off (the brains).
 - `skills/refactor-review-test/SKILL.md` — the autonomous hardener (safety-net → refactor → review → full tests → commit); `/do`'s always-on tail, also standalone.
+- `bin/ccfunnel` — small terminal helper: opens the project's roadmap / cheat-sheet in your editor (`ccfunnel roadmap` · `ccfunnel cheatsheet`).

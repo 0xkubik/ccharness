@@ -1,6 +1,6 @@
 {
   "name": "cc-funnel",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "description": "cc-funnel — the product funnel of the cc-* harness: the ground -> diverge -> decide -> build pipeline. /roadmap-management captures the product's North Star and charts a roadmap; /what-to-do ranks where a product could go next; /how-to-do thinks one fork through to ONE decision; /do builds one task to a smoke-checked finish, then hands off to /refactor-review-test, which hardens it (behavior-preserving refactor, /code-review, full tests) and commits. Driven by cc-agent (the musician) and supervised by cc-maestro. Depends on cc-tools (routes stuck fixes to its /slap).",
   "author": {
     "name": "kubik",
