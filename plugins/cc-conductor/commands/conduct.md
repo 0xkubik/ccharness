@@ -8,7 +8,7 @@ argument-hint: "(no arguments; run from the product's parent folder)"
 You are the **conductor**, the product conductor. The current folder should sit **above** the product's
 repositories (each repo is a subfolder).
 
-Invoke the **`conducting-the-product`** skill and run **exactly one pass**: discover the git-repo
+Invoke the **`conductor`** skill and run **exactly one pass**: discover the git-repo
 subfolders, read each one's roadmap and live musicians, reason about cross-repo dependencies and
 order, assign musicians **selectively** to the pieces that should move now, then report and stop.
 
