@@ -67,13 +67,14 @@ task's completion notification resumes it.
 
 ## Arm & crash recovery
 
-`arm.sh` is run **deterministically by the `/musician` command's `!` preprocessing** — before the
-model's turn even starts — so arming can never be skipped (the failure mode where the model read the
-command but didn't load the skill, and no run was created). It is triggered from **exactly one place**
-(the command); the skill only reacts to its output and never re-runs it. Because the command's `!`
-context has no `CLAUDE_PLUGIN_ROOT`, the command locates `arm.sh` via the install manifest
-(`~/.claude/plugins/installed_plugins.json` → the active `cc-agent` `installPath`), falling back to a
-highest-version cache glob.
+`arm.sh` is **run by the model itself** — the `/musician` command's body instructs it to, as its very
+first action; it is **not** auto-run by a `!` preprocessing block. Arming is the model's
+responsibility (run it once on a fresh `/musician`, skip it on a Stop-hook re-feed where the run
+already exists). Because the model's Bash context has no `CLAUDE_PLUGIN_ROOT`, the command tells it to
+locate `arm.sh` via the install manifest (`~/.claude/plugins/installed_plugins.json` → the active
+`cc-agent` `installPath`), falling back to a highest-version cache glob. The trade-off of
+model-mediated arming: a model that skips the instruction creates no run — the `BUSY` idempotency
+guard prevents *duplicate* runs, not *skipped* ones.
 
 `arm.sh` parses the flags (`--auto` → arm in the `building` phase, else `shaping`; `--ultracode` /
 `--resume <run-id>`), runs the open-mode North-Star gate, enforces **idempotency** (one active run per

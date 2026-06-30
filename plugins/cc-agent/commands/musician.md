@@ -3,21 +3,31 @@ description: "Hand the project ONE thing to carry to a real finish — a task, p
 argument-hint: "[task / problem / idea — or nothing to let it find the work] [--auto] [--ultracode]"
 ---
 
-!`cfg="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"; r="$(jq -r '.plugins["cc-agent@ccharness"][0].installPath // empty' "$cfg/plugins/installed_plugins.json" 2>/dev/null)"; a="$r/skills/musician/arm.sh"; [ -f "$a" ] || a="$(ls "$cfg"/plugins/cache/*/cc-agent/*/skills/musician/arm.sh 2>/dev/null | sort -V | tail -1)"; [ -f "$a" ] && bash "$a" "$ARGUMENTS" || echo "MUSICIAN_ARM_ERROR: could not locate arm.sh under $cfg/plugins — report this, do not improvise"`
+You were handed this argument:
 
-The block above is the **arm step, already run deterministically** for `> $ARGUMENTS` — it created
-(or re-adopted) this run and printed `KEY=VALUE` lines. Now **invoke the `musician` skill and follow
-it**, reacting to that arm output:
+> $ARGUMENTS
+
+**First action — arm the run yourself.** Arming is *not* auto-run; **you** run it. Only here, on a
+fresh `/musician` (never on a Stop-hook re-feed, where the run already exists). Run this **exactly
+once**, as your first Bash command — it locates `arm.sh` via the install manifest (`$CLAUDE_PLUGIN_ROOT`
+is empty here) and passes your argument to it:
+
+```bash
+cfg="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"; r="$(jq -r '.plugins["cc-agent@ccharness"][0].installPath // empty' "$cfg/plugins/installed_plugins.json" 2>/dev/null)"; a="$r/skills/musician/arm.sh"; [ -f "$a" ] || a="$(ls "$cfg"/plugins/cache/*/cc-agent/*/skills/musician/arm.sh 2>/dev/null | sort -V | tail -1)"; [ -f "$a" ] && bash "$a" "$ARGUMENTS" || echo "MUSICIAN_ARM_ERROR: could not locate arm.sh under $cfg/plugins — report this, do not improvise"
+```
+
+It creates (or re-adopts) the run and prints `KEY=VALUE` lines. Then **invoke the `musician` skill and
+follow it**, reacting to that arm output:
 
 - `RUN_DIR` / `RUN_ID` / `ENTRY` → your run; `phase:"shaping"|"building"` → fork on it.
 - `GATE=no-north-star` → tell the user to run `/roadmap-management`; do not proceed.
 - `ORPHAN=…` → surface it (resume with `/musician --resume <id>`); don't auto-adopt.
 - `RESUMED=…` / `RESUME_MISSING=…` → continue that run / report missing.
 - `BUSY=<id>` → this session already has an ACTIVE run; tell the user to `/musician-cancel` it first.
-- `MUSICIAN_ARM_ERROR` (should never happen) → report it; do **not** run `arm.sh` yourself.
+- `MUSICIAN_ARM_ERROR` → report it; do **not** improvise a hand-written run.
 
-**Do NOT run `arm.sh` again** — it already ran here (and a second run is refused as a duplicate). The
-skill's Arm step reacts to this output; it does not re-arm.
+**Run `arm.sh` exactly once.** After it has run, do not run it again this turn — a second run is
+refused as a duplicate (`BUSY`). The skill's Arm step reacts to this output; it does not re-arm.
 
 The musician is the project's brain for ONE piece of work. It plays the cc-funnel instruments
 (`what-to-do` → `how-to-do` → `do` → `refactor-review-test`) plus cc-tools's `crux`/`slap`, and drives

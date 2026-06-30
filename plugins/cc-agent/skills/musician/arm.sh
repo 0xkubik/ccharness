@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 # musician arm — deterministic run setup, extracted from SKILL.md so the bookkeeping is exact and
-# testable. The brain stays in the skill; this only does the mechanical part. The /musician command
-# runs this first and reads its KEY=VALUE output.
+# testable. The brain stays in the skill; this only does the mechanical part. The model runs this as
+# its first action when invoked via /musician (the command's body instructs it — it is NOT auto-run)
+# and reads its KEY=VALUE output.
 #
-# Honest seam: the TRIGGER is still model-mediated (the command invokes this); the win is that
-# run-id, folders, atomic state, the pointer, heartbeat, and the crash-orphan scan are deterministic
-# instead of hand-written JSON. If this helper can't be run, the skill falls back to doing the same
-# steps inline.
+# Honest seam: the TRIGGER is model-mediated — the model decides to run this when it starts a run; the
+# win is that run-id, folders, atomic state, the pointer, heartbeat, and the crash-orphan scan are
+# deterministic instead of hand-written JSON. If this helper isn't run, no run is created — the BUSY
+# guard prevents DUPLICATE runs, not SKIPPED ones.
 #
 # Usage:  musician-arm.sh "<raw $ARGUMENTS>"
 #   Flags in the argument string: --auto  --ultracode  --resume <run-id>

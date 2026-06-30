@@ -164,21 +164,23 @@ class TestArmIdempotency(unittest.TestCase):
 
 
 class TestMusicianCommand(unittest.TestCase):
-    """The /musician command runs arm.sh deterministically in its ! preprocessing — the ONE place arm
-    is triggered (CLAUDE_PLUGIN_ROOT is absent there, so it locates arm.sh via the install manifest)."""
+    """The /musician command instructs the MODEL to run arm.sh itself (model-mediated, not a `!`
+    auto-run). CLAUDE_PLUGIN_ROOT is absent in that context, so it locates arm.sh via the install
+    manifest and passes the user's $ARGUMENTS."""
 
     def setUp(self):
         self.cmd = (Path(__file__).resolve().parent.parent / "commands" / "musician.md").read_text()
 
-    def test_command_runs_arm_in_preprocessing(self):
-        self.assertIn("!`", self.cmd)                 # a ! preprocessing block
-        self.assertIn("arm.sh", self.cmd)             # which runs arm.sh
+    def test_command_instructs_model_to_run_arm(self):
+        # Arm is the model's responsibility now — NO `!` preprocessing auto-runs it.
+        self.assertNotIn("!`", self.cmd)              # no ! auto-run block
+        self.assertIn("arm.sh", self.cmd)             # the model is told to run arm.sh
         self.assertIn("$ARGUMENTS", self.cmd)         # passing the user's args
         self.assertIn("installed_plugins.json", self.cmd)  # located via the install manifest (no plugin-root)
 
-    def test_command_tells_model_not_to_rearm(self):
-        # single place: the model must NOT also run arm from the skill.
-        self.assertIn("Do NOT run", self.cmd)
+    def test_command_says_run_arm_once(self):
+        # The model runs arm exactly once; it must not re-run it (a second run is refused as BUSY).
+        self.assertIn("exactly once", self.cmd)
 
 
 class TestArmOpenMode(unittest.TestCase):

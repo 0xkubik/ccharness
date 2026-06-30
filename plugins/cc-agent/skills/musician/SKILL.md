@@ -172,28 +172,38 @@ drive the single-direction loop a self-written to-do list would.
   never self-read it; `roadmap-management` surfaces it to the human. **Notes feed you closed past; proposals
   feed the human open future — never cross the two.**
 
-## Arm (already done by the `/musician` command — you react, you do NOT re-run it)
+## Arm (you run it — the `/musician` command tells you to; it is **not** auto-run)
 
-**`arm.sh` is run for you, deterministically, by the `/musician` command's `!` preprocessing** —
-*before* you even start, so arming can never be skipped by the model. The invocation lives in
-**exactly one place** (the command); the skill **never runs it**. Its `KEY=VALUE` output is already in
-your context (just above this skill). It parses the run-mode flags — `--auto` (skip shaping → start in
-the **building** phase), `--ultracode` (maximum build parallelism; see **Ultracode**), `--resume
-<run-id>` — and treats everything else as the **task/problem prompt** (empty → open mode; there is
-**no spend flag and no cap**). It then creates the run under `.claude/ccharness/musician/runs/<run_id>/`
-— `state.json` (`status:"working"`, **`input` verbatim**, **`phase`** (`shaping`, or `building` under
-`--auto`), empty `done_when`), the `by-session/<session_id>` pointer, `heartbeat` / `log.jsonl` /
-`blocked.jsonl` — and scans for crashed runs. **`<run>` = `runs/<run_id>/` from here on.**
+Arming is **your responsibility** and **not auto-run** — there is no `!` preprocessing doing it for
+you. The `/musician` command's body instructs you, as your **first action**, to run `arm.sh` yourself
+(it does the exact, error-prone bookkeeping so you never hand-write JSON). You run it **exactly once**,
+only on a fresh `/musician` — never on a Stop-hook re-feed (the run already exists then; see the
+re-feed note below). `arm.sh` parses the run-mode flags — `--auto` (skip shaping → start in the
+**building** phase), `--ultracode` (maximum build parallelism; see **Ultracode**), `--resume <run-id>`
+— and treats everything else as the **task/problem prompt** (empty → open mode; there is
+**no spend flag and no cap**). It creates the run under `.claude/ccharness/musician/runs/<run_id>/` — `state.json`
+(`status:"working"`, **`input` verbatim**, **`phase`** (`shaping`, or `building` under `--auto`), empty
+`done_when`), the `by-session/<session_id>` pointer, `heartbeat` / `log.jsonl` / `blocked.jsonl` — and
+scans for crashed runs. **`<run>` = `runs/<run_id>/` from here on.**
 
-1. **Do NOT run `arm.sh` yourself.** It already ran in the command. Re-running it is refused as a
-   duplicate (`BUSY`), but don't even try — read the output that's already there.
+1. **Run `arm.sh` — exactly once.** If you came through the `/musician` command you have **already run
+   it** (its `KEY=VALUE` output is in your context) — then **do not run it again** (a second run is
+   refused as a duplicate `BUSY`); read the output that's already there. If its output is **not** in
+   your context (you reached this skill without arming), run it now — once — locating it via the
+   install manifest (`${CLAUDE_PLUGIN_ROOT}` is empty in this context), passing the **verbatim**
+   argument you were handed (the task plus any `--auto` / `--ultracode` / `--resume`):
+   ```bash
+   cfg="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"; r="$(jq -r '.plugins["cc-agent@ccharness"][0].installPath // empty' "$cfg/plugins/installed_plugins.json" 2>/dev/null)"; a="$r/skills/musician/arm.sh"; [ -f "$a" ] || a="$(ls "$cfg"/plugins/cache/*/cc-agent/*/skills/musician/arm.sh 2>/dev/null | sort -V | tail -1)"; [ -f "$a" ] && bash "$a" "<the argument you were handed, verbatim>" || echo "MUSICIAN_ARM_ERROR"
+   ```
 2. **React to the arm `KEY=VALUE` output:**
    - `GATE=no-north-star` (open mode, no `## Product North Star` in `.claude/ccharness/roadmap.md`) → no run
      was created; tell the user _"No North Star yet — run `/roadmap-management` to set it, then
      `/musician`."_ END TURN. (Task mode does **not** hard-gate: a fuzzy pain can go to `crux`, which
      is grounding-free, and the `do` build enforces its own North Star gate.)
-   - `BUSY=<run-id>` → this session already has an ACTIVE run, so arm created nothing. Tell the user
-     _"a musician run is already active here — `/musician-cancel` it first, or let it finish."_ END TURN.
+   - `BUSY=<run-id>` → an ACTIVE run already exists for this session, so arm created nothing. If you
+     just ran arm a second time yourself, that's only the duplicate guard — use that run and carry on.
+     Otherwise tell the user _"a musician run is already active here — `/musician-cancel` it first, or
+     let it finish."_ and END TURN.
    - one or more `ORPHAN=<run-id>|<minutes>|<input>` → a past run looks **crashed mid-work** (still
      `working`, heartbeat stale). **Surface it to the user** — _"run `<id>` (`<input>`) looks
      stopped mid-work ~`<minutes>`m ago; resume with `/musician --resume <id>`, or leave it."_ Do
@@ -201,10 +211,7 @@ the **building** phase), `--ultracode` (maximum build parallelism; see **Ultraco
    - `RESUMED=<id>` → arm re-adopted that run (you passed `--resume`); continue ITS loop.
    - `RESUME_MISSING=<id>` → that run id doesn't exist; tell the user and stop.
    - `MUSICIAN_ARM_ERROR` (arm.sh could not be located — should never happen) → report it to the
-     user; do **not** improvise a hand-written run or run `arm.sh` from the skill.
-   - **No arm output at all** (none of the above is in your context — the command didn't run, e.g. the
-     skill was somehow loaded without it) → say so and ask the user to re-invoke `/musician`; do **not**
-     hand-arm or run `arm.sh` yourself.
+     user; do **not** improvise a hand-written run.
    - otherwise use `RUN_DIR` / `RUN_ID` / `ENTRY` as your run.
 3. **Read the awareness notes** — recent `git log --notes` (see **Awareness**): what past runs
    closed, so you don't re-open it. **Then read the project rules** — every file in
@@ -419,9 +426,11 @@ wide* the build fans out.
 hook releases) → handoff (forge `done_when`; ask "review the how?" → yes: how-to-do + explain +
 approve + "start?" / no: go) → flip `phase:"building"` → autonomous loop. `--auto` arms straight in
 building.
-**Arm** runs in the `/musician` **command** (not the skill) — react to its output: `GATE=no-north-star`
-(open mode, no North Star → `/roadmap-management`), `BUSY` (active run here already), `ORPHAN` (crashed
-run — surface, never auto-adopt), `RESUMED` / `RESUME_MISSING`, else `RUN_*`. Then read awareness
+**Arm** — **you run `arm.sh` yourself** (the `/musician` command tells you to, as your first action;
+it is **not** auto-run), exactly once, only on a fresh `/musician` — then react to its output:
+`GATE=no-north-star` (open mode, no North Star → `/roadmap-management`), `BUSY` (active run here
+already), `ORPHAN` (crashed run — surface, never auto-adopt), `RESUMED` / `RESUME_MISSING`, else
+`RUN_*`. Then read awareness
 (`git log --notes`, closed facts only) + project rules (`.claude/rules/`, hold + pass to every
 dispatched subagent), run `worktree.sh prepare` (`GROUNDING_DIRTY=1` → commit grounding first), then
 fork on `phase`: `shaping` → shaping conversation; `building` → cycle 1.
