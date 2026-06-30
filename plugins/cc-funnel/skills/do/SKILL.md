@@ -93,10 +93,12 @@ two parts below are that subagent's brief; both mandatory:
   relationships. If it isn't, fall back to **grep / search** across the tree. Do **not** run
   `codegraph init` yourself — indexing is the user's call; use codegraph when it's already there,
   else grep.
-- **Build the full folder tree — always.** Print the whole tree with its folders (`tree`, or
-  `git ls-files` / `find` if `tree` is absent) so you can see *everything* in the project: module
-  boundaries, where code lives, the naming and file conventions. This is mandatory regardless of
-  how small the change is — you place the change against this map in Stage 2.
+- **Build the full folder tree — always.** Run **`cctree`** (a cc-tools helper — it auto-picks the
+  best tree tool installed and leaves out whatever `.gitignore` ignores) to print the whole tree, so
+  you can see *everything* in the project: module boundaries, where code lives, the naming and file
+  conventions. If `cctree` isn't on PATH (cc-tools not installed), fall back to `tree`, or
+  `git ls-files` / `find`. This is mandatory regardless of how small the change is — you place the
+  change against this map in Stage 2.
 
 ---
 
@@ -234,7 +236,7 @@ and deciding the next move yourself. Keep driving until the work is done and ver
 
 Grounding — no `## Product North Star` → **route to `/roadmap-management`**, stop · `0` Gate — technical fork → how-to-do, business → refuse,
 vague → brainstorming · `1` Map the codebase — **codegraph if indexed, else grep; always print the
-full folder tree** · `2` Scope — place the change cleanly (small structural moves OK, tied to this
+full folder tree via `cctree`** · `2` Scope — place the change cleanly (small structural moves OK, tied to this
 change; structural fork → how-to-do) · checklist + size · `3` Tools — route & announce · `4` Build —
 goal-loop to done · `5` Smoke-check — does it run? · `6` Hand off → **refactor-review-test** (it owns
 verify, review/simplify, full tests, and the commit). `do` never commits.

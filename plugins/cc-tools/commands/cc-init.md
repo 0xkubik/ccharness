@@ -127,7 +127,7 @@ present (skipped), ❌ failed, if any — show the command and its output so the
 
 Do not claim success for any plugin whose install you did not see exit `0`.
 
-**6. Offer the recommended external tools.** Two tools the harness benefits from don't live in the
+**6. Offer the recommended external tools.** A few tools the harness benefits from don't live in the
 marketplace — they install through their own tooling, not `claude plugin install`:
 
 - **codegraph** — indexed code intelligence: an MCP that searches and explores a codebase, far better
@@ -138,12 +138,17 @@ marketplace — they install through their own tooling, not `claude plugin insta
 - **headroom** — compresses tool outputs, logs, and files before they reach the model (60–95% fewer
   tokens, same answers). Repo: https://github.com/headroomlabs-ai/headroom
   - `pip install "headroom-ai[all]"` → `headroom mcp install`.
+- **eza** — a tree-capable `ls`. The `cctree` helper uses it (or `tree`) to draw the project's folder
+  tree, respecting `.gitignore`, for the "Map the codebase" step in `/do` and `/refactor-review-test`.
+  Without a tree tool `cctree` still works — it falls back to a flat git file list — so this just buys
+  the nicer tree view. Repo: https://github.com/eza-community/eza
+  - `brew install eza` (macOS) or `cargo install eza` — or install the classic `tree` instead.
 
-Gate with `AskUserQuestion` (`multiSelect: true`): **codegraph** / **headroom** / **Skip both**. Install
-only what's picked; **capture each exit code** and report honestly (✅ installed / ❌ failed, with the
-command and output) — never claim an install you didn't see exit `0`. Both register an MCP server that
-loads on the **next** session. If the user later asks to set up or troubleshoot either tool, start from
-its repo link above.
+Gate with `AskUserQuestion` (`multiSelect: true`): **codegraph** / **headroom** / **eza** / **Skip all**.
+Install only what's picked; **capture each exit code** and report honestly (✅ installed / ❌ failed, with
+the command and output) — never claim an install you didn't see exit `0`. codegraph and headroom each
+register an MCP server that loads on the **next** session; eza is a plain CLI and works immediately. If
+the user later asks to set up or troubleshoot any of these, start from its repo link above.
 
 ---
 

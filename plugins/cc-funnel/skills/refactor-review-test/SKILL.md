@@ -54,8 +54,10 @@ and work from the map it returns. The two parts below are that subagent's brief;
 - **Study the code.** Use **codegraph** if it's indexed (its MCP tools are available, or a
   `.codegraph/` index exists) to read modules, dependencies, and call relationships; else fall back
   to **grep / search**. Don't run `codegraph init` yourself — indexing is the user's call.
-- **Print the full folder tree — always** (`tree`, or `git ls-files` / `find` if `tree` is absent),
-  to see module boundaries, where the changed code sits, and the naming conventions. Phase 2
+- **Print the full folder tree — always** with **`cctree`** (a cc-tools helper that auto-picks the
+  best tree tool and leaves out `.gitignore`d paths; if it isn't on PATH, fall back to `tree`, or
+  `git ls-files` / `find`), to see module boundaries, where the changed code sits, and the naming
+  conventions. Phase 2
   refactors against this map — seeing the whole tree is to place *this* change well, not a licence
   to refactor the repo.
 
@@ -171,7 +173,7 @@ say which you skipped and why, then verify and commit. Don't manufacture work to
 
 Grounding — from `do`/musician → gate already passed; standalone → behavior-preserving, **no
 gate**. `0` **Map the codebase** (codegraph if indexed, else grep; always print the full folder
-tree) · `1` Understand + **net** (core-logic tests pin current behavior; existing tests green) ·
+tree via `cctree`) · `1` Understand + **net** (core-logic tests pin current behavior; existing tests green) ·
 `2` **Refactor** (behavior-preserving; `/simplify` + `code-simplifier`; justified SOLID structural
 moves OK, tied to the change; net stays green = proof) · `3` **Review** (`/code-review` finds bugs
 → fix yourself, apply-not-report; true behavior fork → conductor, never a human) · `4` **Tests**
