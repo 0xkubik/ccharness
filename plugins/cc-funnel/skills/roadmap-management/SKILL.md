@@ -66,7 +66,8 @@ as a candidate — never auto-apply. Then loop, a few features at a time, with `
    after that?" Keep asking (options + free-text), one decision at a time, until the feature's shape is
    clear: what it is and the observable outcome that means it's done. Ordering rule: **need "A before B"
    → A goes higher in the list**; genuinely independent features can sit in any order — pick a sensible one.
-2. **Write it in, then urge a review.** Append the feature(s) (format below) and **strongly suggest the
+2. **Write it in, then urge a review.** Append the feature(s) — **one line each** (format below; never
+   wrap a feature onto a second line or add sub-bullets) — and **strongly suggest the
    human read it back** — "the musician builds straight off this, top to bottom. Look right before we
    keep going?" Don't steamroll past their review.
 3. **Continue / rethink / finish?** Offer three paths: **Continue** (next feature) · **Rethink** (re-open
@@ -151,6 +152,11 @@ build order**: top to bottom. The **frontier** = the **first unchecked `[ ]` box
 - [ ] M2 — <feature> · done when: <observable outcome>
 - [ ] M3 — <feature> · done when: <observable outcome>
 ```
+
+**Each feature is exactly one line** — a single `- [ ] Mn — <feature> · done when: <outcome>` and
+nothing else. No wrapping onto a second line, no sub-bullets, no indented notes, no multi-line
+description. If a feature won't fit on one line, it's too big or too wordy: tighten the wording, or
+split it into two features — never spill it across lines.
 
 The `done when:` must be **observable** — that's what lets the musician judge a feature complete. Ids
 stay **stable across re-runs** (the musician references them) and are independent of where a feature
