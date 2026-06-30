@@ -65,18 +65,21 @@ recommended one or capturing a project's own — to this shape:
 - **Title = an imperative plus the "why" in one clause.** The first line is `# Do X — <when or why>`
   (e.g. `# Keep files lean — when creating AND when editing`). The heading alone should say what to do
   and in what case.
-- **Open with the principle and the failure it prevents.** The first paragraph states the rule *and*
-  names the mistake it stops — the why, not just the what. A rule with no why gets ignored or
-  misapplied.
-- **Be concrete and checkable where you can.** Prefer specifics you could verify — "run the tests
-  before committing", "two-space indent" — over vague aims like "write good code". When a rule is a
-  broad principle, still ground it in what to actually do.
-- **Plain language, kept short.** Bullets over prose; lead each point with a **bold imperative**, then
-  the detail. Long rules get followed less, not more.
-- **Make sure a rule is the right tool.** A rule is always-on context — it can't *force* anything. If
-  the guidance must run at a fixed moment (before every commit, after each edit), that's a **hook**,
-  not a rule. If it's a multi-step procedure for one kind of task, that's a **skill**, which loads on
-  demand. A plain rule with no frontmatter loads every session; add `paths:` frontmatter only to scope
-  it to matching files.
-- **Don't contradict an existing rule.** Conflicting standing guidance produces arbitrary behaviour —
-  reconcile the two or replace the old one; don't stack a contradiction.
+- **Open with the principle and the failure it prevents — in a sentence or two.** Name the rule *and*
+  the mistake it stops, then stop. The why earns adherence; a rationale essay just adds length.
+- **Be concrete and checkable.** Prefer specifics you could verify in the code — "two-space indent",
+  "run the tests before committing" — over vague aims like "format properly". When a rule is a broad
+  principle, still ground it in what to actually do.
+- **Cut every line that doesn't earn its place.** A rule is read every session, so length has a cost:
+  a bloated file makes Claude *ignore* the rules inside it. For each line ask "would removing this
+  cause a mistake?" — if not, drop it. Plain language, bullets over prose, a **bold imperative**
+  leading each.
+- **Reserve emphasis for the few hard constraints.** A well-placed "IMPORTANT" or "never" lifts
+  adherence — but if every line shouts, none of it lands.
+- **Make sure a rule is the right tool.** A rule is guidance Claude reads, not something it enforces.
+  If the action must run the same way every time (before every commit, after each edit), that's a
+  **hook**. A multi-step procedure for one kind of task is a **skill**, which loads on demand. A plain
+  rule with no frontmatter loads every session; add `paths:` frontmatter to scope it to matching files.
+- **Keep rules honest over time.** Treat them like code: add one when you've had to correct the same
+  thing twice, prune one that's being ignored (often the file simply grew too long), and reconcile
+  contradictions — conflicting standing guidance makes Claude pick one arbitrarily.
