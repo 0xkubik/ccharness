@@ -154,6 +154,42 @@ class TestMusicianHook(unittest.TestCase):
         self.assertEqual(r.stdout.strip(), "")
 
 
+class TestMusicianTaskList(unittest.TestCase):
+    """The `tasks` array IS the loop state: re-feed while any task is incomplete, release when the
+    whole list is done. An empty list (not yet decomposed) is NOT done — re-feed so it decomposes."""
+
+    def test_all_tasks_completed_releases(self):
+        repo = repo_with({"active": True, "session_id": SESSION, "entry": "task",
+                          "tasks": [{"id": 1, "subject": "build", "status": "completed"},
+                                    {"id": 2, "subject": "verify", "status": "completed"}]})
+        rc, out = run_hook(repo, {"session_id": SESSION})
+        self.assertEqual(rc, 0)
+        self.assertEqual(out.strip(), "")          # whole list done → release
+
+    def test_incomplete_task_blocks(self):
+        repo = repo_with({"active": True, "session_id": SESSION, "entry": "task",
+                          "tasks": [{"id": 1, "subject": "build", "status": "completed"},
+                                    {"id": 2, "subject": "verify", "status": "pending"}]})
+        rc, out = run_hook(repo, {"session_id": SESSION})
+        self.assertIn("block", out)                # a task remains → re-feed
+
+    def test_empty_task_list_blocks(self):
+        # Empty list = the musician hasn't decomposed yet — NOT done. Re-feed so it decomposes.
+        repo = repo_with({"active": True, "session_id": SESSION, "entry": "task", "tasks": []})
+        rc, out = run_hook(repo, {"session_id": SESSION})
+        self.assertIn("block", out)
+
+    def test_nojq_completed_list_still_blocks(self):
+        # Fail-closed: with no jq the array can't be parsed, so a completed list whose run is still
+        # active:true must RE-FEED, never silently release. (A properly closed run sets active:false,
+        # which the grep fallback catches and releases — covered by test_nojq_active_false_releases.)
+        repo = repo_with({"active": True, "session_id": SESSION, "entry": "task",
+                          "tasks": [{"status": "completed"}]})
+        r = subprocess.run(["/bin/bash", str(HOOK)], input=json.dumps({"session_id": SESSION}),
+                           cwd=repo, capture_output=True, text=True, env=nojq_env())
+        self.assertIn("block", r.stdout)
+
+
 class TestMusicianPhase(unittest.TestCase):
     """The phase gates the re-feed: shaping = a human conversation (release), building = autonomous (re-feed)."""
 
@@ -229,9 +265,10 @@ class TestMusicianRefeedContent(unittest.TestCase):
         _, out = run_hook(repo, {"session_id": SESSION})
         return out
 
-    def test_refeed_mentions_brain_and_empty_exit(self):
+    def test_refeed_decomposes_and_empty_exit(self):
         out = self._refeed()
-        self.assertIn("BRAIN", out)
+        # the loop is task-driven: an empty list is DECOMPOSED into subtasks
+        self.assertIn("DECOMPOSE", out)
         # the open-mode "nothing to build" close is the only self-close besides achieved
         # (the hook output is JSON, so its embedded quotes are escaped — match the bare word)
         self.assertIn("empty", out)
@@ -239,10 +276,11 @@ class TestMusicianRefeedContent(unittest.TestCase):
         self.assertNotIn("declined", out)
         self.assertNotIn("blocked", out)
 
-    def test_refeed_done_check_leads_build(self):
+    def test_refeed_drives_tasks_with_verify_gate(self):
         out = self._refeed()
-        self.assertIn("done_when", out)
-        self.assertIn("DONE-CHECK", out)
+        # the task list is the loop state, and a real VERIFY gates the close
+        self.assertIn("tasks", out)
+        self.assertIn("VERIFY", out)
 
     def test_refeed_writes_awareness_note_on_close(self):
         # The close-write must live in the re-fed checklist, not only the SKILL: most closes run

@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # musician — Stop hook (the bounded performer's "hard muscle").
 #
-# While THIS session's musician run is ACTIVE, re-feed the musician prompt on every Stop so the
-# loop runs one cycle per turn. The musician ENDS ON ITS OWN: the model flips active:false when the
-# work is achieved or empty (or the human cancels it), and THEN this hook allows the stop. This hook
-# only prevents an accidental mid-task stop.
+# While THIS session's musician run is ACTIVE, re-feed the musician prompt on every Stop so it does
+# the next step of its task list. The musician's `tasks` array IS the loop state: the hook re-feeds
+# while any task is incomplete and releases when the list is done. The musician also flips
+# active:false on the last task; this hook is the hard backstop against an accidental mid-list stop.
 #
 # Each run lives in its own folder runs/<run-id>/; a per-session pointer by-session/<session_id>
 # names it. We resolve THIS session's run from the session_id on stdin (see musician-resolve.sh).
@@ -13,8 +13,12 @@
 #   no pointer for this session  -> RELEASE (the common case — most Stops have no musician at all)
 #   active == false              -> RELEASE (achieved / empty / cancelled)
 #   awaiting set                 -> RELEASE (suspended on async work / transient outage)
-#   pointer exists but state      -> RE-FEED (never drop a live task to an unreadable state)
-#     unreadable, or active:true
+#   phase == shaping             -> RELEASE (collaborating with the human, not looping)
+#   task list non-empty & ALL    -> RELEASE (the work is done)
+#     tasks completed
+#   otherwise (tasks incomplete, -> RE-FEED (never drop a live task; with no jq the list can't be
+#     empty, unparseable, or          parsed, so we fall through to re-feed — fail-closed)
+#     active:true)
 set -u
 
 source "${BASH_SOURCE[0]%/*}/musician-resolve.sh"
@@ -30,11 +34,12 @@ STATE_FILE="$RUN_DIR/state.json"
 # Slurp once for the pure-bash (no jq/grep/cat) fallback path.
 STATE_RAW=""; [ -f "$STATE_FILE" ] && STATE_RAW="$(<"$STATE_FILE")"
 
-STATE_ACTIVE=""; CYCLE="?"; ENTRY="?"
+STATE_ACTIVE=""; DONE="?"; TOTAL="?"; ENTRY="?"
 if command -v jq >/dev/null 2>&1; then
-  STATE_ACTIVE="$(jq -r '.active'        "$STATE_FILE" 2>/dev/null || true)"
-  CYCLE="$(jq -r '.cycle // "?"'         "$STATE_FILE" 2>/dev/null || echo '?')"
-  ENTRY="$(jq -r '.entry // "?"'         "$STATE_FILE" 2>/dev/null || echo '?')"
+  STATE_ACTIVE="$(jq -r '.active'                                       "$STATE_FILE" 2>/dev/null || true)"
+  ENTRY="$(jq -r '.entry // "?"'                                        "$STATE_FILE" 2>/dev/null || echo '?')"
+  DONE="$(jq -r '[(.tasks // [])[] | select(.status=="completed")] | length' "$STATE_FILE" 2>/dev/null || echo '?')"
+  TOTAL="$(jq -r '(.tasks // []) | length'                              "$STATE_FILE" 2>/dev/null || echo '?')"
 fi
 if [ -z "$STATE_ACTIVE" ] && command -v grep >/dev/null 2>&1; then
   grep -Eq '"active"[[:space:]]*:[[:space:]]*false' "$STATE_FILE" && STATE_ACTIVE=false
@@ -92,34 +97,47 @@ if [ "$PHASE" = "shaping" ]; then
   exit 0
 fi
 
+# RELEASE — the task LIST is DONE: at least one task, and every task completed. (An empty list is NOT
+# done — the musician still has to decompose — so length>0 is required.) The musician also flips
+# active:false on the last task; this is the backstop. Pure bash cannot parse the array, so with no
+# jq this check is skipped and we fall through to RE-FEED — fail-closed (never drop a live run).
+if command -v jq >/dev/null 2>&1 && \
+   jq -e '(.tasks // [] | length) > 0 and (all((.tasks // [])[]; .status == "completed"))' \
+      "$STATE_FILE" >/dev/null 2>&1; then
+  exit 0
+fi
+
 # Heartbeat — this run is alive and working. Refreshing it each turn means a hard crash (no Stop
 # event) leaves a STALE heartbeat, which the next `/musician` arm scan reads as a crashed orphan.
 : > "$RUN_DIR/heartbeat" 2>/dev/null || true
 
-# --- ACTIVE for this session (or present-but-unparseable) → RE-FEED. Fail closed. ---
+# --- ACTIVE for this session with tasks still open (or present-but-unparseable) → RE-FEED. ---
 REFEED="$(cat <<'PROMPT'
-🎼 musician is ACTIVE — continue the bounded loop for THIS piece of work. Run exactly ONE cycle:
-1. Read the run state.json + log.jsonl in .claude/ccharness/musician/runs/<run-id>/ (resolve <run-id> from .claude/ccharness/musician/by-session/$CLAUDE_CODE_SESSION_ID); the log carries which approaches already failed this run.
-2. BRAIN (only while done_when == ""): you CONDUCT — dispatch a subagent to think it through, sized to the input; never reason the work out in your own context. TASK mode → triage the prompt, dispatch the brain by necessity (a crux subagent for a fuzzy pain / a what-to-do North-Star fit for an idea / skip for a clear task); NEVER refuse handed work — sharpen the target if it's aimed wrong, then proceed. OPEN mode → dispatch a cc-funnel:what-to-do subagent (menu as DATA, NO AskUserQuestion) → auto-pick the TOP direction; if it finds nothing worth building (frontier exhausted) → set active:false outcome:"empty", log why, report, END TURN — no work to pick. Otherwise FORGE a falsifiable done_when and write it to state (atomic).
-3. DONE-CHECK: survey "now" and judge against state.done_when. MET → set active:false outcome:"achieved", final log line, report, END TURN.
-4. Otherwise build ONE step toward done_when: dispatch a cc-funnel:how-to-do subagent (hand it any approach that already failed this run, read from log.jsonl, so it proposes a DIFFERENT one) → capture BASE = the main repo current HEAD (run git rev-parse HEAD) → dispatch a cc-funnel:do subagent WITH worktree isolation (Agent isolation:"worktree" — the build, its tools, and its sub-agents all stay in one worktree under .claude/worktrees/; a "cd into a worktree" instruction leaks back to main), instructing it that its FIRST action is to run git reset --hard BASE so it builds on your current HEAD (the worktree base is otherwise out of your control). IT writes the code (you never Edit/Write product code yourself), builds+smoke, chains to refactor-review-test which makes the LOCAL commit INSIDE the worktree (no push). Capture the returned worktreePath + worktreeBranch, then land it via the worktree helper whose absolute path is recorded in state under the worktree_helper key (read it from <run>/state.json): if the build committed, run that helper with [integrate worktreePath worktreeBranch] — it is fast-forward-only (INTEGRATED=sha → on your branch + worktree removed; STALE=branch → the build was NOT on your current HEAD so stale work is refused and the worktree kept → run [discard worktreePath worktreeBranch] and rebuild this step); if the build produced NO commit, run the helper with [discard worktreePath worktreeBranch]. There is no "couldn't build it" self-close: you never flip to a defeat outcome. Async build you BACKGROUNDED (its result won't come back IN THIS TURN) → set awaiting and END TURN on the SAME turn you dispatch — decide at dispatch, never end a turn active-and-not-awaiting while a backgrounded build still runs (that burns one wasted, empty re-feed before you suspend). Handback (business/non-technical blocker do refuses, OR technical fork / stuck slap-twice) → log the reason in the cycle line and re-run how-to-do for a DIFFERENT approach. External transient block → suspend (awaiting). A genuine dead-end you can't get past is the human's /musician-cancel. Append a log line, bump cycle (atomic), END TURN.
-5. ON an achieved close: before END TURN, append ONE past-tense closed-fact line as awareness for the next run — git notes append -m "built: <what> — <why>". NEVER a forward intent.
-You stop ONLY by flipping active:false (achieved, or open-mode empty), or the user runs /musician-cancel. Handed work is never refused — you carry it toward a build. There is no try-count or cycle cap, and no "couldn't build it" self-close: a true wall is the human's /musician-cancel. Do not otherwise stop.
+🎼 musician is ACTIVE — carry THIS piece of work one step further. You run ONE step per turn; this hook re-feeds you while tasks remain and releases when the list is done. You CONDUCT — every work-unit is a dispatched subagent and you never write product code yourself. Do ONE step:
+1. Read your run state.json + log.jsonl in .claude/ccharness/musician/runs/<run-id>/ (resolve <run-id> from .claude/ccharness/musician/by-session/$CLAUDE_CODE_SESSION_ID). The `tasks` array IS your plan and your progress; log.jsonl carries which approaches already failed this run.
+2. tasks EMPTY → DECOMPOSE: break this piece of work into an ordered list of concrete subtasks, each executable as ONE dispatched unit; the LAST task is ALWAYS a real verification of the observable "done". OPEN mode → first dispatch a cc-funnel:what-to-do subagent (menu as DATA, NO AskUserQuestion), auto-pick the TOP direction, then decompose THAT; nothing worth building (frontier exhausted) → set active:false outcome:"empty", report, END TURN. Write the list to state.tasks (atomic) AND mirror it to the native task tool so the human sees it. NEVER refuse handed work — sharpen a misaimed target, then decompose.
+3. tasks REMAIN → take the FIRST incomplete one (in_progress, else first pending), mark it in_progress, and DO it. Dispatch the right instrument: cc-funnel:do for a build, cc-funnel:how-to-do for a real fork, cc-tools:crux for a fuzzy pain. A BUILD runs worktree-isolated: capture BASE = git rev-parse HEAD → dispatch the cc-funnel:do subagent with Agent isolation:"worktree", model:"opus", told its FIRST action is git reset --hard BASE; it writes the code + smoke-checks, then chains to cc-funnel:refactor-review-test which makes the LOCAL commit INSIDE the worktree (no push); land it ff-only via the helper at state.worktree_helper (integrate → INTEGRATED=sha; STALE → discard + rebuild this step; no commit → discard). Then mark the task completed in state.tasks AND the native task tool.
+   • VERIFY task → dispatch a REAL check of the observable outcome (run/check it, do not vibe). PASSED → mark it completed. FAILED → do NOT complete it; APPEND remediation task(s) to the list (it stays incomplete) and continue. A run closes ONLY after a real verify has passed — this is how "done" stays honest.
+   • Backgrounded async that will not return IN THIS TURN → leave the task in_progress, set awaiting, and END TURN on the SAME turn you dispatch (decide this AT dispatch; never end a turn active-and-not-awaiting while a backgrounded build still runs — that burns one wasted, empty re-feed). The completion notification resumes you, where you clear awaiting and judge the result.
+   • Handback (do could not build it) → re-dispatch cc-funnel:how-to-do for a DIFFERENT approach (failed approaches are in log.jsonl); never self-close. A transient external block (5xx/rate-limit) → suspend (awaiting). A true dead-end is for the human to run /musician-cancel.
+4. Completed the LAST task (the list is now ALL done) → in ONE atomic state write set active:false and outcome:"achieved" (do not split closing from completing the task); append one git notes line — git notes append -m "built: <what> — <why>" (closed past only, NEVER a forward intent); report; END TURN.
+5. Append a log.jsonl line and END TURN. The hook re-feeds while any task is incomplete.
+You stop ONLY by finishing the list (active:false, outcome:"achieved"), open-mode "empty", or /musician-cancel. Handed work is never refused. There is no try-count and no cycle cap.
 PROMPT
 )"
 
 if [ -n "$ULTRA" ]; then
   REFEED="$REFEED
-ULTRACODE (mandatory this run): push parallelism to the max in step 4's build — author a Workflow and/or dispatch parallel cc-funnel:do subagents, EACH with its own worktree isolation, and integrate each one's branch (via the recorded worktree helper) as it lands; verify findings adversarially. These tools are always permitted; --ultracode makes them required, not optional."
+ULTRACODE (mandatory this run): push parallelism to the max on the build tasks — author a Workflow and/or dispatch parallel cc-funnel:do subagents, EACH with its own worktree isolation, and integrate each one's branch (via the recorded worktree helper) as it lands; verify findings adversarially. These tools are always permitted; --ultracode makes them required, not optional."
 fi
 
 if command -v jq >/dev/null 2>&1; then
   jq -n \
     --arg r "$REFEED" \
-    --arg m "🎼 musician (${ENTRY}) cycle ${CYCLE}$([ -n "$ULTRA" ] && printf ' [ultracode]') -> continuing (brain → done-check; /musician-cancel to stop)" \
+    --arg m "🎼 musician (${ENTRY}) ${DONE}/${TOTAL} tasks$([ -n "$ULTRA" ] && printf ' [ultracode]') -> next step (decompose → do next task → close; /musician-cancel to stop)" \
     '{decision:"block", reason:$r, systemMessage:$m}'
 else
-  FALLBACK_REASON='musician is active — run one bounded cycle: read your run state.json under .claude/ccharness/musician/runs/<run-id>/ (resolve via by-session/$CLAUDE_CODE_SESSION_ID). You CONDUCT — every work-unit is a dispatched subagent; never think or write code inline. Dispatch the BRAIN while done_when is empty (never refuse handed work — sharpen + proceed; open mode with nothing to build -> close outcome:"empty"), then DONE-check, then one build step (dispatch how-to-do -> do subagents; the do subagent runs WITH worktree isolation so the build stays in a worktree and is told to first git reset --hard to your current HEAD, then chains to refactor-review-test which commits INSIDE it; land it with the worktree helper recorded in state.worktree_helper — integrate is ff-only (STALE -> discard + rebuild), or discard if no commit; handback -> retry how-to-do for a DIFFERENT approach, never a self-close); flip active:false on achieved (or open-mode empty); on an achieved close git notes append one closed fact (built: + why), never a forward intent. A true dead-end is the human'"'"'s /musician-cancel.'
+  FALLBACK_REASON='musician is active — do the next step. Read your run state.json under .claude/ccharness/musician/runs/<run-id>/ (resolve via by-session/$CLAUDE_CODE_SESSION_ID); the `tasks` array is your plan + progress. You CONDUCT — every work-unit is a dispatched subagent; never write code inline. If tasks is EMPTY, DECOMPOSE the work into an ordered subtask list whose LAST item is a real verification, write it to state.tasks, and mirror it to the native task tool (open mode with nothing to build -> active:false outcome:"empty"). Otherwise take the first incomplete task, mark it in_progress, and DO it via the right instrument; a build runs WITH worktree isolation (git reset --hard to your current HEAD first, chains to refactor-review-test which commits INSIDE it, landed ff-only via state.worktree_helper — STALE -> discard + rebuild, no commit -> discard), then mark it completed. A VERIFY task that FAILS appends fix tasks (never marked done); a backgrounded build sets awaiting and ENDS THE TURN on the same turn you dispatch; a handback re-runs how-to-do for a DIFFERENT approach (never a self-close). When the LAST task completes, set active:false outcome:"achieved" in one write and git notes append one closed fact (built: + why). A true dead-end is the human'"'"'s /musician-cancel.'
   [ -n "$ULTRA" ] && FALLBACK_REASON="$FALLBACK_REASON ULTRACODE: fan out via Workflow + parallel subagents + git worktrees (mandatory)."
   printf '%s' "{\"decision\":\"block\",\"reason\":\"$FALLBACK_REASON\"}"
 fi

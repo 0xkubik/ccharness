@@ -12,9 +12,13 @@ class TestMusicianSkill(unittest.TestCase):
     def test_exists(self):
         self.assertTrue(MUS.exists(), "musician SKILL.md missing")
 
-    def test_done_check_leads(self):
-        self.assertIn("DONE", self.text)
-        self.assertIn("done_when", self.text)
+    def test_task_list_drives_with_verify_gate(self):
+        # The loop is task-driven: a `tasks` list whose LAST item is a real VERIFY that gates the
+        # close. (This replaced the single done_when survey.)
+        self.assertIn("tasks", self.text)
+        self.assertIn("VERIFY", self.text)
+        # the old done_when field is gone — it must not creep back as stored state
+        self.assertNotIn("done_when", self.text)
 
     def test_exits_are_achieved_empty_cancelled(self):
         # The doors out: achieved (done), empty (open mode found nothing to build — nonstop's stop
@@ -55,9 +59,10 @@ class TestMusicianSkill(unittest.TestCase):
         self.assertIn("arm.sh", self.text)
         self.assertTrue((ROOT / "skills" / "musician" / "arm.sh").exists(), "arm.sh missing")
 
-    def test_status_and_heartbeat(self):
-        # Explicit lifecycle label + the crash-fuse heartbeat the next arm scans.
-        self.assertIn("status", self.text.lower())
+    def test_task_state_and_heartbeat(self):
+        # The loop state is the `tasks` list (no stored status label — it is derived); the crash-fuse
+        # heartbeat is what the next arm scans.
+        self.assertIn("tasks", self.text.lower())
         self.assertIn("heartbeat", self.text.lower())
 
     def test_crash_orphan_surface_only(self):

@@ -65,7 +65,7 @@ if [ -n "$RESUME" ]; then
     printf 'RESUME_MISSING=%s\n' "$RESUME"; exit 0
   fi
   tmp="$RDIR/state.json.tmp.$$"
-  jq --arg sid "$SID" --arg helper "$HELPER" '.active=true | .status="working" | .awaiting=null | .outcome=null | .session_id=$sid | .worktree_helper=$helper' \
+  jq --arg sid "$SID" --arg helper "$HELPER" '.active=true | .awaiting=null | .outcome=null | .session_id=$sid | .worktree_helper=$helper' \
      "$RDIR/state.json" > "$tmp" 2>/dev/null && mv "$tmp" "$RDIR/state.json"
   [ -n "$SID" ] && printf '%s' "$RESUME" > "$MUS/by-session/$SID"
   : > "$RDIR/heartbeat"
@@ -102,10 +102,9 @@ jq -n \
   --arg run_id "$RUN_ID" --arg sid "$SID" --arg input "$PROMPT" --arg entry "$ENTRY" \
   --argjson ultra "$ULTRA" --arg phase "$PHASE" \
   --arg started "$(now_iso)" --arg helper "$HELPER" \
-  '{active:true, status:"working", run_id:$run_id, session_id:$sid, mode:"musician",
-    entry:$entry, input:$input, phase:$phase, done_when:"", cycle:0, ultracode:$ultra,
-    started_at:$started, last_surveyed_sha:"", awaiting:null, outcome:null,
-    worktree_helper:$helper}' \
+  '{active:true, run_id:$run_id, session_id:$sid, mode:"musician",
+    entry:$entry, input:$input, phase:$phase, tasks:[], ultracode:$ultra,
+    started_at:$started, awaiting:null, outcome:null, worktree_helper:$helper}' \
   > "$tmp" && mv "$tmp" "$RUN_DIR/state.json"
 
 [ -n "$SID" ] && printf '%s' "$RUN_ID" > "$MUS/by-session/$SID"

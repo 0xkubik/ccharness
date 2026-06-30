@@ -40,7 +40,11 @@ class TestArmTaskMode(unittest.TestCase):
         rid = out["RUN_ID"]
         st = state_of(repo, rid)
         self.assertTrue(st["active"])
-        self.assertEqual(st["status"], "working")
+        # the task list is the loop state — empty at arm, the musician fills it
+        self.assertEqual(st["tasks"], [])
+        # the collapsed-away fields are gone (status/cycle derived; done_when replaced by the list)
+        for gone in ("status", "done_when", "cycle", "last_surveyed_sha"):
+            self.assertNotIn(gone, st)
         self.assertEqual(st["run_id"], rid)
         self.assertEqual(st["session_id"], SESSION)
         # the original prompt, captured verbatim
@@ -157,7 +161,7 @@ class TestArmIdempotency(unittest.TestCase):
         out1, _, _ = run_arm(repo, "first task")
         rid1 = out1["RUN_ID"]
         # close the first run (achieved) — the session is now free for a new one
-        st = state_of(repo, rid1); st["active"] = False; st["status"] = "achieved"
+        st = state_of(repo, rid1); st["active"] = False; st["outcome"] = "achieved"
         (Path(repo) / MUS / "runs" / rid1 / "state.json").write_text(json.dumps(st))
         out2, _, _ = run_arm(repo, "second task")
         self.assertNotIn("BUSY", out2)
@@ -207,13 +211,13 @@ class TestArmResume(unittest.TestCase):
         first, _, _ = run_arm(repo, "long task")
         rid = first["RUN_ID"]
         # simulate a close, then a resume from a different (new) session
-        st = state_of(repo, rid); st["active"] = False; st["status"] = "achieved"
+        st = state_of(repo, rid); st["active"] = False; st["outcome"] = "achieved"
         (Path(repo) / MUS / "runs" / rid / "state.json").write_text(json.dumps(st))
         out, _, _ = run_arm(repo, f"--resume {rid}", session="new-9999")
         self.assertEqual(out.get("RESUMED"), rid)
         st2 = state_of(repo, rid)
         self.assertTrue(st2["active"])
-        self.assertEqual(st2["status"], "working")
+        self.assertIsNone(st2["outcome"])   # resume re-opens the run (outcome cleared)
         self.assertEqual(st2["session_id"], "new-9999")
         self.assertEqual((Path(repo) / MUS / "by-session" / "new-9999").read_text(), rid)
 
@@ -230,8 +234,7 @@ class TestArmOrphanScan(unittest.TestCase):
         orphan = Path(repo) / MUS / "runs" / "20260626-100000-dead"
         orphan.mkdir(parents=True)
         (orphan / "state.json").write_text(json.dumps(
-            {"active": True, "status": "working", "awaiting": None,
-             "input": "refactor the parser"}))
+            {"active": True, "awaiting": None, "input": "refactor the parser"}))
         hb = orphan / "heartbeat"; hb.write_text("")
         old = time.time() - 3600  # 60 min ago > 30 min threshold
         os.utime(hb, (old, old))
@@ -249,7 +252,7 @@ class TestArmOrphanScan(unittest.TestCase):
         shaping = Path(repo) / MUS / "runs" / "20260626-080000-talk"
         shaping.mkdir(parents=True)
         (shaping / "state.json").write_text(json.dumps(
-            {"active": True, "status": "working", "phase": "shaping",
+            {"active": True, "phase": "shaping",
              "awaiting": None, "input": "discuss this idea"}))
         hb = shaping / "heartbeat"; hb.write_text("")
         old = time.time() - 3600
@@ -264,7 +267,7 @@ class TestArmOrphanScan(unittest.TestCase):
         parked = Path(repo) / MUS / "runs" / "20260626-090000-park"
         parked.mkdir(parents=True)
         (parked / "state.json").write_text(json.dumps(
-            {"active": True, "status": "working",
+            {"active": True,
              "awaiting": {"what": "scan", "since": "x"}, "input": "y"}))
         hb = parked / "heartbeat"; hb.write_text("")
         old = time.time() - 3600
