@@ -67,9 +67,13 @@ ccfunnel cheatsheet   # open .claude/ccharness/cheatsheet.md
 ```
 
 It finds `.claude/ccharness/` in the current directory or any parent, and opens the file with
-`$VISUAL`, else `$EDITOR`, else your OS default app (`open` / `xdg-open`). Symlink `bin/ccfunnel`
-onto your PATH to type `ccfunnel` directly; inside a Claude Code session use
-`"${CLAUDE_PLUGIN_ROOT}/bin/ccfunnel"`.
+`$VISUAL`, else `$EDITOR`, else your OS default app (`open` / `xdg-open`).
+
+**You don't symlink it** — once cc-funnel is installed, `ccfunnel` is already on your PATH. Claude
+Code adds every installed plugin's `bin/` to PATH, exactly like `ccmaestro` (cc-maestro) and
+`musicians` (cc-agent). Just install cc-funnel (`/plugin install cc-funnel@ccharness`) and run
+`ccfunnel roadmap`. (For a standalone terminal outside Claude Code, add the plugin's `bin/` to your
+shell PATH yourself.)
 
 ## The funnel
 
