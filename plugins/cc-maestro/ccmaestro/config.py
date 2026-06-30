@@ -9,7 +9,7 @@ DEFAULTS = {
     "loop_n": 4,               # same (tool, input) repeated this many times -> looping
     "loop_window": 8,          # only consider the last N tool calls
     "token_budget": 0,         # gross tokens over this -> over-budget (0 = disabled)
-    "musician_stall_min": 30,  # musician: no new cycle in this many minutes -> stalled
+    "musician_stall_min": 30,  # musician: no new activity in this many minutes -> stalled
     "report_endpoint": "",     # optional webhook URL (used in Phase 3)
     "max_concurrent": 0,       # max agents start will launch concurrently (0 = unlimited)
 }

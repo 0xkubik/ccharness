@@ -53,7 +53,7 @@ def build_rows(entries, now, *, summarizer, config):
             "cwd": cwd,
             "name": meta.get("task") or native.get("name") or "",
             "musician": minfo,
-            "cycles": minfo["cycle"] if is_mus else None,
+            "progress": (f"{minfo['done']}/{minfo['total']}" if is_mus and minfo["total"] else None),
         })
     return rows
 
@@ -76,9 +76,10 @@ def render_table(rows, now=None):
         m = r.get("musician")
         if m:
             act = m.get("last_action") or "(starting)"
-            goal = m.get("done_when") or "(forging done-contract)"
-            lines.append(f"{'':8} ▸ cycle {m.get('cycle')} · {m.get('status')} · {act}")
-            lines.append(f"{'':8}   goal: {goal[:60]}")
+            prog = f"{m.get('done')}/{m.get('total')}" if m.get("total") else "decomposing"
+            lines.append(f"{'':8} ▸ {prog} tasks · {m.get('status')} · {act}")
+            if m.get("current"):
+                lines.append(f"{'':8}   doing: {m['current'][:60]}")
     return "\n".join(lines)
 
 
@@ -88,12 +89,13 @@ def render_musician_list(rows, now=None):
     out = [f"MUSICIANS ({len(rows)})"]
     for r in rows:
         m = r["musician"]
-        out.append("{id:8} cycle {cyc} · {status} · {act}".format(
-            id=r["id"], cyc=m.get("cycle"), status=m.get("status") or "?",
+        prog = f"{m.get('done')}/{m.get('total')}" if m.get("total") else "decomposing"
+        out.append("{id:8} {prog} tasks · {status} · {act}".format(
+            id=r["id"], prog=prog, status=m.get("status") or "?",
             act=(m.get("last_action") or "(starting)")))
         out.append(f"         asked: {(m.get('input') or '(open mode)')[:72]}")
-        if m.get("done_when"):
-            out.append(f"         goal:  {m['done_when'][:72]}")
+        if m.get("current"):
+            out.append(f"         doing: {m['current'][:72]}")
     return "\n".join(out)
 
 
@@ -107,10 +109,10 @@ def render_musician_detail(row, now=None):
     lines = [
         f"musician {row['id']}  ({row.get('cwd') or '?'})",
         f"  run_id   {m.get('run_id')}",
-        f"  status   {m.get('status')}  (cycle {m.get('cycle')}{extra})",
+        f"  status   {m.get('status')}  ({m.get('done')}/{m.get('total')} tasks{extra})",
         f"  entry    {m.get('entry')}",
         f"  asked    {m.get('input') or '(open mode — found its own direction)'}",
-        f"  goal     {m.get('done_when') or '(not forged yet)'}",
+        f"  doing    {m.get('current') or '(decomposing)'}",
         f"  verdict  {row.get('verdict')}" + (f" — {row['reason']}" if row.get("reason") else ""),
     ]
     tail = mus.live_tail(row.get("cwd"), row.get("sessionId"), 20)

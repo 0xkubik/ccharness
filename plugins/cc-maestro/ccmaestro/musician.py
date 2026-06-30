@@ -60,9 +60,37 @@ def is_musician(cwd, session_id=None):
     return bool(st and st.get("active"))
 
 
-def cycle_count(cwd, session_id=None):
+def _label(st):
+    """The lifecycle label, derived (there is no stored status field)."""
+    if not st.get("active"):
+        return st.get("outcome") or "closed"
+    if st.get("awaiting"):
+        return "suspended"
+    if st.get("phase") == "shaping":
+        return "shaping"
+    return "working"
+
+
+def _task_progress(st):
+    tasks = st.get("tasks") or []
+    done = sum(1 for t in tasks if t.get("status") == "completed")
+    return done, len(tasks)
+
+
+def _current_task(st):
+    """The subject of the task being worked (in_progress, else the next pending)."""
+    tasks = st.get("tasks") or []
+    for want in ("in_progress", "pending"):
+        for t in tasks:
+            if t.get("status") == want:
+                return t.get("subject")
+    return None
+
+
+def task_progress(cwd, session_id=None):
+    """(completed, total) tasks for this session's run, or (None, None) if there is none."""
     _, st = _read_state(cwd, session_id)
-    return st.get("cycle") if st else None
+    return _task_progress(st) if st else (None, None)
 
 
 def musician_info(cwd, session_id=None):
@@ -70,14 +98,16 @@ def musician_info(cwd, session_id=None):
     rd, st = _read_state(cwd, session_id)
     if not st or not st.get("active"):
         return None
+    done, total = _task_progress(st)
     return {
         "run_id": st.get("run_id"),
         "active": True,
-        "status": st.get("status"),
+        "status": _label(st),
         "entry": st.get("entry"),
         "input": st.get("input"),
-        "done_when": st.get("done_when"),
-        "cycle": st.get("cycle"),
+        "done": done,
+        "total": total,
+        "current": _current_task(st),
         "awaiting": st.get("awaiting"),
         "ultracode": bool(st.get("ultracode")),
         "started_at": st.get("started_at"),
@@ -93,9 +123,9 @@ def live_tail(cwd, session_id=None, n=20):
 
 def cancel_run(cwd, session_id=None):
     """Cancel this session's active musician run the way /musician-cancel does: mark its
-    state.json active:false / status:cancelled / outcome:cancelled and drop the by-session
-    pointer so the Stop hook stops re-feeding. The run folder stays as the durable record.
-    Returns the run dir on success, or None if there was no active run to cancel."""
+    state.json active:false / outcome:cancelled and drop the by-session pointer so the Stop
+    hook stops re-feeding. The run folder stays as the durable record. Returns the run dir on
+    success, or None if there was no active run to cancel."""
     rd = _resolve_run_dir(cwd, session_id)
     if not rd:
         return None
@@ -104,7 +134,7 @@ def cancel_run(cwd, session_id=None):
         st = json.loads(st_path.read_text())
     except (json.JSONDecodeError, OSError):
         st = {}
-    st.update(active=False, status="cancelled", outcome="cancelled")
+    st.update(active=False, outcome="cancelled")
     tmp = st_path.with_name(st_path.name + ".tmp")
     try:
         tmp.write_text(json.dumps(st, indent=2))

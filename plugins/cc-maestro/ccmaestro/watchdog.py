@@ -32,7 +32,7 @@ def verdict(summary, entry, config, now):
         idle_min = (now - la).total_seconds() / 60.0
         if entry.get("is_musician"):
             limit = config["musician_stall_min"]
-            kind = "no new cycle"
+            kind = "no new activity"
         elif summary.get("pending_tool"):
             limit = config["tool_stall_min"]
             kind = "on a tool"

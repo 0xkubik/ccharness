@@ -37,9 +37,11 @@ class TestRender(unittest.TestCase):
         run = Path(repo) / ".claude" / "ccharness" / "musician" / "runs" / "r1"
         run.mkdir(parents=True)
         (run / "state.json").write_text(json.dumps(
-            {"active": True, "status": "working", "cycle": 2, "run_id": "r1",
-             "input": "do X", "done_when": "X is observably done"}))
-        (run / "live.log").write_text("12:00 cycle 2   ▶ cc-funnel:do\n")
+            {"active": True, "run_id": "r1", "input": "do X",
+             "tasks": [{"id": 1, "subject": "build the X widget", "status": "completed"},
+                       {"id": 2, "subject": "wire X into the page", "status": "in_progress"},
+                       {"id": 3, "subject": "verify X works", "status": "pending"}]}))
+        (run / "live.log").write_text("12:00 ▶ cc-funnel:do\n")
         bys = Path(repo) / ".claude" / "ccharness" / "musician" / "by-session"
         bys.mkdir(parents=True)
         (bys / "s1").write_text("r1")
@@ -49,10 +51,11 @@ class TestRender(unittest.TestCase):
         rows = render.build_rows([make_entry("s1", cwd=repo)], NOW, summarizer=summarizer, config=CFG)
         self.assertEqual(rows[0]["kind"], "musician")
         self.assertIsNotNone(rows[0]["musician"])
-        self.assertEqual(rows[0]["musician"]["done_when"], "X is observably done")
+        self.assertEqual((rows[0]["musician"]["done"], rows[0]["musician"]["total"]), (1, 3))
         out = render.render_table(rows, NOW)
-        self.assertIn("goal:", out)
-        self.assertIn("X is observably done", out)
+        self.assertIn("1/3 tasks", out)             # progress, not a cycle count
+        self.assertIn("doing:", out)
+        self.assertIn("wire X into the page", out)  # the current (in_progress) task
         # the detail view shows what was asked + the live feed
         detail = render.render_musician_detail(rows[0], NOW)
         self.assertIn("do X", detail)

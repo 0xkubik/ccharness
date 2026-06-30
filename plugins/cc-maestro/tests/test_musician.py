@@ -35,30 +35,44 @@ class TestMusician(unittest.TestCase):
     def test_none_cwd_safe(self):
         self.assertFalse(musician.is_musician(None))
 
-    def test_cycle_count(self):
-        self.assertEqual(musician.cycle_count(self._repo({"active": True, "cycle": 5})), 5)
+    def test_task_progress(self):
+        repo = self._repo({"active": True, "tasks": [
+            {"status": "completed"}, {"status": "completed"}, {"status": "pending"}]})
+        self.assertEqual(musician.task_progress(repo), (2, 3))
 
     # --- precise resolution via the by-session pointer ---
     def test_pointer_resolution(self):
-        repo = self._repo({"active": True, "cycle": 3}, session="sess-xyz")
+        repo = self._repo({"active": True, "tasks": [{"status": "completed"},
+                                                     {"status": "pending"}]}, session="sess-xyz")
         self.assertTrue(musician.is_musician(repo, "sess-xyz"))
-        self.assertEqual(musician.cycle_count(repo, "sess-xyz"), 3)
+        self.assertEqual(musician.task_progress(repo, "sess-xyz"), (1, 2))
 
     # --- rich info ---
     def test_musician_info_rich(self):
         repo = self._repo(
-            {"active": True, "status": "working", "run_id": RID, "cycle": 4,
-             "entry": "task", "ultracode": True,
-             "input": "fix the flaky login test", "done_when": "test passes 10x in a row"},
+            {"active": True, "run_id": RID, "entry": "task", "ultracode": True,
+             "input": "fix the flaky login test",
+             "tasks": [{"id": 1, "subject": "write the failing test", "status": "completed"},
+                       {"id": 2, "subject": "make it pass", "status": "in_progress"},
+                       {"id": 3, "subject": "verify it passes 10x", "status": "pending"}]},
             session="s1",
-            live=["12:00:01 cycle 4   $ npm test", "12:00:09 cycle 4   ▶ cc-funnel:do"])
+            live=["12:00:01 $ npm test", "12:00:09 ▶ cc-funnel:do"])
         info = musician.musician_info(repo, "s1")
-        self.assertEqual(info["status"], "working")
+        self.assertEqual(info["status"], "working")            # derived label, no stored field
         self.assertEqual(info["input"], "fix the flaky login test")
-        self.assertEqual(info["done_when"], "test passes 10x in a row")
-        self.assertEqual(info["cycle"], 4)
+        self.assertEqual((info["done"], info["total"]), (1, 3))
+        self.assertEqual(info["current"], "make it pass")      # the in_progress task
         self.assertTrue(info["ultracode"])
-        self.assertEqual(info["last_action"], "12:00:09 cycle 4   ▶ cc-funnel:do")
+        self.assertEqual(info["last_action"], "12:00:09 ▶ cc-funnel:do")
+
+    def test_status_label_derived(self):
+        # No stored status field — the label is read off active/awaiting/phase.
+        susp = musician.musician_info(self._repo(
+            {"active": True, "awaiting": {"what": "scan", "since": "x"}, "tasks": []}))
+        self.assertEqual(susp["status"], "suspended")
+        shap = musician.musician_info(self._repo(
+            {"active": True, "phase": "shaping", "tasks": []}))
+        self.assertEqual(shap["status"], "shaping")
 
     def test_info_none_when_inactive(self):
         self.assertIsNone(musician.musician_info(self._repo({"active": False})))
@@ -71,14 +85,13 @@ class TestMusician(unittest.TestCase):
 
     # --- cancel (mirrors /musician-cancel) ---
     def test_cancel_run_marks_cancelled_and_drops_pointer(self):
-        repo = self._repo({"active": True, "cycle": 2}, session="s-cancel")
+        repo = self._repo({"active": True, "tasks": [{"status": "pending"}]}, session="s-cancel")
         rd = musician.cancel_run(repo, "s-cancel")
         self.assertIsNotNone(rd)
         base = Path(repo) / ".claude" / "ccharness" / "musician"
         st = json.loads((base / "runs" / RID / "state.json").read_text())
         self.assertFalse(st["active"])                                  # hook releases
-        self.assertEqual(st["status"], "cancelled")
-        self.assertEqual(st["outcome"], "cancelled")
+        self.assertEqual(st["outcome"], "cancelled")                    # label derives from this
         self.assertFalse((base / "by-session" / "s-cancel").exists())   # pointer dropped
         self.assertTrue((base / "runs" / RID).exists())                 # record kept
 

@@ -100,20 +100,28 @@ run_task() {  # run dir $1 -> task text (truncated) or "(open)"
   echo "$input"
 }
 
+task_progress() {  # run dir $1 -> "N/M" completed/total tasks, or "" (no tasks, or no jq)
+  local st="$1/state.json" done total
+  command -v jq >/dev/null 2>&1 || { echo ""; return; }
+  done="$(jq -r '[(.tasks // [])[] | select(.status=="completed")] | length' "$st" 2>/dev/null)"
+  total="$(jq -r '(.tasks // []) | length' "$st" 2>/dev/null)"
+  { [ -n "$total" ] && [ "$total" -gt 0 ] 2>/dev/null; } && echo "$done/$total" || echo ""
+}
+
 do_ls() {
   if [ ! -d "$RUNS" ] || [ -z "$(ls -A "$RUNS" 2>/dev/null)" ]; then
     echo "No musician runs in this repo yet. Start one with /musician."
     return 0
   fi
-  printf '%-22s %-9s %-8s %-5s %s\n' "ID" "STATE" "NONSTOP" "AGE" "TASK"
+  printf '%-22s %-9s %-8s %-5s %-6s %s\n' "ID" "STATE" "NONSTOP" "AGE" "TASKS" "TASK"
   local d id sid ns
   while IFS= read -r id; do
     d="$RUNS/$id"
     [ -f "$d/state.json" ] || continue
     sid="$(json_field "$d/state.json" session_id)"
     if [ -n "$sid" ] && ns_on "$sid"; then ns="on"; else ns="off"; fi
-    printf '%-22s %-9s %-8s %-5s %s\n' \
-      "$id" "$(state_label "$d")" "$ns" "$(run_age "$d")" "$(run_task "$d")"
+    printf '%-22s %-9s %-8s %-5s %-6s %s\n' \
+      "$id" "$(state_label "$d")" "$ns" "$(run_age "$d")" "$(task_progress "$d")" "$(run_task "$d")"
   done < <(ls -1 "$RUNS" 2>/dev/null | sort -r)
 }
 
@@ -129,7 +137,7 @@ do_info() {
   printf '%-12s %s\n' "state"     "$(state_label "$d")"
   printf '%-12s %s\n' "nonstop"   "$ns"
   printf '%-12s %s\n' "started"   "$(json_field "$st" started_at)"
-  printf '%-12s %s\n' "cycle"     "$(json_field "$st" cycle)"
+  printf '%-12s %s\n' "tasks"     "$(task_progress "$d")"
   printf '%-12s %s\n' "session"   "$sid"
   printf '%-12s %s\n' "dir"       "$d"
 }

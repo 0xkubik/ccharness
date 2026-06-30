@@ -65,7 +65,8 @@ class TestControl(unittest.TestCase):
         rid = "20260626-120000-aaaa"
         base = Path(repo) / ".claude" / "ccharness" / "musician"
         run = base / "runs" / rid; run.mkdir(parents=True)
-        state = run / "state.json"; state.write_text(json.dumps({"active": True, "cycle": 3}))
+        state = run / "state.json"
+        state.write_text(json.dumps({"active": True, "tasks": [{"status": "pending"}]}))
         (base / "by-session").mkdir(parents=True)
         ptr = base / "by-session" / "sid-musi"; ptr.write_text(rid)
         info = {"is_musician": True, "cwd": repo, "sessionId": "sid-musi", "pid": 123}
@@ -74,8 +75,7 @@ class TestControl(unittest.TestCase):
         self.assertEqual(result, "musician-cancelled")
         st = json.loads(state.read_text())
         self.assertFalse(st["active"])           # run marked closed -> hook releases
-        self.assertEqual(st["status"], "cancelled")
-        self.assertEqual(st["outcome"], "cancelled")
+        self.assertEqual(st["outcome"], "cancelled")   # label derives from outcome
         self.assertFalse(ptr.exists())           # pointer dropped -> clean re-arm
         self.assertTrue(run.exists())            # run folder kept as the record
         self.assertEqual(sent, [])               # process NOT signalled
