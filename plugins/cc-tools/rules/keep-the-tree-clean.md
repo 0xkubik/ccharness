@@ -1,14 +1,12 @@
 # Keep the file tree clean — place each change where it belongs
 
-A project's folder tree is a map of how it's built. Code that lands wherever was easiest blurs that
-map: related things drift apart, the root fills with loose files, and the next person can't tell
-from the layout where anything lives. Before adding to the tree, read it — then put the change where
-it belongs, and keep the structure clean as you go.
+A project's folder tree is a map of how it's built, and code that lands wherever was easiest blurs
+that map. Before adding to the tree, read it — then put the change where it belongs, and keep the
+structure clean as you go.
 
 - **Read the layout before you place a change.** Look at the folder tree and how the code is
   organised — module boundaries, naming, where similar things already live — and fit the change
-  _into_ that structure. Which module does it extend? What should it be named? Where do new files
-  go? Decide by the existing conventions, not by what's nearest to hand.
+  _into_ that structure, deciding by the existing conventions, not by what's nearest to hand.
 - **Group what belongs together.** Don't scatter related modules across the root, and don't leave
   one concern split over unrelated places. When a lone file at the root gains a sibling, give the
   two their own folder. Keep each directory about one thing.
