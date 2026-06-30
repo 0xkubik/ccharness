@@ -268,13 +268,14 @@ and run the next cycle directly.
             `STALE=<branch>` → build wasn't on `main`'s HEAD, or you're not on `main` (`REASON=not-on-main`);
             worktree kept → `discard` + rebuild). Build produced no commit (handback / dead
             approach) → `worktree.sh discard <worktreePath> <worktreeBranch>`.
-          ASYNC — decide this AT DISPATCH, not after the turn ends: will the build return its result
-            IN THIS TURN, or run past it (backgrounded, or a long do→refactor-review-test with no
-            parallel in-turn work worth doing)? Runs past the turn → set awaiting:{what, since}
-            (atomic), log "suspended", and END TURN on the SAME turn you dispatched. NOT a cycle.
-            NEVER end a turn active-and-not-awaiting while a build is still running — the Stop hook
-            then re-feeds you one wasted, empty turn before you suspend. (Hook releases on awaiting;
-            the subagent's completion notification resumes you at step 0.)
+          ASYNC — decide this AT DISPATCH: does this dispatch return its result IN THIS TURN (a
+            blocking Agent call — you integrate it below, no awaiting), or did you BACKGROUND it
+            (too long to block the turn on, and no parallel in-turn work worth doing)? Backgrounded
+            → it won't finish in-turn, so on the SAME turn you dispatch, set awaiting:{what, since}
+            (atomic), log "suspended", and END TURN. NOT a cycle. NEVER end a turn
+            active-and-not-awaiting while a backgrounded build is still running — the Stop hook then
+            re-feeds you one wasted, empty turn before you suspend. (Hook releases on awaiting; the
+            subagent's completion notification resumes you at step 0.)
           HANDBACK (the do subagent couldn't build it) — a business / non-technical blocker OR a
             technical fork / stuck (slap-twice): log the reason in the cycle line and loop back to
             step 4 (how-to-do) for a DIFFERENT approach. You never self-close on a handback; a real
