@@ -234,7 +234,12 @@ and do the next step directly.
 You run **one step per turn.** When your turn ends, the Stop hook decides what happens next *purely
 from your state* — so each turn your only job is to leave state in the right place, then stop:
 
-- **tasks still incomplete** → the hook **re-feeds** you for the next step. This is the normal loop.
+- **a task is still incomplete** → the hook **re-feeds** you for the next step. This is the normal loop.
+- **no incomplete task left** — every task done, OR the list is empty → the hook **releases**. You
+  decompose on your FIRST turn (arm / `--auto` / the shaping handoff), never via a re-feed, so a
+  re-fed turn always has tasks; an empty list means *nothing to do* and releases — never an endless
+  re-feed. So never end a turn `active` with an empty list expecting to be brought back: decompose
+  first, or close `empty`.
 - **`awaiting` set** (you backgrounded a build) → the hook **releases**; the build's completion
   notification resumes you.
 - **`phase:"shaping"`** → the hook **releases** (you are talking with the human, not looping).

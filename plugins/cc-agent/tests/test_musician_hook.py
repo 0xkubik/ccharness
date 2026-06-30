@@ -55,8 +55,8 @@ class TestMusicianHook(unittest.TestCase):
         self.assertEqual(out.strip(), "")
 
     def test_active_same_session_blocks(self):
-        repo = repo_with({"active": True, "session_id": SESSION,
-                          "cycle": 2, "entry": "task"})
+        repo = repo_with({"active": True, "session_id": SESSION, "entry": "task",
+                          "tasks": [{"status": "pending"}]})
         rc, out = run_hook(repo, {"session_id": SESSION})
         self.assertEqual(rc, 0)
         self.assertIn('"decision"', out)
@@ -87,7 +87,8 @@ class TestMusicianHook(unittest.TestCase):
     def test_two_runs_isolated(self):
         # Two runs in one repo, each in its own folder with its own pointer. A Stop from each
         # session resolves ITS run only: the active one re-feeds, the closed one releases.
-        repo = repo_with({"active": True, "session_id": SESSION, "cycle": 1, "entry": "task"},
+        repo = repo_with({"active": True, "session_id": SESSION, "entry": "task",
+                          "tasks": [{"status": "pending"}]},
                          run_id="20260626-120000-aaaa")
         # add a second, closed run owned by OTHER
         base = Path(repo) / ".claude" / "ccharness" / "musician"
@@ -139,8 +140,8 @@ class TestMusicianHook(unittest.TestCase):
 
     def test_awaiting_null_still_blocks(self):
         # awaiting:null is the normal state — must still re-feed (block).
-        repo = repo_with({"active": True, "session_id": SESSION, "cycle": 2,
-                          "entry": "task", "awaiting": None})
+        repo = repo_with({"active": True, "session_id": SESSION, "entry": "task",
+                          "awaiting": None, "tasks": [{"status": "pending"}]})
         rc, out = run_hook(repo, {"session_id": SESSION})
         self.assertIn("block", out)
 
@@ -173,11 +174,14 @@ class TestMusicianTaskList(unittest.TestCase):
         rc, out = run_hook(repo, {"session_id": SESSION})
         self.assertIn("block", out)                # a task remains → re-feed
 
-    def test_empty_task_list_blocks(self):
-        # Empty list = the musician hasn't decomposed yet — NOT done. Re-feed so it decomposes.
+    def test_empty_task_list_releases(self):
+        # Empty list at a turn boundary = nothing to do. The musician decomposes on its FIRST turn
+        # (arm / --auto / handoff), never via a re-feed, so a re-fed turn always has tasks; an empty
+        # list here releases — never an endless re-feed (the flagged infinite-loop edge).
         repo = repo_with({"active": True, "session_id": SESSION, "entry": "task", "tasks": []})
         rc, out = run_hook(repo, {"session_id": SESSION})
-        self.assertIn("block", out)
+        self.assertEqual(rc, 0)
+        self.assertEqual(out.strip(), "")
 
     def test_nojq_completed_list_still_blocks(self):
         # Fail-closed: with no jq the array can't be parsed, so a completed list whose run is still
@@ -203,15 +207,16 @@ class TestMusicianPhase(unittest.TestCase):
         self.assertEqual(out.strip(), "")
 
     def test_building_blocks(self):
-        # phase:"building" — the autonomous loop. Re-feed (block) as before.
-        repo = repo_with({"active": True, "session_id": SESSION, "cycle": 1,
-                          "entry": "task", "phase": "building"})
+        # phase:"building" with work left — the autonomous loop re-feeds (block).
+        repo = repo_with({"active": True, "session_id": SESSION, "entry": "task",
+                          "phase": "building", "tasks": [{"status": "pending"}]})
         rc, out = run_hook(repo, {"session_id": SESSION})
         self.assertIn("block", out)
 
     def test_absent_phase_blocks(self):
         # Back-compat: a run armed before the phase field exists must re-feed (treated as building).
-        repo = repo_with({"active": True, "session_id": SESSION, "cycle": 1, "entry": "task"})
+        repo = repo_with({"active": True, "session_id": SESSION, "entry": "task",
+                          "tasks": [{"status": "pending"}]})
         rc, out = run_hook(repo, {"session_id": SESSION})
         self.assertIn("block", out)
 
@@ -229,7 +234,8 @@ class TestMusicianFlags(unittest.TestCase):
     """The musician carries --ultracode only. There is NO spend flag (it is bounded by design)."""
 
     def test_baseline_has_no_ultracode(self):
-        repo = repo_with({"active": True, "session_id": SESSION, "cycle": 1, "entry": "task"})
+        repo = repo_with({"active": True, "session_id": SESSION, "entry": "task",
+                          "tasks": [{"status": "pending"}]})
         rc, out = run_hook(repo, {"session_id": SESSION})
         self.assertIn("block", out)
         self.assertNotIn("ULTRACODE", out)
@@ -243,8 +249,8 @@ class TestMusicianFlags(unittest.TestCase):
         self.assertNotIn("spend-session", out.lower())
 
     def test_ultracode_injects_block(self):
-        repo = repo_with({"active": True, "session_id": SESSION, "cycle": 1,
-                          "entry": "task", "ultracode": True})
+        repo = repo_with({"active": True, "session_id": SESSION, "entry": "task",
+                          "ultracode": True, "tasks": [{"status": "pending"}]})
         rc, out = run_hook(repo, {"session_id": SESSION})
         self.assertIn("ULTRACODE", out)
         self.assertIn("Workflow", out)
@@ -261,7 +267,8 @@ class TestMusicianRefeedContent(unittest.TestCase):
     """The re-feed must carry the musician's load-bearing behaviours."""
 
     def _refeed(self):
-        repo = repo_with({"active": True, "session_id": SESSION, "cycle": 1, "entry": "task"})
+        repo = repo_with({"active": True, "session_id": SESSION, "entry": "task",
+                          "tasks": [{"status": "pending"}]})
         _, out = run_hook(repo, {"session_id": SESSION})
         return out
 

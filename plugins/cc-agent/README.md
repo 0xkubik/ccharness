@@ -63,7 +63,8 @@ Each run gets its OWN folder so many runs in one repo never collide:
 
 `tasks` is the loop state: an ordered list `[{id, subject, status}]` (status `pending` /
 `in_progress` / `completed`) whose LAST item is always a real verification. The hooks re-feed while
-any task is incomplete and release when the whole list is done. There is **no stored status field** —
+any task is incomplete and release when no incomplete task is left (the list is done, or — abnormally
+— empty; decomposition happens on the first turn, never via a re-feed). There is **no stored status field** —
 the lifecycle label (`working` / `suspended` / `shaping` / `achieved` / `empty` / `cancelled`) is
 *derived* from `active` + `awaiting` + `phase` + `outcome`. A non-null `awaiting` object means the
 loop is **suspended** on async work or a transient outage — not done, not given up; the awaited
@@ -100,8 +101,8 @@ The hook finds THIS session's run via the `by-session/<session-id>` pointer (see
 
 | Situation | `musician-stop.sh` |
 | --- | --- |
-| active, `phase:"building"`, tasks still incomplete | blocks (re-feeds the next step) |
-| active, building, all tasks completed | yields (the list is done) |
+| active, `phase:"building"`, a task still incomplete | blocks (re-feeds the next step) |
+| active, building, no incomplete task (list done, or empty) | yields (nothing to do) |
 | active but `phase:"shaping"` | yields (collaborating with the human — normal conversation, no re-feed) |
 | active but `awaiting` set | yields (suspended — terminal frees, no turn burned) |
 | `active:false` (achieved / empty / cancelled) | yields (session ends) |

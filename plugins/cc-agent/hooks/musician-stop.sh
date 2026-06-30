@@ -14,11 +14,10 @@
 #   active == false              -> RELEASE (achieved / empty / cancelled)
 #   awaiting set                 -> RELEASE (suspended on async work / transient outage)
 #   phase == shaping             -> RELEASE (collaborating with the human, not looping)
-#   task list non-empty & ALL    -> RELEASE (the work is done)
-#     tasks completed
-#   otherwise (tasks incomplete, -> RE-FEED (never drop a live task; with no jq the list can't be
-#     empty, unparseable, or          parsed, so we fall through to re-feed — fail-closed)
-#     active:true)
+#   no incomplete task remains   -> RELEASE (all tasks completed, OR the list is empty — nothing to do)
+#   a task is still incomplete   -> RE-FEED (do the next step)
+#   state unreadable (no file /  -> RE-FEED (fail-closed: never drop a live task to a parse failure)
+#     no jq to parse the array)
 set -u
 
 source "${BASH_SOURCE[0]%/*}/musician-resolve.sh"
@@ -97,13 +96,14 @@ if [ "$PHASE" = "shaping" ]; then
   exit 0
 fi
 
-# RELEASE — the task LIST is DONE: at least one task, and every task completed. (An empty list is NOT
-# done — the musician still has to decompose — so length>0 is required.) The musician also flips
-# active:false on the last task; this is the backstop. Pure bash cannot parse the array, so with no
-# jq this check is skipped and we fall through to RE-FEED — fail-closed (never drop a live run).
+# RELEASE — nothing left to do: NO incomplete task remains (every task completed, OR the list is
+# empty). The musician decomposes on its FIRST turn (arm / --auto / handoff), never via a re-feed, so
+# a re-fed turn always has tasks — an empty list at a turn boundary means "done / nothing to do" and
+# releases (it is never an endless re-feed; the musician should close, but empty is a release either
+# way). Pure bash cannot parse the array, so with no jq this is skipped and we fall through to RE-FEED
+# — fail-closed on an UNREADABLE state (missing file / no jq), never on a definite empty one.
 if command -v jq >/dev/null 2>&1 && \
-   jq -e '(.tasks // [] | length) > 0 and (all((.tasks // [])[]; .status == "completed"))' \
-      "$STATE_FILE" >/dev/null 2>&1; then
+   jq -e 'all((.tasks // [])[]; .status == "completed")' "$STATE_FILE" >/dev/null 2>&1; then
   exit 0
 fi
 
