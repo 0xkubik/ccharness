@@ -12,7 +12,7 @@
 # musician.
 #
 # Zones never overlap with musician-stop.sh:
-#   musician active:true  -> musician-stop.sh drives (re-feed one cycle); we no-op.
+#   musician active:true  -> musician-stop.sh drives (re-feed the next step); we no-op.
 #   musician active:false -> musician-stop.sh releases;  WE block (re-launch).
 #
 # Fail OPEN: on any doubt -> exit 0 (no-op). A bug here must never trap the loop —

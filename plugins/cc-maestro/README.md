@@ -14,9 +14,9 @@ plugins/cc-maestro/bin/ccmaestro start "fix the flaky test" --repo ~/app
 plugins/cc-maestro/bin/ccmaestro logs <id> --tail 50
 ```
 
-A **musician** row in `ls` carries its run detail — status, cycle, the goal it forged
-(`done_when`), and its latest action from the live feed. `ccmaestro musician` is the dedicated view:
-what was asked, the goal, the blocked queue, and a tail of `live.log` (what it's doing right now).
+A **musician** row in `ls` carries its run detail — status, task progress (`done/total`), the
+current task, and its latest action from the live feed. `ccmaestro musician` is the dedicated view:
+what was asked, the progress, the current task, and a tail of `live.log` (what it's doing right now).
 maestro reads the per-run layout (`runs/<run-id>/` via the `by-session` pointer), so it sees every
 run even when several share a repo.
 

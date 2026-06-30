@@ -29,7 +29,9 @@ STATE_FILE="$RUN_DIR/state.json"
 LIVE_LOG="$RUN_DIR/live.log"
 
 [ "$(jq -r '.active' "$STATE_FILE" 2>/dev/null)" = "true" ] || exit 0
-CYCLE="$(jq -r '.cycle // "?"' "$STATE_FILE" 2>/dev/null || echo '?')"
+DONE="$(jq -r '[(.tasks // [])[] | select(.status=="completed")] | length' "$STATE_FILE" 2>/dev/null || echo '?')"
+TOTAL="$(jq -r '(.tasks // []) | length' "$STATE_FILE" 2>/dev/null || echo '?')"
+PROG="${DONE}/${TOTAL}"
 
 # Heartbeat — every tool call keeps the working run's liveness mark fresh (see musician-stop.sh).
 : > "$RUN_DIR/heartbeat" 2>/dev/null || true
@@ -61,10 +63,10 @@ if [ "$MODE" = "post" ]; then
   # Light completion tick — only for the heavy, slow instruments, to avoid doubling the feed.
   case "$TOOL" in
     Skill|Task|Agent|Bash)
-      printf '%s  cycle %s   ✓ %s\n' "$TS" "$CYCLE" "$LABEL" >> "$LIVE_LOG" 2>/dev/null || true ;;
+      printf '%s  [%s]  ✓ %s\n' "$TS" "$PROG" "$LABEL" >> "$LIVE_LOG" 2>/dev/null || true ;;
   esac
   exit 0
 fi
 
-printf '%s  cycle %s   %s\n' "$TS" "$CYCLE" "$LABEL" >> "$LIVE_LOG" 2>/dev/null || true
+printf '%s  [%s]  %s\n' "$TS" "$PROG" "$LABEL" >> "$LIVE_LOG" 2>/dev/null || true
 exit 0

@@ -122,7 +122,7 @@ REFEED="$(cat <<'PROMPT'
    • Handback (do could not build it) → re-dispatch cc-funnel:how-to-do for a DIFFERENT approach (failed approaches are in log.jsonl); never self-close. A transient external block (5xx/rate-limit) → suspend (awaiting). A true dead-end is for the human to run /musician-cancel.
 4. Completed the LAST task (the list is now ALL done) → in ONE atomic state write set active:false and outcome:"achieved" (do not split closing from completing the task); append one git notes line — git notes append -m "built: <what> — <why>" (closed past only, NEVER a forward intent); report; END TURN.
 5. Append a log.jsonl line and END TURN. The hook re-feeds while any task is incomplete.
-You stop ONLY by finishing the list (active:false, outcome:"achieved"), open-mode "empty", or /musician-cancel. Handed work is never refused. There is no try-count and no cycle cap.
+You stop ONLY by finishing the list (active:false, outcome:"achieved"), open-mode "empty", or /musician-cancel. Handed work is never refused. There is no try-count and no step cap.
 PROMPT
 )"
 

@@ -43,14 +43,15 @@ class TestObserveHook(unittest.TestCase):
         self.assertEqual(live_log(repo), "")
 
     def test_active_session_logs_skill(self):
-        repo = repo_with({"active": True, "session_id": SESSION, "cycle": 2})
+        repo = repo_with({"active": True, "session_id": SESSION,
+                          "tasks": [{"status": "completed"}, {"status": "pending"}]})
         rc, out = run_observe(repo, {"session_id": SESSION, "tool_name": "Skill",
                                      "tool_input": {"skill": "cc-funnel:how-to-do"}})
         self.assertEqual(rc, 0)
         self.assertEqual(out.strip(), "")  # a PreToolUse witness must not emit a decision
         log = live_log(repo)
         self.assertIn("cc-funnel:how-to-do", log)
-        self.assertIn("cycle 2", log)
+        self.assertIn("1/2", log)          # task progress, not a cycle count
 
     def test_active_session_logs_bash_head(self):
         repo = repo_with({"active": True, "session_id": SESSION, "cycle": 1})

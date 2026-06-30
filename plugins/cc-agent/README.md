@@ -22,11 +22,12 @@ first turn (the old behaviour; this is what `nonstop` passes to walk the roadmap
 - **Without a prompt** (`/musician`): it **finds the work itself** via `what-to-do` (picking the top
   direction *with* you in shaping, or autonomously under `--auto`), then builds that one direction to done.
 
-It runs as a loop across turns (the Stop hook re-feeds one cycle per turn), but it is **bounded**:
-one piece of work, to its end, then stop. Want another — launch it again.
+It runs as a loop across turns (the Stop hook re-feeds one step per turn while tasks remain), but it
+is **bounded**: one piece of work, to its end, then stop. Want another — launch it again.
 
 - **Exits (the only doors out):**
-  - **achieved** — the done-check is met.
+  - **achieved** — the task list is done: every task completed, including the final verify, which
+    actually passed.
   - **empty** — *open mode only:* `what-to-do` found nothing worth building (the roadmap frontier is
     exhausted), so there's no direction to pick. Not a refusal of handed work — it's the autonomous
     walker's natural floor, and the signal `nonstop` reads to stop.
@@ -49,19 +50,22 @@ Each run gets its OWN folder so many runs in one repo never collide:
   musician/
     runs/<run-id>/            one folder per run  (run-id = UTC YYYYMMDD-HHMMSS-<hex>, sortable)
       state.json             loop control + identity
-                             {active, status, run_id, session_id, mode:"musician",
+                             {active, run_id, session_id, mode:"musician",
                               entry:"task"|"open", phase:"shaping"|"building",
-                              input (the original prompt, verbatim), done_when,
-                              cycle, ultracode, awaiting, outcome, worktree_helper, …}
-      log.jsonl              one line per cycle (carries which approaches failed this run)
+                              input (the original prompt, verbatim),
+                              tasks (the ordered plan: [{id, subject, status}], last = verify),
+                              ultracode, awaiting, outcome, worktree_helper, …}
+      log.jsonl              one line per step (carries which approaches failed this run)
       live.log               live action feed — one line per tool call (see "Watching a run live")
       heartbeat              touched by the hooks each turn/tool call (crash detection)
     by-session/<session-id>  pointer → the active run-id for that session (how the hooks find it)
 ```
 
-`status` is the human-readable lifecycle label — `working` / `suspended` / `achieved` / `empty`
-/ `cancelled`. `outcome` carries the same terminal value (or `null` while
-running); `active` + `awaiting` are what the hooks gate on. A non-null `awaiting` object means the
+`tasks` is the loop state: an ordered list `[{id, subject, status}]` (status `pending` /
+`in_progress` / `completed`) whose LAST item is always a real verification. The hooks re-feed while
+any task is incomplete and release when the whole list is done. There is **no stored status field** —
+the lifecycle label (`working` / `suspended` / `shaping` / `achieved` / `empty` / `cancelled`) is
+*derived* from `active` + `awaiting` + `phase` + `outcome`. A non-null `awaiting` object means the
 loop is **suspended** on async work or a transient outage — not done, not given up; the awaited
 task's completion notification resumes it.
 
@@ -96,7 +100,8 @@ The hook finds THIS session's run via the `by-session/<session-id>` pointer (see
 
 | Situation | `musician-stop.sh` |
 | --- | --- |
-| this session's run active, `phase:"building"` | blocks (re-feeds one cycle) |
+| active, `phase:"building"`, tasks still incomplete | blocks (re-feeds the next step) |
+| active, building, all tasks completed | yields (the list is done) |
 | active but `phase:"shaping"` | yields (collaborating with the human — normal conversation, no re-feed) |
 | active but `awaiting` set | yields (suspended — terminal frees, no turn burned) |
 | `active:false` (achieved / empty / cancelled) | yields (session ends) |
@@ -148,8 +153,8 @@ A musician reasons inside its own session window, invisible from outside. A `Pre
 `PostToolUse` hook — `musician-observe.sh` — makes the work visible **as it happens**: while a
 musician is active for this session, it appends one line per tool call to `live.log` — the
 instrument it called (`crux` / `what-to-do` / `how-to-do` / `do` / `refactor-review-test`), a shell command, a file edit, a
-spawned subagent — with the cycle number. It is a read-only witness: it **never blocks or alters a
-tool**, and logging is best-effort (skipped if it can't parse the input).
+spawned subagent — tagged with the task progress (`[done/total]`). It is a read-only witness: it
+**never blocks or alters a tool**, and logging is best-effort (skipped if it can't parse the input).
 
 Follow it from another terminal while the musician works (`musicians watch` tails the newest run):
 
