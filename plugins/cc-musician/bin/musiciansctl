@@ -1,3 +1,0 @@
-#!/usr/bin/env bash
-# musicians — thin alias for `ccmusicianctl` (its name was absorbed; same command, same grammar).
-exec "$(dirname "$0")/ccmusicianctl" "$@"
