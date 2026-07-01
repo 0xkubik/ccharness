@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # ccscriptctl — small terminal helpers for the cc-script harness.
-# Today it opens the project's roadmap or cheat-sheet in your editor, so you don't
-# have to dig into .claude/ccharness/ by hand. More helpers may be added over time.
+# It opens the project's roadmap or cheat-sheet in your editor, and captures quick
+# roadmap notes from the shell, so you don't have to dig into .claude/ccharness/ by
+# hand. More helpers may be added over time.
 set -eu
 
 usage() {
@@ -11,13 +12,18 @@ ccscriptctl — small helpers for the cc-script harness
 Usage: ccscriptctl <command>
 
 Commands:
-  roadmap      Open .claude/ccharness/roadmap.md in your editor
-  cheatsheet   Open .claude/ccharness/cheatsheet.md in your editor
-  help         Show this help
+  roadmap open              Open .claude/ccharness/roadmap.md in your editor
+  roadmap add <kind> <text> Append a note to roadmap.md without opening it,
+                            where <kind> is one of:
+                              bug       → the "## Bugs" section
+                              feat      → the "## Features" section
+                              backlog   → the "## Backlog" section
+  cheatsheet                Open .claude/ccharness/cheatsheet.md in your editor
+  help                      Show this help
 
-The file opens with $VISUAL, else $EDITOR, else your OS default app
-(open / xdg-open). ccscriptctl finds .claude/ccharness/ in the current
-directory or any parent, so it works from anywhere inside a project.
+Files open with $VISUAL, else $EDITOR, else your OS default app (open /
+xdg-open). ccscriptctl finds .claude/ccharness/ in the current directory or any
+parent, so it works from anywhere inside a project.
 EOF
 }
 
@@ -32,6 +38,27 @@ find_ccharness() {
     [ "$dir" = "/" ] && return 1
     dir="$(dirname "$dir")"
   done
+}
+
+# Print the ccharness dir, or exit 1 with a hint to run the owning skill.
+require_ccharness() {
+  local skill="$1" dir
+  if ! dir="$(find_ccharness)"; then
+    echo "ccscriptctl: no .claude/ccharness/ found in '$PWD' or any parent." >&2
+    echo "Run $skill in your project to create it." >&2
+    exit 1
+  fi
+  printf '%s\n' "$dir"
+}
+
+# Exit 1 with a hint if the target file does not exist yet.
+require_file() {
+  local file="$1" skill="$2"
+  if [ ! -f "$file" ]; then
+    echo "ccscriptctl: $file does not exist yet." >&2
+    echo "Run $skill to create it." >&2
+    exit 1
+  fi
 }
 
 open_in_editor() {
@@ -49,24 +76,108 @@ open_in_editor() {
   exit 1
 }
 
+# Append "- [ ] <text>" under "## <section>" in the roadmap, creating the section
+# at the end of the file if it isn't there yet. The curated feature list is left
+# untouched — captured notes live in their own sections for later triage.
+roadmap_add_note() {
+  local section="$1" bullet="$2" file="$3" heading tmp
+  heading="## $section"
+  if grep -qxF "$heading" "$file"; then
+    tmp="$(mktemp)"
+    awk -v heading="$heading" -v bullet="$bullet" '
+      function flush() {
+        while (n > 0 && buf[n] ~ /^[[:space:]]*$/) n--
+        for (i = 1; i <= n; i++) print buf[i]
+        print bullet
+        n = 0; in_sec = 0
+      }
+      BEGIN { in_sec = 0; n = 0 }
+      {
+        if (!in_sec && $0 == heading) { print; in_sec = 1; next }
+        if (in_sec) {
+          if (/^## /) { flush(); print ""; print; next }
+          buf[++n] = $0; next
+        }
+        print
+      }
+      END { if (in_sec) flush() }
+    ' "$file" > "$tmp"
+    mv "$tmp" "$file"
+  else
+    [ -n "$(tail -c1 "$file")" ] && printf '\n' >> "$file"
+    printf '\n%s\n\n%s\n' "$heading" "$bullet" >> "$file"
+  fi
+}
+
+cmd_roadmap() {
+  local sub="${1:-}"
+  case "$sub" in
+    open)
+      local ccdir file
+      ccdir="$(require_ccharness /roadmap-management)"
+      file="$ccdir/roadmap.md"
+      require_file "$file" /roadmap-management
+      open_in_editor "$file"
+      ;;
+    add)
+      shift || true
+      local kind section
+      kind="${1:-}"
+      case "$kind" in
+        bug)     section="Bugs" ;;
+        feat)    section="Features" ;;
+        backlog) section="Backlog" ;;
+        "")      echo "ccscriptctl: 'roadmap add' needs a kind (bug|feat|backlog) and text." >&2; exit 2 ;;
+        *)       echo "ccscriptctl: unknown kind '$kind' — use bug, feat, or backlog." >&2; exit 2 ;;
+      esac
+      shift || true
+      local text="$*"
+      if [ -z "$text" ]; then
+        echo "ccscriptctl: 'roadmap add $kind' needs some text to record." >&2
+        exit 2
+      fi
+      local ccdir file
+      ccdir="$(require_ccharness /roadmap-management)"
+      file="$ccdir/roadmap.md"
+      require_file "$file" /roadmap-management
+      roadmap_add_note "$section" "- [ ] $text" "$file"
+      echo "Added to $section in $file:"
+      echo "  - [ ] $text"
+      ;;
+    "")
+      echo "ccscriptctl: 'roadmap' needs a subcommand — 'open' or 'add'." >&2
+      echo >&2
+      usage >&2
+      exit 2
+      ;;
+    *)
+      echo "ccscriptctl: unknown roadmap subcommand '$sub'." >&2
+      echo >&2
+      usage >&2
+      exit 2
+      ;;
+  esac
+}
+
 case "${1:-help}" in
-  roadmap)    target="roadmap.md";    skill="/roadmap-management" ;;
-  cheatsheet) target="cheatsheet.md"; skill="/cheatsheet-management" ;;
-  -h|--help|help) usage; exit 0 ;;
-  *) echo "ccscriptctl: unknown command '$1'" >&2; echo >&2; usage >&2; exit 2 ;;
+  roadmap)
+    shift
+    cmd_roadmap "$@"
+    ;;
+  cheatsheet)
+    ccdir="$(require_ccharness /cheatsheet-management)"
+    file="$ccdir/cheatsheet.md"
+    require_file "$file" /cheatsheet-management
+    open_in_editor "$file"
+    ;;
+  -h|--help|help)
+    usage
+    exit 0
+    ;;
+  *)
+    echo "ccscriptctl: unknown command '$1'" >&2
+    echo >&2
+    usage >&2
+    exit 2
+    ;;
 esac
-
-if ! ccdir="$(find_ccharness)"; then
-  echo "ccscriptctl: no .claude/ccharness/ found in '$PWD' or any parent." >&2
-  echo "Run $skill in your project to create it." >&2
-  exit 1
-fi
-
-file="$ccdir/$target"
-if [ ! -f "$file" ]; then
-  echo "ccscriptctl: $file does not exist yet." >&2
-  echo "Run $skill to create it." >&2
-  exit 1
-fi
-
-open_in_editor "$file"

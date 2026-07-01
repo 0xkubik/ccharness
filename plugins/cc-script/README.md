@@ -58,21 +58,29 @@ This captures the product's *North Star* (the goal) and the ordered feature list
 
 ## `ccscriptctl` — terminal helper
 
-A tiny CLI for the chores you'd otherwise do by hand. Today it opens the project's roadmap or
-cheat-sheet in your editor, so you don't have to dig into `.claude/ccharness/` every time:
+A tiny CLI for the chores you'd otherwise do by hand — it opens the project's roadmap or
+cheat-sheet in your editor, and captures quick roadmap notes straight from the shell, so you don't
+have to dig into `.claude/ccharness/` every time:
 
 ```
-ccscriptctl roadmap      # open .claude/ccharness/roadmap.md
-ccscriptctl cheatsheet   # open .claude/ccharness/cheatsheet.md
+ccscriptctl roadmap open               # open .claude/ccharness/roadmap.md
+ccscriptctl roadmap add bug <text>     # note a bug     → "## Bugs" section
+ccscriptctl roadmap add feat <text>    # note a feature → "## Features" section
+ccscriptctl roadmap add backlog <text> # note an idea   → "## Backlog" section
+ccscriptctl cheatsheet                 # open .claude/ccharness/cheatsheet.md
 ```
 
-It finds `.claude/ccharness/` in the current directory or any parent, and opens the file with
+`roadmap add` appends `- [ ] <text>` under the matching section at the bottom of `roadmap.md`
+(creating the section if it isn't there yet) without opening an editor — a shell inbox to triage
+later with `/roadmap-management`. The curated `Mn` feature list is left untouched.
+
+It finds `.claude/ccharness/` in the current directory or any parent, and opens files with
 `$VISUAL`, else `$EDITOR`, else your OS default app (`open` / `xdg-open`).
 
 **You don't symlink it** — once cc-script is installed, `ccscriptctl` is already on your PATH. Claude
 Code adds every installed plugin's `bin/` to PATH, exactly like `ccconductorctl` (cc-conductor) and
 `musiciansctl` (cc-musician). Just install cc-script (`/plugin install cc-script@ccharness`) and run
-`ccscriptctl roadmap`. (For a standalone terminal outside Claude Code, add the plugin's `bin/` to your
+`ccscriptctl roadmap open`. (For a standalone terminal outside Claude Code, add the plugin's `bin/` to your
 shell PATH yourself.)
 
 ## The script
@@ -152,4 +160,4 @@ Beyond the marketplace set, `/cc-init` also **offers** two external MCP tools it
 - `skills/how-to-do/SKILL.md` — the decision loop (four proposers → synthesis).
 - `skills/do/SKILL.md` — the gated executor: builds + smoke-checks, then hands off (the brains).
 - `skills/refactor-review-test/SKILL.md` — the autonomous hardener (safety-net → refactor → review → full tests → commit); `/do`'s always-on tail, also standalone.
-- `bin/ccscriptctl` — small terminal helper: opens the project's roadmap / cheat-sheet in your editor (`ccscriptctl roadmap` · `ccscriptctl cheatsheet`).
+- `bin/ccscriptctl` — small terminal helper: opens the project's roadmap / cheat-sheet in your editor (`ccscriptctl roadmap open` · `ccscriptctl cheatsheet`) and captures quick roadmap notes (`ccscriptctl roadmap add bug|feat|backlog <text>`).

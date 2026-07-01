@@ -49,9 +49,15 @@ class TestCcfunnelBin(unittest.TestCase):
         self.assertTrue(os.access(BIN, os.X_OK), "bin/ccscriptctl not executable")
 
     def test_opens_roadmap(self):
-        r = self.run_bin("roadmap")
+        r = self.run_bin("roadmap", "open")
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertEqual(self.opened.read_text(), str(self.ccdir / "roadmap.md"))
+
+    def test_bare_roadmap_needs_subcommand(self):
+        r = self.run_bin("roadmap")
+        self.assertEqual(r.returncode, 2)
+        self.assertIn("subcommand", r.stderr)
+        self.assertFalse(self.opened.exists(), "bare roadmap opened an editor")
 
     def test_opens_cheatsheet(self):
         r = self.run_bin("cheatsheet")
@@ -61,7 +67,7 @@ class TestCcfunnelBin(unittest.TestCase):
     def test_walks_up_from_subdir(self):
         deep = self.proj / "a" / "b" / "c"
         deep.mkdir(parents=True)
-        r = self.run_bin("roadmap", cwd=deep)
+        r = self.run_bin("roadmap", "open", cwd=deep)
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertEqual(self.opened.read_text(), str(self.ccdir / "roadmap.md"))
 
@@ -70,7 +76,7 @@ class TestCcfunnelBin(unittest.TestCase):
         marker = self.base / "vis_opened"
         visual.write_text('#!/usr/bin/env bash\nprintf "%s" "$1" > ' f'"{marker}"\n')
         visual.chmod(0o755)
-        r = self.run_bin("roadmap", env_extra={"VISUAL": str(visual)})
+        r = self.run_bin("roadmap", "open", env_extra={"VISUAL": str(visual)})
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertEqual(marker.read_text(), str(self.ccdir / "roadmap.md"))
         self.assertFalse(self.opened.exists(), "$EDITOR ran even though $VISUAL was set")
@@ -84,7 +90,7 @@ class TestCcfunnelBin(unittest.TestCase):
     def test_no_ccharness_exits_1(self):
         bare = self.base / "bare"
         bare.mkdir()
-        r = self.run_bin("roadmap", cwd=bare)
+        r = self.run_bin("roadmap", "open", cwd=bare)
         self.assertEqual(r.returncode, 1)
         self.assertIn("/roadmap-management", r.stderr)
 
@@ -97,6 +103,70 @@ class TestCcfunnelBin(unittest.TestCase):
         r = self.run_bin("help")
         self.assertEqual(r.returncode, 0)
         self.assertIn("ccscriptctl", r.stdout)
+
+    def roadmap_text(self):
+        return (self.ccdir / "roadmap.md").read_text()
+
+    def test_add_creates_section_and_appends(self):
+        r = self.run_bin("roadmap", "add", "bug", "crash", "on", "empty", "export")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        text = self.roadmap_text()
+        self.assertIn("## Bugs", text)
+        self.assertIn("- [ ] crash on empty export", text)
+        self.assertFalse(self.opened.exists(), "add opened an editor")
+
+    def test_add_maps_kinds_to_sections(self):
+        self.run_bin("roadmap", "add", "feat", "dark mode")
+        self.run_bin("roadmap", "add", "backlog", "i18n someday")
+        text = self.roadmap_text()
+        self.assertIn("## Features", text)
+        self.assertIn("- [ ] dark mode", text)
+        self.assertIn("## Backlog", text)
+        self.assertIn("- [ ] i18n someday", text)
+
+    def test_add_appends_within_existing_section(self):
+        self.run_bin("roadmap", "add", "bug", "first")
+        self.run_bin("roadmap", "add", "bug", "second")
+        text = self.roadmap_text()
+        self.assertEqual(text.count("## Bugs"), 1, "duplicate section created")
+        self.assertLess(
+            text.index("- [ ] first"),
+            text.index("- [ ] second"),
+            "second note not appended after first",
+        )
+
+    def test_add_leaves_feature_list_untouched(self):
+        (self.ccdir / "roadmap.md").write_text(
+            "# Roadmap\n\n- [ ] M1 — build it\n"
+        )
+        self.run_bin("roadmap", "add", "feat", "new idea")
+        text = self.roadmap_text()
+        self.assertIn("- [ ] M1 — build it", text)
+        self.assertLess(
+            text.index("M1 — build it"),
+            text.index("## Features"),
+            "capture section landed above the feature list",
+        )
+
+    def test_add_unknown_kind_exits_2(self):
+        r = self.run_bin("roadmap", "add", "chore", "something")
+        self.assertEqual(r.returncode, 2)
+        self.assertIn("bug", r.stderr)
+
+    def test_add_without_text_exits_2(self):
+        r = self.run_bin("roadmap", "add", "bug")
+        self.assertEqual(r.returncode, 2)
+
+    def test_add_missing_roadmap_exits_1(self):
+        (self.ccdir / "roadmap.md").unlink()
+        r = self.run_bin("roadmap", "add", "bug", "x")
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("/roadmap-management", r.stderr)
+
+    def test_unknown_roadmap_subcommand_exits_2(self):
+        r = self.run_bin("roadmap", "bogus")
+        self.assertEqual(r.returncode, 2)
+        self.assertIn("subcommand", r.stderr)
 
 
 if __name__ == "__main__":
