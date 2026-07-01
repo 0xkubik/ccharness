@@ -1,4 +1,4 @@
-import json, os, subprocess, tempfile, unittest
+import json, os, subprocess, tempfile, time, unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -24,6 +24,31 @@ def repo_with_run(active=False, outcome="achieved", session=SESSION, input_="har
     (base / "by-session").mkdir(parents=True, exist_ok=True)
     (base / "by-session" / session).write_text(RUN_ID)
     return repo
+
+
+def iso_ago(seconds):  # a UTC started_at string for `seconds` in the past
+    return time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime(time.time() - seconds))
+
+
+def make_run(repo, run_id, *, active=False, outcome="achieved",
+             started_at="2026-06-27T08:00:00Z", session=SESSION, input_="a task",
+             heartbeat_age_s=None):
+    base = Path(repo) / ".claude" / "ccharness" / "musician"
+    run = base / "runs" / run_id
+    run.mkdir(parents=True, exist_ok=True)
+    (run / "state.json").write_text(json.dumps({
+        "active": active, "run_id": run_id, "session_id": session, "entry": "task",
+        "input": input_, "phase": "building", "started_at": started_at, "outcome": outcome,
+    }))
+    (run / "live.log").write_text("a tool call\n")
+    hb = run / "heartbeat"
+    hb.write_text("")
+    if heartbeat_age_s is not None:
+        t = time.time() - heartbeat_age_s
+        os.utime(hb, (t, t))
+    (base / "by-session").mkdir(parents=True, exist_ok=True)
+    (base / "by-session" / session).write_text(run_id)
+    return run
 
 
 def run_bin(repo, *args, env_extra=None, strip_env=(), bin=BIN):
@@ -217,6 +242,126 @@ class TestCcmusician(unittest.TestCase):
         rc, out, _ = run_bin(repo, "ls", bin=ALIAS)
         self.assertEqual(rc, 0)
         self.assertIn(RUN_ID, out)
+
+
+    # --- prune: delete finished run folders to declutter; flags compose like a rotation policy ---
+
+    def test_prune_removes_closed_keeps_active(self):
+        repo = tempfile.mkdtemp()
+        make_run(repo, "closed-1", active=False, outcome="achieved")
+        make_run(repo, "active-1", active=True, outcome=None, session="sess-active")
+        rc, out, err = run_bin(repo, "prune", strip_env=("CLAUDE_CODE_SESSION_ID",))
+        self.assertEqual(rc, 0, err)
+        runs = Path(repo) / ".claude/ccharness/musician/runs"
+        self.assertFalse((runs / "closed-1").exists())
+        self.assertTrue((runs / "active-1").exists())
+        self.assertIn("closed-1", out)
+
+    def test_prune_dry_run_deletes_nothing(self):
+        repo = tempfile.mkdtemp()
+        make_run(repo, "closed-1", active=False)
+        rc, out, _ = run_bin(repo, "prune", "--dry-run", strip_env=("CLAUDE_CODE_SESSION_ID",))
+        self.assertEqual(rc, 0)
+        self.assertTrue((Path(repo) / ".claude/ccharness/musician/runs/closed-1").exists())
+        self.assertIn("closed-1", out)
+        self.assertIn("dry-run", out.lower())
+
+    def test_prune_keep_protects_newest(self):
+        repo = tempfile.mkdtemp()
+        make_run(repo, "old", active=False, started_at=iso_ago(3 * 86400))
+        make_run(repo, "mid", active=False, started_at=iso_ago(2 * 86400))
+        make_run(repo, "new", active=False, started_at=iso_ago(1 * 86400))
+        rc, out, err = run_bin(repo, "prune", "--keep", "1", strip_env=("CLAUDE_CODE_SESSION_ID",))
+        self.assertEqual(rc, 0, err)
+        runs = Path(repo) / ".claude/ccharness/musician/runs"
+        self.assertTrue((runs / "new").exists())
+        self.assertFalse((runs / "old").exists())
+        self.assertFalse((runs / "mid").exists())
+
+    def test_prune_older_than_filters_by_age(self):
+        repo = tempfile.mkdtemp()
+        make_run(repo, "ancient", active=False, started_at=iso_ago(10 * 86400))
+        make_run(repo, "fresh", active=False, started_at=iso_ago(0))
+        rc, out, err = run_bin(repo, "prune", "--older-than", "2d", strip_env=("CLAUDE_CODE_SESSION_ID",))
+        self.assertEqual(rc, 0, err)
+        runs = Path(repo) / ".claude/ccharness/musician/runs"
+        self.assertFalse((runs / "ancient").exists())
+        self.assertTrue((runs / "fresh").exists())
+
+    def test_prune_outcome_filter(self):
+        repo = tempfile.mkdtemp()
+        make_run(repo, "cancelled-run", active=False, outcome="cancelled")
+        make_run(repo, "achieved-run", active=False, outcome="achieved")
+        rc, out, err = run_bin(repo, "prune", "--outcome", "cancelled", strip_env=("CLAUDE_CODE_SESSION_ID",))
+        self.assertEqual(rc, 0, err)
+        runs = Path(repo) / ".claude/ccharness/musician/runs"
+        self.assertFalse((runs / "cancelled-run").exists())
+        self.assertTrue((runs / "achieved-run").exists())
+
+    def test_prune_keep_and_older_than_compose(self):
+        # --keep protects the newest N computed BEFORE the age filter; --older-than then excludes
+        # anything too young. keep-1 + older-than-7d over ages 1d,2d,8d,9d prunes only 8d and 9d.
+        repo = tempfile.mkdtemp()
+        make_run(repo, "d1", active=False, started_at=iso_ago(1 * 86400))
+        make_run(repo, "d2", active=False, started_at=iso_ago(2 * 86400))
+        make_run(repo, "d8", active=False, started_at=iso_ago(8 * 86400))
+        make_run(repo, "d9", active=False, started_at=iso_ago(9 * 86400))
+        rc, out, err = run_bin(repo, "prune", "--keep", "1", "--older-than", "7d",
+                               strip_env=("CLAUDE_CODE_SESSION_ID",))
+        self.assertEqual(rc, 0, err)
+        runs = Path(repo) / ".claude/ccharness/musician/runs"
+        self.assertTrue((runs / "d1").exists())   # newest, protected by --keep
+        self.assertTrue((runs / "d2").exists())   # too young for --older-than
+        self.assertFalse((runs / "d8").exists())
+        self.assertFalse((runs / "d9").exists())
+
+    def test_prune_orphans_reaps_only_dead_active_runs(self):
+        repo = tempfile.mkdtemp()
+        make_run(repo, "orphan", active=True, outcome=None, session="dead-sess", heartbeat_age_s=40 * 60)
+        make_run(repo, "live", active=True, outcome=None, session="live-sess", heartbeat_age_s=10)
+        rc, out, err = run_bin(repo, "prune", "--orphans", strip_env=("CLAUDE_CODE_SESSION_ID",))
+        self.assertEqual(rc, 0, err)
+        runs = Path(repo) / ".claude/ccharness/musician/runs"
+        self.assertFalse((runs / "orphan").exists())
+        self.assertTrue((runs / "live").exists())
+
+    def test_prune_without_orphans_never_touches_active(self):
+        repo = tempfile.mkdtemp()
+        make_run(repo, "orphan", active=True, outcome=None, heartbeat_age_s=40 * 60)
+        rc, out, _ = run_bin(repo, "prune", strip_env=("CLAUDE_CODE_SESSION_ID",))
+        self.assertEqual(rc, 0)
+        self.assertTrue((Path(repo) / ".claude/ccharness/musician/runs/orphan").exists())
+
+    def test_prune_never_reaps_current_session_run(self):
+        # even a crashed-looking run owned by THIS session is protected from --orphans.
+        repo = tempfile.mkdtemp()
+        make_run(repo, "mine", active=True, outcome=None, session=SESSION, heartbeat_age_s=40 * 60)
+        rc, out, _ = run_bin(repo, "prune", "--orphans", env_extra={"CLAUDE_CODE_SESSION_ID": SESSION})
+        self.assertEqual(rc, 0)
+        self.assertTrue((Path(repo) / ".claude/ccharness/musician/runs/mine").exists())
+
+    def test_prune_drops_dangling_session_pointer(self):
+        repo = tempfile.mkdtemp()
+        make_run(repo, "closed-1", active=False, session="ghost-sess")
+        ptr = Path(repo) / ".claude/ccharness/musician/by-session/ghost-sess"
+        self.assertTrue(ptr.exists())
+        rc, _, err = run_bin(repo, "prune", strip_env=("CLAUDE_CODE_SESSION_ID",))
+        self.assertEqual(rc, 0, err)
+        self.assertFalse(ptr.exists())
+
+    def test_prune_empty_is_friendly(self):
+        repo = tempfile.mkdtemp()
+        rc, out, _ = run_bin(repo, "prune")
+        self.assertEqual(rc, 0)
+        self.assertIn("nothing to prune", out.lower())
+
+    def test_prune_rejects_bad_duration(self):
+        repo = tempfile.mkdtemp()
+        make_run(repo, "closed-1", active=False)
+        rc, _, err = run_bin(repo, "prune", "--older-than", "soon")
+        self.assertEqual(rc, 2)
+        self.assertIn("duration", err.lower())
+        self.assertTrue((Path(repo) / ".claude/ccharness/musician/runs/closed-1").exists())
 
 
 if __name__ == "__main__":

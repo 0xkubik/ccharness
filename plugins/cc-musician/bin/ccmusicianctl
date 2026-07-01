@@ -14,10 +14,19 @@
 #   ccmusicianctl stop <id>                 soft-cancel a run (the /musician-cancel brake, by id)
 #   ccmusicianctl nonstop <id> on|off       arm/disarm nonstop for that run's session
 #   ccmusicianctl nonstop on|off            same, for the musician in the current session
+#   ccmusicianctl prune [flags]             delete finished run folders (declutter); flags compose:
+#     -n, --dry-run                           list what would go, delete nothing
+#     --keep N                                keep the N newest candidates (protected before --older-than)
+#     --older-than DUR                        only runs older than DUR (7d/24h/90m/30s)
+#     --outcome LIST                          only these outcomes (comma-sep: cancelled,empty,achieved)
+#     --orphans                               also reap crashed runs (active but heartbeat >30m stale)
 #
 # <id> matches a run-id exactly, or by unique prefix. `nonstop on` only sets the flag — it does NOT
 # launch a musician; start one with `ccmusicianctl start` or /musician. When armed, the musician keeps
 # walking the roadmap (re-launching after each piece closes) until it finds nothing left or you disarm.
+#
+# `prune` removes only CLOSED runs by default (active ones are left alone); `--orphans` additionally
+# reaps runs that look crashed, and your own session's active run is never pruned. Preview with --dry-run.
 #
 # Several musicians can run on one repo at once — each builds in its own worktree and keys its state
 # by session, so independent (non-colliding) tasks parallelise freely.
@@ -94,6 +103,18 @@ state_label() {  # short state for run dir $1
 
 iso_to_epoch() {
   date -j -f "%Y-%m-%dT%H:%M:%SZ" "$1" +%s 2>/dev/null || date -d "$1" +%s 2>/dev/null || echo ""
+}
+
+parse_dur() {  # "7d"/"24h"/"90m"/"30s" -> seconds; empty on a malformed value
+  local s="$1"
+  [[ "$s" =~ ^([0-9]+)([smhd])$ ]] || { echo ""; return; }
+  local n="${BASH_REMATCH[1]}"
+  case "${BASH_REMATCH[2]}" in
+    s) echo "$n" ;;
+    m) echo "$((n*60))" ;;
+    h) echo "$((n*3600))" ;;
+    d) echo "$((n*86400))" ;;
+  esac
 }
 
 human_age() {  # seconds -> "5s"/"4m"/"2h"/"3d"
@@ -298,6 +319,95 @@ do_nonstop() {  # do_nonstop <id-or-empty> <on|off>
   esac
 }
 
+do_prune() {  # delete finished run folders; see the header for the flag grammar
+  local dry=false keep="" older="" outcome_csv="" orphans=false
+  while [ "$#" -gt 0 ]; do
+    case "$1" in
+      -n|--dry-run) dry=true ;;
+      --keep)       shift; keep="${1:-}" ;;
+      --older-than) shift; older="${1:-}" ;;
+      --outcome)    shift; outcome_csv="${1:-}" ;;
+      --orphans)    orphans=true ;;
+      *) echo "ccmusicianctl: prune: unknown flag '$1' — see: ccmusicianctl --help" >&2; exit 2 ;;
+    esac
+    shift
+  done
+  if [ -n "$keep" ] && ! [[ "$keep" =~ ^[0-9]+$ ]]; then
+    echo "ccmusicianctl: prune --keep needs a number (got '$keep')" >&2; exit 2
+  fi
+  local older_s=""
+  if [ -n "$older" ]; then
+    older_s="$(parse_dur "$older")"
+    [ -n "$older_s" ] || { echo "ccmusicianctl: prune --older-than needs a duration like 7d/24h/90m/30s (got '$older')" >&2; exit 2; }
+  fi
+  if [ ! -d "$RUNS" ] || [ -z "$(ls -A "$RUNS" 2>/dev/null)" ]; then
+    echo "No musician runs in this repo — nothing to prune."; return 0
+  fi
+
+  local now cur_run="" cursid
+  now="$(date +%s 2>/dev/null || echo 0)"
+  cursid="${CLAUDE_CODE_SESSION_ID:-}"
+  # Never prune the run owned by THIS session — not even as an orphan.
+  [ -n "$cursid" ] && [ -f "$MUS/by-session/$cursid" ] && cur_run="$(cat "$MUS/by-session/$cursid" 2>/dev/null)"
+
+  # --- collect candidates: closed runs always; active runs only with --orphans and a dead heartbeat.
+  #     Each entry is "epoch<TAB>id" so we can sort newest-first for --keep. ---
+  local -a cand=()
+  local d id st active oc hb hbe ep
+  for d in "$RUNS"/*; do
+    [ -d "$d" ] || continue
+    id="${d##*/}"; st="$d/state.json"
+    [ -f "$st" ] || continue
+    [ "$id" = "$cur_run" ] && continue
+    active="$(json_field "$st" active)"
+    if [ "$active" = "true" ]; then
+      [ "$orphans" = true ] || continue
+      hb="$d/heartbeat"; [ -f "$hb" ] || continue
+      hbe="$(stat -f %m "$hb" 2>/dev/null || stat -c %Y "$hb" 2>/dev/null || echo "")"
+      [ -n "$hbe" ] || continue
+      [ "$(( (now - hbe) / 60 ))" -ge 30 ] || continue
+    fi
+    if [ -n "$outcome_csv" ]; then
+      oc="$(json_field "$st" outcome)"
+      case ",$outcome_csv," in *,"$oc",*) : ;; *) continue ;; esac
+    fi
+    ep="$(iso_to_epoch "$(json_field "$st" started_at)")"; [ -n "$ep" ] || ep=0
+    cand+=("$ep	$id")
+  done
+  [ "${#cand[@]}" -gt 0 ] || { echo "Nothing to prune."; return 0; }
+
+  # --- sort newest-first, then apply the two orthogonal protections and delete ---
+  local -a sorted=()
+  local line
+  while IFS= read -r line; do sorted+=("$line"); done < <(printf '%s\n' "${cand[@]}" | sort -t$'\t' -k1,1nr)
+
+  local rank=0 pruned=0 sid
+  for line in "${sorted[@]}"; do
+    ep="${line%%$'\t'*}"; id="${line#*$'\t'}"; d="$RUNS/$id"
+    if [ -n "$keep" ] && [ "$rank" -lt "$keep" ]; then rank=$((rank+1)); continue; fi
+    rank=$((rank+1))
+    if [ -n "$older_s" ]; then
+      [ "$ep" -gt 0 ] 2>/dev/null || continue          # unknown age -> never age-prune
+      [ "$(( now - ep ))" -ge "$older_s" ] || continue
+    fi
+    if [ "$dry" = true ]; then
+      echo "[dry-run] would prune $id ($(state_label "$d"), $(run_age "$d"))"
+    else
+      sid="$(json_field "$d/state.json" session_id)"
+      rm -rf "$d"
+      # drop a now-dangling session pointer that named this run
+      [ -n "$sid" ] && [ -f "$MUS/by-session/$sid" ] && \
+        [ "$(cat "$MUS/by-session/$sid" 2>/dev/null)" = "$id" ] && rm -f "$MUS/by-session/$sid"
+      echo "pruned $id"
+    fi
+    pruned=$((pruned+1))
+  done
+
+  if [ "$pruned" -eq 0 ]; then echo "Nothing to prune."
+  elif [ "$dry" = true ]; then echo "[dry-run] $pruned run(s) would be pruned; nothing deleted."
+  else echo "Pruned $pruned run(s)."; fi
+}
+
 usage() {
   sed -n '2,/^set -u/{/^set -u/d;p;}' "$0" | sed 's/^# \{0,1\}//'
 }
@@ -311,6 +421,7 @@ case "$cmd" in
   watch)     do_watch "${1:-}" ;;
   start)     do_start "$@" ;;
   stop)      do_stop "${1:-}" ;;
+  prune)     do_prune "$@" ;;
   nonstop)
     if [ "${1:-}" = "on" ] || [ "${1:-}" = "off" ]; then
       do_nonstop "" "${1:-}"
