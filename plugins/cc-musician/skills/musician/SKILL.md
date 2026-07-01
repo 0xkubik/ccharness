@@ -83,8 +83,8 @@ directly; don't dispatch a subagent per sentence.
 3. **Flip to building** = write `phase:"building"` to state (atomic); `active` stays true. From here
    the Stop hook re-feeds while tasks remain, and `AskUserQuestion` is forbidden again.
 
-**2. Building (autonomous).** The **One step** loop below — do the next incomplete task, builds
-dispatched to isolated worktrees, until the list is done (the final verify passes), then close. After
+**2. Building (autonomous).** The **One step** loop below — do the next incomplete task, the build
+segment dispatched to one isolated worktree, until the list is done (the final verify passes), then close. After
 shaping the list already exists, so the loop starts straight at step 3 (do the next task). (Under
 `--auto`, nothing was shaped, so step 2 DECOMPOSE runs in-loop on the first turn.)
 
@@ -117,8 +117,12 @@ context. You triage *which* instrument; the subagent runs it and reports back:
 
 Before you build, break the handed work into an **ordered list of concrete subtasks** and write it to
 `state.tasks` (and mirror it to the native task tool so the human sees it). Each task is one
-dispatched unit — a build, a think (`how-to-do`/`crux`), or the final **verify**. Size the list by
-the brain (above): a clear, small task is two items (build it; verify it), a fuzzy one is more. **The
+dispatched unit — a think (`how-to-do`/`crux`), the **build segment**, or the final **verify**. **The
+whole run's building is ONE segment, not one task per commit:** a single `do` dispatch in one worktree
+builds all the pieces and hardens them once (see **Build in an isolated worktree**). So the list is
+the think tasks the work genuinely needs, then **one** build task, then verify — never a build task
+per deliverable. Size it by the brain (above): a clear, small task is two items (build it; verify it),
+a fuzzy one adds think tasks up front — but the build stays one segment. **The
 last task is ALWAYS a real verification of the observable "done"** (see **Verification**) — that
 single rule is what keeps "implemented = done" from sneaking in: the run cannot close until a real
 check has passed. The list is *living* — as you learn, you may split a task or append one; a failed
@@ -256,7 +260,9 @@ done.* You never babysit the loop in-turn — you leave state correct and stop.
 1. READ   <run>/state.json + <run>/log.jsonl (<run> = runs/<run_id>/, via the by-session pointer).
           `state.tasks` is your plan and your progress; log.jsonl carries approaches that already failed.
 2. tasks EMPTY → DECOMPOSE. Break this piece of work into an ordered list of concrete subtasks, each
-          a single dispatched unit, sized by the brain (above — crux/what-to-do as needed). The LAST
+          a single dispatched unit, sized by the brain (above — crux/what-to-do as needed); the
+          building is ONE build segment (one `do` dispatch, one worktree — see **Decompose**), never a
+          task per commit. The LAST
           task is ALWAYS a real verification of the observable "done" (see **Verification**). OPEN
           mode → first dispatch a cc-script:what-to-do subagent (menu as DATA, NO AskUserQuestion),
           auto-pick the TOP direction, then decompose THAT; nothing worth building (frontier
@@ -265,12 +271,14 @@ done.* You never babysit the loop in-turn — you leave state correct and stop.
           work — sharpen a misaimed target, then decompose.
 3. tasks REMAIN → take the FIRST incomplete one (in_progress, else first pending), mark it
           in_progress, and DO it — you CONDUCT, never write product code yourself:
-          • BUILD task → capture BASE = `git rev-parse HEAD`, dispatch a cc-script:do subagent with
+          • BUILD task (the run's SINGLE build segment — this one dispatch builds ALL the pieces, then
+            hardens once) → capture BASE = `git rev-parse HEAD`, dispatch a cc-script:do subagent with
             Agent isolation:"worktree", model:"opus" (see **Build in an isolated worktree**), told its
             FIRST action is `git reset --hard <BASE>` and to obey `.claude/rules/`; it writes the code
-            + smoke, chains to cc-script:refactor-review-test which makes the LOCAL commit INSIDE the
-            worktree; integrate ff-only via the helper (INTEGRATED / STALE→discard+rebuild / no
-            commit→discard). A "harden/refactor existing code" task → dispatch refactor-review-test directly.
+            + smoke for every piece, chains to cc-script:refactor-review-test which makes ONE LOCAL
+            commit INSIDE the worktree; integrate ff-only via the helper (INTEGRATED /
+            STALE→discard+rebuild / no commit→discard). A "harden/refactor existing code" task →
+            dispatch refactor-review-test directly.
           • THINK task (a real fork, a fuzzy pain) → dispatch cc-script:how-to-do / cc-instruments:crux.
           • VERIFY task → see **Verification** (pass → complete it; fail → APPEND fix tasks, stay open).
           Then mark the task completed in state.tasks AND the native task tool.
@@ -332,11 +340,13 @@ rule for every build task (step 3).
   cue to `/musician-cancel`; you never self-close on it.
 - **Discard an abandoned build** — no commit (a handback or dead approach) →
   `bash "$HELPER" discard <worktreePath> <worktreeBranch>`.
-- **Per build, not one for the whole run.** A multi-build piece cuts a fresh worktree each build and
-  integrates as it goes (each build builds on the last, now on `main`); a single-build piece is "cut →
-  build → integrate → remove". The worktree is cut from your last commit, so the build sees committed
-  state only — `GROUNDING_DIRTY` guards the one case that breaks silently: an uncommitted North Star.
-  (An `empty` run never builds, so it leaves nothing to clean up.)
+- **One worktree for the run's build segment, not one per commit.** The whole run's building is a
+  single segment (see **Decompose**), so it is one "cut → build every piece → harden once → integrate
+  → remove". That one `do` dispatch builds all the pieces and chains `refactor-review-test` **once** at
+  the end, inside the worktree; you integrate ff-only a single time. The worktree is cut from your last
+  commit, so the build sees committed state only — `GROUNDING_DIRTY` guards the one case that breaks
+  silently: an uncommitted North Star. (An `empty` run never builds, so it leaves nothing to clean up.
+  `--ultracode` is the deliberate exception — parallel builds need a worktree each; see **Ultracode**.)
 
 ## Terminal exits — the only doors out
 
@@ -389,8 +399,10 @@ Rules:
 
 ## Ultracode mode (`--ultracode`)
 
-A **plus**, not a switch. The baseline already dispatches one isolated build per build task;
-`--ultracode` raises that to **maximal fan-out**. When `ultracode` is set (the Stop hook injects this
+A **plus**, not a switch. The baseline already dispatches one isolated build for the run's single
+build segment; `--ultracode` raises that to **maximal fan-out** — the one deliberate exception to the baseline's
+single-worktree build segment (parallel builds need a worktree each). When `ultracode` is set (the
+Stop hook injects this
 each turn), a **build task** must go wide instead of a single `do` subagent: author a **Workflow**
 and/or dispatch **parallel** `do` subagents — each with its own `isolation:"worktree"` (the parallel
 file-mutating work is already isolated, which is exactly what makes parallel builds safe), and
@@ -413,6 +425,7 @@ wide* the build fans out. (Decomposing into more parallel build tasks is also fa
 | "do handed back once — I'll keep retrying the same approach a few times." | There is no try-count. A handback goes back to how-to-do for a DIFFERENT approach — never the same one again; a true wall is the human's `/musician-cancel`. |
 | "It's a tiny change — I'll just `Edit` it inline instead of dispatching `do`." | **No.** You conduct; a `cc-script:do` subagent writes every code change. Inline edits skip its fork-test, verification, and unverified-commit guard — and the small ones are exactly where the boundary erodes. |
 | "It's a quick build — I'll dispatch `do` normally, without worktree isolation." | **No.** Every build is dispatched `isolation:"worktree"` and its result integrated via `worktree.sh`. An un-isolated build dirties the main tree mid-flight — the exact thing the worktree rule prevents — and "cd into a worktree" leaks back anyway. |
+| "This feature has several parts — I'll make a build task per part so each hardens separately." | **No — the run's building is ONE segment.** One `do` dispatch builds all the parts in one worktree and hardens them once at the end; a build-task-per-part is the over-fragmentation (a worktree and a full funnel per commit) this design removes. Think tasks may be several; the build is one. (`--ultracode` is the only exception — it fans out on purpose.) |
 | "This is quick to reason about — I'll think it through here instead of dispatching." | The work-unit thinking (diagnose / find direction / decide approach) goes to a subagent. Your context is for conducting — route, do the next task, pick the next move — not for doing the work. |
 
 ## Red flags — you are about to make the wrong call
@@ -426,6 +439,7 @@ wide* the build fans out. (Decomposing into more parallel build tasks is also fa
 - You're waiting in-turn on an async build instead of suspending (`awaiting`).
 - You're about to `Edit`/`Write` product code yourself instead of dispatching a `cc-script:do` subagent.
 - You're dispatching a build WITHOUT `isolation:"worktree"`, or landing its result by hand instead of via `worktree.sh integrate`.
+- You split the build into multiple build tasks / worktrees — the run's building is ONE segment (think tasks may be several; the build is one). Only `--ultracode` fans out.
 - You're reasoning a work-unit out in your own context instead of dispatching a subagent to do it.
 - You're dispatching a subagent (brain or build) without telling it to read and obey `.claude/rules/`.
 
@@ -449,6 +463,7 @@ passed): `git notes append` one closed fact (`built: …` + why) — never a for
 **Invariant:** shape WITH the human, then build alone (`--auto` skips shaping); conduct, never perform
 — every work-unit and every code change goes to a dispatched subagent; handed work is never refused
 (open mode may close `empty` when there's nothing to build); you decompose into a `tasks` list ending
-in a real verify, and the run closes ONLY when that verify passes; every build runs worktree-isolated
-and ff-integrated to local `main`; one piece of work to its end, then close — `active:false` is the
-only door out.
+in a real verify, and the run closes ONLY when that verify passes; the run's building is ONE segment
+(one worktree, harden once at the end), not a build per commit — `--ultracode` is the only fan-out
+exception; every build runs worktree-isolated and ff-integrated to local `main`; one piece of work to
+its end, then close — `active:false` is the only door out.
