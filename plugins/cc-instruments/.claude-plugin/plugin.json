@@ -1,6 +1,6 @@
 {
   "name": "cc-instruments",
-  "version": "0.26.0",
+  "version": "0.27.0",
   "description": "cc-instruments — the tools layer of the cc-* harness: philosophy-agnostic helpers usable in any project. /crux unwinds a pain, doubt, or blockage into ONE diagnosis and angle of attack; /slap resets a fix stuck in a rabbit hole; /cc-init is the onboarding orchestrator — it explains the four plugins, installs dependencies and recommended tools, then runs three setup skills (/rules-management installs recommended + project rules, /cheatsheet-management builds the reminder cheat-sheet, /docs-management finds stale prose) and offers /roadmap-management; plus a set of recommended project rules installed into .claude/rules/. Also ships command-less diagram references (mermaid / likec4 / excalidraw) that the cc-script architect draws on. The product script lives in cc-script; the musician (cc-musician) drives it; cc-conductor supervises.",
   "author": {
     "name": "kubik",

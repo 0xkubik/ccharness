@@ -39,9 +39,9 @@ skill. Nothing else from the repo — no source files.
    you're designing toward. No roadmap? Start from the user's words.
 2. **Draw out intent — conversationally, user-led.** Ask what they want to design: the pieces, the
    boundaries, what talks to what. Pull the shape out of them. Do not invent a full system unprompted.
-3. **Pick the format(s) per need** (see the guide below): **LikeC4** for structured, layered
-   architecture (context → containers → components, with drill-down); **Excalidraw** for a freeform
-   sketch the user will move by hand; **Mermaid** for quick, portable, or fallback.
+3. **Model the architecture in LikeC4 first** — the collapsible backbone, from system down to
+   modules and key classes (see *Which format*). Reach for **Mermaid** only for leaf detail that
+   can't fold into the model, and **Excalidraw** for a freeform sketch the user will rearrange.
 4. **Load the matching reference skill** from cc-instruments — `mermaid`, `likec4`, or `excalidraw` —
    **before drawing.** These are command-less docs; invoke/read them through the Skill mechanism so
    the deep syntax knowledge is actually present. Don't rely on ambient auto-pickup.
@@ -54,14 +54,19 @@ skill. Nothing else from the repo — no source files.
 
 ## Which format
 
-| The design is…                                        | Draw it in    |
-| ----------------------------------------------------- | ------------- |
-| structured, layered, one model → many drill-down views | **LikeC4**    |
-| a freeform sketch the user will rearrange by hand      | **Excalidraw** |
-| quick, portable, must render anywhere, or a fallback   | **Mermaid**   |
+**LikeC4 is the backbone.** One collapsible model — from the system down to modules and key classes,
+with drill-down at every level and `dynamic view`s for flows — a single source of truth, not a pile
+of disconnected pictures. Model the architecture here first, at whatever depth the design needs.
+Reach past it only for what can't fold into that model:
 
-When in doubt, or when the picture just has to show up somewhere with no tooling, **Mermaid** is the
-safe baseline.
+| The design is…                                                                    | Draw it in     |
+| --------------------------------------------------------------------------------- | -------------- |
+| the architecture — system → containers → components → modules/classes, plus flows | **LikeC4** (the backbone) |
+| leaf detail — a class's fields/methods, a step-by-step call sequence, a DB table's columns | **Mermaid** (`classDiagram` / `sequenceDiagram` / `erDiagram`), hung off the model's leaf |
+| a freeform sketch the user will rearrange by hand                                  | **Excalidraw** |
+
+If cc-instruments isn't installed (no `likec4` skill), fall back to **Mermaid** for everything — it
+renders anywhere with nothing installed. A picture you can show beats a model you can't drive.
 
 ---
 
@@ -85,10 +90,12 @@ architect is the **optional design step** in the script: set the goal (`/roadmap
 ## Quick reference
 
 `1` Anchor on the roadmap if present, else the user's words · `2` Draw out intent conversationally,
-user-led — don't invent a system unprompted · `3` Pick the format: LikeC4 (layered) · Excalidraw
-(freeform sketch) · Mermaid (quick/portable/fallback) · `4` Load the matching cc-instruments
-reference skill BEFORE drawing · `5` Produce diagrams, text as connective tissue only · `6` Iterate
-on feedback · `7` Save to `docs/architecture/`. No cc-instruments → degrade to Mermaid.
+user-led — don't invent a system unprompted · `3` Model in LikeC4 (the collapsible backbone, system
+→ code) · Mermaid for leaf detail that can't fold in · Excalidraw for freeform sketches · `4` Load
+the matching cc-instruments reference skill BEFORE drawing · `5` Produce diagrams, text as connective
+tissue only · `6` Iterate on feedback · `7` Save to `docs/architecture/`. No cc-instruments → degrade
+to Mermaid.
 
-**Invariant:** diagrams first, never read the project's code, one conversational user-led mode; shape
-the architecture, don't rank or build.
+**Invariant:** diagrams first, never read the project's code, one conversational user-led mode;
+LikeC4 is the single collapsible backbone (down to code), Mermaid only for leaf detail; shape the
+architecture, don't rank or build.

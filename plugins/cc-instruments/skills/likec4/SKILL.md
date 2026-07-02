@@ -74,6 +74,41 @@ windows onto the same elements, so they can never contradict each other.
 
 ---
 
+## Down to the code level — one collapsible model, all the way
+
+Nesting is **unlimited** and you declare your own element kinds in `specification` — so the same
+model that holds systems and containers can keep going *down into the code*. Declare `module`,
+`package`, or `class` kinds and nest them inside a component:
+
+```
+specification {
+  element component
+  element module
+}
+model {
+  api = component 'API' {
+    router = module 'Router'
+    auth   = module 'Auth'
+    router -> auth 'verifies token'
+  }
+}
+views {
+  view of api { include * }   // drill into API — its modules and how they link
+}
+```
+
+That's "one model, many views" carried to the bottom: **one file, foldable from the system down to
+modules and key classes**, a drill-down view at each level and `dynamic view`s for the flows between
+them. It stays a single source of truth — not a pile of disconnected diagrams.
+
+**Where it stops.** LikeC4 models elements, nesting, and relationships — *not* a class's fields and
+methods, the internals of a step-by-step call sequence, or a table's columns. That leaf-level detail
+doesn't fold into the model in any tool. Render it separately with the `mermaid` skill
+(`classDiagram` / `sequenceDiagram` / `erDiagram`) and hang it off the leaf. Keep this model as the
+backbone; use Mermaid only for detail that can't collapse.
+
+---
+
 ## CLI — via `npx`, no global install
 
 - `npx likec4 start` — interactive dev server in the browser, hot reload as you edit. The primary
