@@ -1,6 +1,6 @@
 ---
 name: architect
-description: "Use when designing a NEW system or feature together with the user — an interview first (like roadmap-management): it draws the design OUT of the user one decision at a time and confirms the shape before it draws, never running ahead. Turns intent into architecture diagrams (mostly diagrams, a little text). Sits in the cc-script funnel after the roadmap: goal set → design the architecture → decide what to do → build. Never reads project code; context comes from the user's words. Draws in LikeC4, Excalidraw, or Mermaid, chosen per need."
+description: "Use when designing a NEW system or feature together with the user — an interview first (like roadmap-management): it draws the design OUT of the user through AskUserQuestion, one decision at a time, and confirms the shape before it draws, never running ahead. Turns intent into architecture diagrams (mostly diagrams, a little text). Sits in the cc-script funnel after the roadmap: goal set → design the architecture → decide what to do → build. Never reads project code; context comes from the user's words. Draws in LikeC4, Excalidraw, or Mermaid, chosen per need."
 argument-hint: "<what you want to design>"
 ---
 
@@ -43,16 +43,21 @@ skill. Nothing else from the repo — no source files.
 
 1. **Anchor.** Read `docs/ccharness/roadmap.md` if it's there — let the North Star frame what
    you're designing toward — and `.claude/rules/` if present. No roadmap? Start from the user's words.
-2. **Interview, one decision at a time.** Lead with questions and pull the design out of the user —
-   do **not** offer a pre-baked architecture, and do **not** start drawing. Work through it one step
-   at a time (use `AskUserQuestion`; open questions for the core intent, so it comes from their head):
-   - what is this system/feature, and who or what uses it?
-   - the major pieces, and the boundary of each — what each is responsible for;
-   - what talks to what, and how (the key relationships);
-   - the important data, and the key flows (the scenarios that matter);
-   - the constraints that shape it (scale, tech already chosen, must-nots).
-   If the user arrived with a specific idea, **acknowledge it and fold it in** — don't discard it,
-   and don't expand it past what they said.
+2. **Interview through `AskUserQuestion`, one decision at a time.** This is *how* you ask — the same
+   way `roadmap-management` does: **one decision per question**, in plain language, never a wall of
+   questions at once, and never a pre-baked architecture. Two kinds of question:
+   - **The core intent — open questions, no pre-baked options.** What is this system/feature, and
+     who or what uses it? This must come from the user's own head — ask it open (free-text), don't
+     put words in their mouth. (Exactly like roadmap-management's North Star step.)
+   - **Every structural decision — `AskUserQuestion` with concrete options + free-text.** Once you
+     have the intent, walk the design one decision at a time, each as an `AskUserQuestion` that
+     offers a few concrete options *and* leaves room for the user's own answer:
+     - the major pieces, and the boundary of each — what each is responsible for;
+     - what talks to what, and how (the key relationships);
+     - the important data, and the key flows (the scenarios that matter);
+     - the constraints that shape it (scale, tech already chosen, must-nots).
+   Do **not** start drawing while interviewing. If the user arrived with a specific idea,
+   **acknowledge it and fold it in** — don't discard it, and don't expand it past what they said.
 3. **Reflect the shape back — in words — and confirm.** Before drawing anything, play the design
    back in a few plain sentences and ask "is this the shape?" **Don't draw until the user agrees.**
    If they don't, keep interviewing.
@@ -134,9 +139,10 @@ architect is the **optional design step** in the script: set the goal (`/roadmap
 ## Quick reference
 
 **Phase A (interview first)** `1` Anchor on the roadmap/rules if present, else the user's words ·
-`2` Interview one decision at a time (`AskUserQuestion`, open questions) — what/who, pieces +
-boundaries, what talks to what, data + flows, constraints; **never draw yet** · `3` Reflect the
-shape back in words and get a "yes" before drawing. **Phase B (draw + review)** `4` Pick the format
+`2` Interview via `AskUserQuestion`, one decision at a time (like roadmap-management) — core intent
+(what/who) as OPEN questions (no options, from their head); every structural decision (pieces +
+boundaries · what talks to what · data + flows · constraints) as `AskUserQuestion` with options +
+free-text; **never draw yet** · `3` Reflect the shape back in words and get a "yes" before drawing. **Phase B (draw + review)** `4` Pick the format
 (LikeC4 backbone · Mermaid leaf detail · Excalidraw sketch) and load its cc-instruments reference
 BEFORE drawing · `5` Draw only the confirmed shape, text as connective tissue only · `6` Urge a
 read-back, then continue / rethink / finish — deepen level by level, not all at once · `7` Save the
