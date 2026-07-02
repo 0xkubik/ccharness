@@ -23,6 +23,9 @@ Commands:
   roadmap view [what]       Print roadmap.md to the console. [what] is one of:
                               all       → the whole file (default)
                               feat / todo / backlog / bug → just that section
+  roadmap renumber          Renumber every section's items to 1..N in order
+                            (fixes gaps and old "- [ ]" bullets)
+  roadmap prune             Remove completed ("[x]") items from every section
   cheatsheet                Open .claude/ccharness/cheatsheet.md in your editor
   help                      Show this help
 
@@ -184,6 +187,45 @@ roadmap_view_section() {
   ' "$file"
 }
 
+# Renumber each managed section's items to a contiguous 1..N in document order —
+# converts old "- [ ]" bullets and closes gaps; the checkbox state is preserved.
+# (The item regex is inlined literally — passing it via `awk -v` would mangle the
+# \[ \] escapes.)
+roadmap_renumber() {
+  local file="$1" tmp
+  tmp="$(mktemp)"
+  awk '
+    function managed(h) { return h == "## Features" || h == "## TODO" || h == "## Backlog" || h == "## Bugs" }
+    /^## / { in_sec = managed($0); count = 0; print; next }
+    in_sec && /^[[:space:]]*(([0-9]+\.)|[-*])[[:space:]]+\[[ xX]\]/ {
+      count++
+      line = $0
+      sub(/^[[:space:]]*(([0-9]+\.)|[-*])[[:space:]]+/, "", line)
+      print count ". " line
+      next
+    }
+    { print }
+  ' "$file" > "$tmp"
+  mv "$tmp" "$file"
+}
+
+# Remove completed ("[x]") items from every managed section. Numbers are left as
+# they are — run `renumber` after to close the gaps. Prints how many were removed.
+roadmap_prune() {
+  local file="$1" tmp before after
+  tmp="$(mktemp)"
+  awk '
+    function managed(h) { return h == "## Features" || h == "## TODO" || h == "## Backlog" || h == "## Bugs" }
+    /^## / { in_sec = managed($0); print; next }
+    in_sec && /^[[:space:]]*(([0-9]+\.)|[-*])[[:space:]]+\[[xX]\]/ { next }
+    { print }
+  ' "$file" > "$tmp"
+  before=$(wc -l < "$file")
+  after=$(wc -l < "$tmp")
+  mv "$tmp" "$file"
+  printf '%s\n' "$(( before - after ))"
+}
+
 cmd_roadmap() {
   local sub="${1:-}"
   case "$sub" in
@@ -243,8 +285,25 @@ cmd_roadmap() {
         roadmap_view_section "$section" "$file"
       fi
       ;;
+    renumber)
+      local ccdir file
+      ccdir="$(require_ccharness /roadmap-management)"
+      file="$ccdir/roadmap.md"
+      require_file "$file" /roadmap-management
+      roadmap_renumber "$file"
+      echo "Renumbered every section in $file."
+      ;;
+    prune)
+      local ccdir file removed
+      ccdir="$(require_ccharness /roadmap-management)"
+      file="$ccdir/roadmap.md"
+      require_file "$file" /roadmap-management
+      removed="$(roadmap_prune "$file")"
+      echo "Pruned $removed completed item(s) from $file."
+      [ "$removed" -gt 0 ] && echo "Run 'ccscriptctl roadmap renumber' to close the gaps."
+      ;;
     "")
-      echo "ccscriptctl: 'roadmap' needs a subcommand — 'open', 'add', or 'view'." >&2
+      echo "ccscriptctl: 'roadmap' needs a subcommand — 'open', 'add', 'view', 'renumber', or 'prune'." >&2
       echo >&2
       usage >&2
       exit 2

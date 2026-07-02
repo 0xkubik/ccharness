@@ -333,6 +333,62 @@ class TestCcfunnelBin(unittest.TestCase):
         self.assertEqual(r.returncode, 2)
         self.assertIn("unknown view", r.stderr)
 
+    # --- renumber / prune ---
+
+    def _seed_messy(self):
+        # Old dash bullet, a completed item, and a numbering gap, across sections.
+        (self.ccdir / "roadmap.md").write_text(
+            "# Roadmap\n\n## Product North Star\n\nGoal.\n\n"
+            "- **In production?** no\n\n---\n\n"
+            "## Features\n\n- [ ] old bullet\n2. [x] done\n5. [ ] gappy\n\n"
+            "## TODO\n\n1. [x] done task\n2. [ ] pending\n\n"
+            "## Bugs\n\n- [x] fixed\n"
+        )
+
+    def test_renumber_makes_sections_contiguous(self):
+        self._seed_messy()
+        r = self.run_bin("roadmap", "renumber")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        text = self.roadmap_text()
+        self.assertIn("1. [ ] old bullet", text)  # old dash bullet converted
+        self.assertIn("2. [x] done", text)         # gap closed, checkbox state kept
+        self.assertIn("3. [ ] gappy", text)
+        self.assertIn("1. [x] done task", text)    # TODO numbered independently
+        self.assertIn("2. [ ] pending", text)
+        self.assertIn("1. [x] fixed", text)
+
+    def test_renumber_leaves_north_star_untouched(self):
+        self._seed_messy()
+        self.run_bin("roadmap", "renumber")
+        self.assertIn("- **In production?** no", self.roadmap_text())
+
+    def test_prune_removes_completed_only(self):
+        self._seed_messy()
+        r = self.run_bin("roadmap", "prune")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertIn("3 completed", r.stdout)
+        text = self.roadmap_text()
+        self.assertNotIn("[x]", text)
+        self.assertIn("old bullet", text)
+        self.assertIn("gappy", text)
+        self.assertIn("pending", text)
+        self.assertIn("- **In production?** no", text)  # not a checkbox item
+
+    def test_prune_then_renumber_is_clean(self):
+        self._seed_messy()
+        self.run_bin("roadmap", "prune")
+        self.run_bin("roadmap", "renumber")
+        self.assertEqual(
+            self.run_bin("roadmap", "view", "feat").stdout,
+            "## Features\n\n1. [ ] old bullet\n2. [ ] gappy\n",
+        )
+
+    def test_prune_missing_roadmap_exits_1(self):
+        (self.ccdir / "roadmap.md").unlink()
+        r = self.run_bin("roadmap", "prune")
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("/roadmap-management", r.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()
