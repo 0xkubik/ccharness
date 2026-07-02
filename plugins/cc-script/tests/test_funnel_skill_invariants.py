@@ -6,6 +6,7 @@ ROADMAP_MANAGEMENT = ROOT / "skills" / "roadmap-management" / "SKILL.md"
 WHAT_TO_DO = ROOT / "skills" / "what-to-do" / "SKILL.md"
 DO = ROOT / "skills" / "do" / "SKILL.md"
 RRT = ROOT / "skills" / "refactor-review-test" / "SKILL.md"
+ARCHITECT = ROOT / "skills" / "architect" / "SKILL.md"
 
 
 class TestRoadmapManagementSkill(unittest.TestCase):
@@ -33,6 +34,11 @@ class TestDoSkill(unittest.TestCase):
 class TestRefactorReviewTestSkill(unittest.TestCase):
     def test_exists(self):
         self.assertTrue(RRT.exists(), "refactor-review-test SKILL.md missing")
+
+
+class TestArchitectSkill(unittest.TestCase):
+    def test_exists(self):
+        self.assertTrue(ARCHITECT.exists(), "architect SKILL.md missing")
 
 
 if __name__ == "__main__":
