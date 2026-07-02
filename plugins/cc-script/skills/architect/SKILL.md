@@ -70,6 +70,27 @@ renders anywhere with nothing installed. A picture you can show beats a model yo
 
 ---
 
+## Folder structure — a projection, not a separate artifact
+
+Folder layout is *physical* (where files live), not logical architecture — don't design it twice.
+A project's folders mirror the **`module`/`package` nesting** you already put in the LikeC4
+code-level model, so **derive the tree from that model** rather than hand-maintaining a second one.
+When the design calls for a layout, read it off the module nesting and write it out as **paths or a
+plain indented list** — the ornate `├──` tree is an output, not the thing you keep in sync:
+
+```
+src/
+  api/          <- component `API`
+    routes/     <- module `Router`
+    auth/       <- module `Auth`
+  domain/       <- component `Domain`
+```
+
+Change the structure in one place — the LikeC4 model — and re-project. Never keep a `├──` tree
+aligned by hand.
+
+---
+
 ## Cross-plugin degradation
 
 The three reference skills live in **cc-instruments**. If it isn't installed, `likec4` and
@@ -94,7 +115,7 @@ user-led — don't invent a system unprompted · `3` Model in LikeC4 (the collap
 → code) · Mermaid for leaf detail that can't fold in · Excalidraw for freeform sketches · `4` Load
 the matching cc-instruments reference skill BEFORE drawing · `5` Produce diagrams, text as connective
 tissue only · `6` Iterate on feedback · `7` Save to `docs/architecture/`. No cc-instruments → degrade
-to Mermaid.
+to Mermaid. Folder tree = a projection of the LikeC4 module nesting, not a hand-kept artifact.
 
 **Invariant:** diagrams first, never read the project's code, one conversational user-led mode;
 LikeC4 is the single collapsible backbone (down to code), Mermaid only for leaf detail; shape the

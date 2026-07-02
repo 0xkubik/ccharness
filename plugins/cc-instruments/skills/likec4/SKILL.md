@@ -101,6 +101,10 @@ That's "one model, many views" carried to the bottom: **one file, foldable from 
 modules and key classes**, a drill-down view at each level and `dynamic view`s for the flows between
 them. It stays a single source of truth — not a pile of disconnected diagrams.
 
+This `module`/`package` nesting also **doubles as the folder structure** — the on-disk layout
+(`api/router/`, `api/auth/`…) is a projection of the model, so the tree is designed once here rather
+than kept in sync as a separate artifact.
+
 **Where it stops.** LikeC4 models elements, nesting, and relationships — *not* a class's fields and
 methods, the internals of a step-by-step call sequence, or a table's columns. That leaf-level detail
 doesn't fold into the model in any tool. Render it separately with the `mermaid` skill
