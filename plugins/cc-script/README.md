@@ -69,6 +69,8 @@ ccscriptctl roadmap add todo <text>    # note a task    → "## TODO" section
 ccscriptctl roadmap add backlog <text> # note an idea   → "## Backlog" section
 ccscriptctl roadmap add bug <text>     # note a bug     → "## Bugs" section
 ccscriptctl roadmap view [what]        # print the roadmap (all | feat|todo|backlog|bug)
+ccscriptctl roadmap done <kind> <n>    # mark item <n> in that section done ("[x]")
+ccscriptctl roadmap drop <kind> <n>    # remove item <n> from that section, then renumber
 ccscriptctl roadmap renumber           # renumber every section's items to 1..N
 ccscriptctl roadmap prune              # drop completed ("[x]") items, then renumber
 ccscriptctl cheatsheet                 # open .claude/ccharness/cheatsheet.md
@@ -83,6 +85,9 @@ joins the list in order; TODO / Backlog / Bugs are a shell inbox to triage onto 
 
 `roadmap view` prints straight to the console — `view all` (the default) dumps the whole file, and
 `view feat|todo|backlog|bug` prints just that one section.
+
+`roadmap done <kind> <n>` ticks item `n` in that section (`[ ]` → `[x]`); `roadmap drop <kind> <n>`
+removes it and renumbers what's left. Both address items by the number `view` shows.
 
 `roadmap renumber` rewrites every section's items to a contiguous `1..N` in document order — closing
 gaps and converting any old `- [ ]` bullets to numbered items (checkbox state preserved). `roadmap
@@ -177,4 +182,4 @@ Beyond the marketplace set, `/cc-init` also **offers** two external MCP tools it
 - `skills/how-to-do/SKILL.md` — the decision loop (four proposers → synthesis).
 - `skills/do/SKILL.md` — the gated executor: builds + smoke-checks, then hands off (the brains).
 - `skills/refactor-review-test/SKILL.md` — the autonomous hardener (safety-net → refactor → review → full tests → commit); `/do`'s always-on tail, also standalone.
-- `bin/ccscriptctl` — small terminal helper: opens the project's roadmap / cheat-sheet in your editor (`ccscriptctl roadmap open` · `ccscriptctl cheatsheet`), captures quick roadmap notes (`ccscriptctl roadmap add feat|todo|backlog|bug <text>`), prints the roadmap (`ccscriptctl roadmap view [all|feat|todo|backlog|bug]`), and tidies it (`ccscriptctl roadmap renumber` · `ccscriptctl roadmap prune`).
+- `bin/ccscriptctl` — small terminal helper: opens the project's roadmap / cheat-sheet in your editor (`ccscriptctl roadmap open` · `ccscriptctl cheatsheet`), captures quick roadmap notes (`ccscriptctl roadmap add feat|todo|backlog|bug <text>`), prints the roadmap (`ccscriptctl roadmap view [all|feat|todo|backlog|bug]`), ticks or removes items by number (`ccscriptctl roadmap done|drop <kind> <n>`), and tidies it (`ccscriptctl roadmap renumber` · `ccscriptctl roadmap prune`).

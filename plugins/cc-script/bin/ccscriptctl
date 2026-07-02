@@ -23,9 +23,12 @@ Commands:
   roadmap view [what]       Print roadmap.md to the console. [what] is one of:
                               all       → the whole file (default)
                               feat / todo / backlog / bug → just that section
+  roadmap done <kind> <n>   Mark item <n> in that section done ("[x]")
+  roadmap drop <kind> <n>   Remove item <n> from that section, then renumber
+                            (<kind> is feat | todo | backlog | bug)
   roadmap renumber          Renumber every section's items to 1..N in order
                             (fixes gaps and old "- [ ]" bullets)
-  roadmap prune             Remove completed ("[x]") items from every section
+  roadmap prune             Remove completed ("[x]") items, then renumber
   cheatsheet                Open .claude/ccharness/cheatsheet.md in your editor
   help                      Show this help
 
@@ -88,6 +91,17 @@ open_in_editor() {
     echo "ccscriptctl: no way to open '$file' — install a desktop opener (open / xdg-open) or set \$EDITOR/\$VISUAL." >&2
     exit 1
   fi
+}
+
+# Map an add/view/drop/done <kind> to its section heading name; fail on unknown.
+kind_to_section() {
+  case "$1" in
+    feat)    echo Features ;;
+    todo)    echo TODO ;;
+    backlog) echo Backlog ;;
+    bug)     echo Bugs ;;
+    *)       return 1 ;;
+  esac
 }
 
 # The roadmap's sections keep a fixed order; a missing one is created in its slot.
@@ -226,6 +240,48 @@ roadmap_prune() {
   printf '%s\n' "$(( before - after ))"
 }
 
+# Flip item <num> in "## <section>" from "[ ]" to "[x]". Prints one of:
+# changed | already (was already done) | notfound.
+roadmap_mark_done() {
+  local section="$1" num="$2" file="$3" heading tmp st status
+  heading="## $section"
+  tmp="$(mktemp)"; st="$(mktemp)"
+  awk -v heading="$heading" -v num="$num" -v st="$st" '
+    $0 == heading { in_sec = 1; print; next }
+    in_sec && /^## / { in_sec = 0 }
+    in_sec && !found && /^[[:space:]]*[0-9]+\.[[:space:]]+\[[ xX]\]/ && ($0 + 0) == num {
+      found = 1
+      if ($0 ~ /\[ \]/) { sub(/\[ \]/, "[x]"); changed = 1 }
+      print; next
+    }
+    { print }
+    END { print (found ? (changed ? "changed" : "already") : "notfound") > st }
+  ' "$file" > "$tmp"
+  mv "$tmp" "$file"
+  status="$(cat "$st")"; rm -f "$st"
+  printf '%s\n' "$status"
+}
+
+# Remove item <num> from "## <section>". Prints "dropped" or "notfound". Leaves
+# numbering as-is (the caller renumbers afterward).
+roadmap_drop_item() {
+  local section="$1" num="$2" file="$3" heading tmp st status
+  heading="## $section"
+  tmp="$(mktemp)"; st="$(mktemp)"
+  awk -v heading="$heading" -v num="$num" -v st="$st" '
+    $0 == heading { in_sec = 1; print; next }
+    in_sec && /^## / { in_sec = 0 }
+    in_sec && !found && /^[[:space:]]*[0-9]+\.[[:space:]]+\[[ xX]\]/ && ($0 + 0) == num {
+      found = 1; next
+    }
+    { print }
+    END { print (found ? "dropped" : "notfound") > st }
+  ' "$file" > "$tmp"
+  mv "$tmp" "$file"
+  status="$(cat "$st")"; rm -f "$st"
+  printf '%s\n' "$status"
+}
+
 cmd_roadmap() {
   local sub="${1:-}"
   case "$sub" in
@@ -302,8 +358,41 @@ cmd_roadmap() {
       roadmap_renumber "$file"
       echo "Pruned $removed completed item(s) from $file and renumbered."
       ;;
+    done|drop)
+      shift || true
+      local kind section num ccdir file status
+      kind="${1:-}"
+      if ! section="$(kind_to_section "$kind")"; then
+        echo "ccscriptctl: 'roadmap $sub' needs a kind (feat|todo|backlog|bug) and an item number." >&2
+        exit 2
+      fi
+      num="${2:-}"
+      case "$num" in
+        ''|*[!0-9]*) echo "ccscriptctl: 'roadmap $sub $kind' needs a numeric item number." >&2; exit 2 ;;
+      esac
+      ccdir="$(require_ccharness /roadmap-management)"
+      file="$ccdir/roadmap.md"
+      require_file "$file" /roadmap-management
+      if [ "$sub" = "done" ]; then
+        status="$(roadmap_mark_done "$section" "$num" "$file")"
+        case "$status" in
+          changed)  echo "Marked $kind #$num done in $section." ;;
+          already)  echo "$kind #$num in $section was already done." ;;
+          notfound) echo "ccscriptctl: no item #$num in $section." >&2; exit 1 ;;
+        esac
+      else
+        status="$(roadmap_drop_item "$section" "$num" "$file")"
+        if [ "$status" = "dropped" ]; then
+          roadmap_renumber "$file"
+          echo "Dropped $kind #$num from $section and renumbered."
+        else
+          echo "ccscriptctl: no item #$num in $section." >&2
+          exit 1
+        fi
+      fi
+      ;;
     "")
-      echo "ccscriptctl: 'roadmap' needs a subcommand — 'open', 'add', 'view', 'renumber', or 'prune'." >&2
+      echo "ccscriptctl: 'roadmap' needs a subcommand — 'open', 'add', 'view', 'done', 'drop', 'renumber', or 'prune'." >&2
       echo >&2
       usage >&2
       exit 2

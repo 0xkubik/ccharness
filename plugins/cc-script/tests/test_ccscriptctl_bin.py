@@ -389,6 +389,68 @@ class TestCcfunnelBin(unittest.TestCase):
         self.assertEqual(r.returncode, 1)
         self.assertIn("/roadmap-management", r.stderr)
 
+    # --- done / drop ---
+
+    def _seed_numbered(self):
+        (self.ccdir / "roadmap.md").write_text(
+            "# Roadmap\n\n## Features\n\n1. [ ] auth\n2. [ ] dark mode\n3. [ ] export\n\n"
+            "## Bugs\n\n1. [ ] crash\n2. [ ] leak\n"
+        )
+
+    def test_done_marks_item(self):
+        self._seed_numbered()
+        r = self.run_bin("roadmap", "done", "feat", "2")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        text = self.roadmap_text()
+        self.assertIn("2. [x] dark mode", text)
+        self.assertIn("1. [ ] auth", text)  # others untouched
+
+    def test_done_targets_the_right_section(self):
+        self._seed_numbered()
+        self.run_bin("roadmap", "done", "bug", "1")
+        text = self.roadmap_text()
+        self.assertIn("1. [x] crash", text)
+        self.assertIn("1. [ ] auth", text)  # Features #1 not touched
+
+    def test_done_already_done_reports(self):
+        self._seed_numbered()
+        self.run_bin("roadmap", "done", "feat", "2")
+        r = self.run_bin("roadmap", "done", "feat", "2")
+        self.assertEqual(r.returncode, 0)
+        self.assertIn("already done", r.stdout)
+
+    def test_done_notfound_exits_1(self):
+        self._seed_numbered()
+        r = self.run_bin("roadmap", "done", "feat", "9")
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("no item #9", r.stderr)
+
+    def test_done_bad_kind_exits_2(self):
+        self._seed_numbered()
+        r = self.run_bin("roadmap", "done", "zzz", "1")
+        self.assertEqual(r.returncode, 2)
+
+    def test_done_non_numeric_exits_2(self):
+        self._seed_numbered()
+        r = self.run_bin("roadmap", "done", "feat", "two")
+        self.assertEqual(r.returncode, 2)
+
+    def test_drop_removes_and_renumbers(self):
+        self._seed_numbered()
+        r = self.run_bin("roadmap", "drop", "feat", "2")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        # "dark mode" gone; "export" renumbered from 3 to 2.
+        self.assertEqual(
+            self.run_bin("roadmap", "view", "feat").stdout,
+            "## Features\n\n1. [ ] auth\n2. [ ] export\n",
+        )
+
+    def test_drop_notfound_exits_1(self):
+        self._seed_numbered()
+        r = self.run_bin("roadmap", "drop", "bug", "9")
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("no item #9", r.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()
