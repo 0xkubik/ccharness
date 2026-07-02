@@ -56,11 +56,13 @@ parenthetical owner may read `what-to-do` or `roadmap-management`, both count.
 | **Present** | **Read it = the goal.** A prompt (if given) scopes the run to a theme/area; no prompt = full survey. Then read the roadmap (below) and proceed to Phase 1.                                                                                                                |
 
 **Read the feature list.** The roadmap (`.claude/ccharness/roadmap.md`, located above) holds the North
-Star at the top and the feature list below it. Derive the **frontier** = the **first unchecked `[ ]`
-box** (the list is flat and ordered; tracking is checkboxes only — no separate pointer). The frontier
-biases Phase 2 and Phase 3. If there are no feature lines yet (goal set, route not charted), what-to-do
-runs unbiased — you may nudge _("no feature list yet — `/roadmap-management` charts the route far ahead")_, then
-proceed.
+Star at the top and the charted route in a `## Features` section below it. Derive the **frontier** = the
+**first unchecked `[ ]` box under `## Features`** (the list is flat and ordered; tracking is checkboxes
+only — no separate pointer). The `## TODO`, `## Backlog`, and `## Bugs` sections are a human capture
+inbox, **not the route** — read them as raw signal if useful, but the frontier is `## Features`-only. The
+frontier biases Phase 2 and Phase 3. If `## Features` has no lines yet (goal set, route not charted),
+what-to-do runs unbiased — you may nudge _("no feature list yet — `/roadmap-management` charts the route
+far ahead")_, then proceed.
 
 ---
 
@@ -114,7 +116,7 @@ candidates:    [ {
   goal_fit:      high | med | low      # against the North Star
   effort:        S | M | L
   reversibility: easy | hard           # weighs more once the product is in production
-  advances:      <milestone id (e.g. M2) | "off-roadmap">   # only when a roadmap exists
+  advances:      <the frontier feature it advances (short quote) | "off-roadmap">   # only when a roadmap exists
 } ]
 empty_reason:  <if candidates == [] : why this lane has nothing real here>
 ```
@@ -152,7 +154,7 @@ move:      ADD | FINISH | REBUILD | REFACTOR
 title:     <direction>
 what:      <1–2 sentences>
 why_now:   <gap it closes toward the North Star>
-milestone: <M2 | off-roadmap>          # only when a roadmap exists — tags the menu line
+milestone: <the frontier feature it advances (short quote) | off-roadmap>   # only when a roadmap exists — tags the menu line
 score:     goal_fit / effort / reversibility  (+ production-caution and roadmap-fit adjustments if they moved the rank)
 ```
 
@@ -193,8 +195,8 @@ what-to-do's.
 
 ## Quick reference
 
-`0` Ground — `## Product North Star` at the top of `.claude/ccharness/roadmap.md`? no → **route to `/roadmap-management`**, stop; yes → North Star = goal, feature list below (**frontier** = the
-first unchecked `[ ]`) · `1` Survey — repo = where we are
+`0` Ground — `## Product North Star` at the top of `.claude/ccharness/roadmap.md`? no → **route to `/roadmap-management`**, stop; yes → North Star = goal, route = the `## Features` section (**frontier** = the
+first unchecked `[ ]` there; TODO/Backlog/Bugs are capture, not the route) · `1` Survey — repo = where we are
 now; if roadmap, check whether the **frontier feature** is built (interactive: offer to check off ·
 under the musician: auto-mark) · `2` Fan-out — four lenses (ADD / FINISH / REBUILD / REFACTOR), parallel,
 empty-lane valve, **fed the frontier milestone as a steer (not a gate)** · `3`

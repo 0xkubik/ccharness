@@ -64,15 +64,18 @@ have to dig into `.claude/ccharness/` every time:
 
 ```
 ccscriptctl roadmap open               # open .claude/ccharness/roadmap.md
-ccscriptctl roadmap add bug <text>     # note a bug     → "## Bugs" section
-ccscriptctl roadmap add feat <text>    # note a feature → "## Features" section
+ccscriptctl roadmap add feat <text>    # note a feature → "## Features" section (the route)
+ccscriptctl roadmap add todo <text>    # note a task    → "## TODO" section
 ccscriptctl roadmap add backlog <text> # note an idea   → "## Backlog" section
+ccscriptctl roadmap add bug <text>     # note a bug     → "## Bugs" section
 ccscriptctl cheatsheet                 # open .claude/ccharness/cheatsheet.md
 ```
 
-`roadmap add` appends `- [ ] <text>` under the matching section at the bottom of `roadmap.md`
-(creating the section if it isn't there yet) without opening an editor — a shell inbox to triage
-later with `/roadmap-management`. The curated `Mn` feature list is left untouched.
+`roadmap add` appends `- [ ] <text>` under the matching section of `roadmap.md` without opening an
+editor, creating a missing section in its canonical slot (Features → TODO → Backlog → Bugs). It writes
+into the same `## Features` route that `/roadmap-management` manages, so a captured feature just joins
+the list in order; TODO / Backlog / Bugs are a shell inbox to triage onto the route later with
+`/roadmap-management`.
 
 It finds `.claude/ccharness/` in the current directory or any parent, and opens files with
 `$VISUAL`, else `$EDITOR`, else your OS default app (`open` / `xdg-open`).
@@ -160,4 +163,4 @@ Beyond the marketplace set, `/cc-init` also **offers** two external MCP tools it
 - `skills/how-to-do/SKILL.md` — the decision loop (four proposers → synthesis).
 - `skills/do/SKILL.md` — the gated executor: builds + smoke-checks, then hands off (the brains).
 - `skills/refactor-review-test/SKILL.md` — the autonomous hardener (safety-net → refactor → review → full tests → commit); `/do`'s always-on tail, also standalone.
-- `bin/ccscriptctl` — small terminal helper: opens the project's roadmap / cheat-sheet in your editor (`ccscriptctl roadmap open` · `ccscriptctl cheatsheet`) and captures quick roadmap notes (`ccscriptctl roadmap add bug|feat|backlog <text>`).
+- `bin/ccscriptctl` — small terminal helper: opens the project's roadmap / cheat-sheet in your editor (`ccscriptctl roadmap open` · `ccscriptctl cheatsheet`) and captures quick roadmap notes (`ccscriptctl roadmap add feat|todo|backlog|bug <text>`).

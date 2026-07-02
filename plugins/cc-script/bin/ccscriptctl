@@ -15,9 +15,11 @@ Commands:
   roadmap open              Open .claude/ccharness/roadmap.md in your editor
   roadmap add <kind> <text> Append a note to roadmap.md without opening it,
                             where <kind> is one of:
-                              bug       → the "## Bugs" section
-                              feat      → the "## Features" section
+                              feat      → the "## Features" section (the route)
+                              todo      → the "## TODO" section
                               backlog   → the "## Backlog" section
+                              bug       → the "## Bugs" section
+                            Missing sections are created in that order.
   cheatsheet                Open .claude/ccharness/cheatsheet.md in your editor
   help                      Show this help
 
@@ -76,19 +78,31 @@ open_in_editor() {
   exit 1
 }
 
-# Append "- [ ] <text>" under "## <section>" in the roadmap, creating the section
-# at the end of the file if it isn't there yet. The curated feature list is left
-# untouched — captured notes live in their own sections for later triage.
+# The roadmap's sections keep a fixed order; a missing one is created in its slot.
+# Print the sections that should sit after the given one (its ordered successors).
+section_successors() {
+  case "$1" in
+    Features) printf '%s\n' TODO Backlog Bugs ;;
+    TODO)     printf '%s\n' Backlog Bugs ;;
+    Backlog)  printf '%s\n' Bugs ;;
+    Bugs)     : ;;
+  esac
+}
+
+# Append "- [ ] <text>" under "## <section>" in the roadmap. If the section isn't
+# there yet, create it in its canonical slot (Features → TODO → Backlog → Bugs):
+# just before the first later section that already exists, else at the end of the
+# file. The "## Features" route is shared with roadmap-management.
 roadmap_add_note() {
-  local section="$1" bullet="$2" file="$3" heading tmp
+  local section="$1" bullet="$2" file="$3" heading tmp successor cand
   heading="## $section"
   if grep -qxF "$heading" "$file"; then
     tmp="$(mktemp)"
-    awk -v heading="$heading" -v bullet="$bullet" '
+    BULLET="$bullet" awk -v heading="$heading" '
       function flush() {
         while (n > 0 && buf[n] ~ /^[[:space:]]*$/) n--
         for (i = 1; i <= n; i++) print buf[i]
-        print bullet
+        print ENVIRON["BULLET"]
         n = 0; in_sec = 0
       }
       BEGIN { in_sec = 0; n = 0 }
@@ -101,6 +115,21 @@ roadmap_add_note() {
         print
       }
       END { if (in_sec) flush() }
+    ' "$file" > "$tmp"
+    mv "$tmp" "$file"
+    return
+  fi
+
+  successor=""
+  for cand in $(section_successors "$section"); do
+    if grep -qxF "## $cand" "$file"; then successor="## $cand"; break; fi
+  done
+
+  if [ -n "$successor" ]; then
+    tmp="$(mktemp)"
+    BULLET="$bullet" awk -v succ="$successor" -v heading="$heading" '
+      $0 == succ && !done { print heading; print ""; print ENVIRON["BULLET"]; print ""; done = 1 }
+      { print }
     ' "$file" > "$tmp"
     mv "$tmp" "$file"
   else
@@ -124,11 +153,12 @@ cmd_roadmap() {
       local kind section
       kind="${1:-}"
       case "$kind" in
-        bug)     section="Bugs" ;;
         feat)    section="Features" ;;
+        todo)    section="TODO" ;;
         backlog) section="Backlog" ;;
-        "")      echo "ccscriptctl: 'roadmap add' needs a kind (bug|feat|backlog) and text." >&2; exit 2 ;;
-        *)       echo "ccscriptctl: unknown kind '$kind' — use bug, feat, or backlog." >&2; exit 2 ;;
+        bug)     section="Bugs" ;;
+        "")      echo "ccscriptctl: 'roadmap add' needs a kind (feat|todo|backlog|bug) and text." >&2; exit 2 ;;
+        *)       echo "ccscriptctl: unknown kind '$kind' — use feat, todo, backlog, or bug." >&2; exit 2 ;;
       esac
       shift || true
       local text="$*"

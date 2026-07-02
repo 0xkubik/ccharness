@@ -6,9 +6,11 @@ description: Use to create OR maintain a product's roadmap (the North Star goal 
 # roadmap-management — own the product's roadmap across its life
 
 You own `.claude/ccharness/roadmap.md`: the product's **North Star** (the goal) at the top, and a
-**flat, ordered list of features** (the route to it) below. Every later step builds on this file —
-what-to-do ranks moves against the goal, the musician builds straight off the list — so a sloppy goal
-or vague feature aims every automated step at the wrong target.
+**flat, ordered list of features** (the route to it) in a `## Features` section below — plus three
+capture sections (`## TODO`, `## Backlog`, `## Bugs`) shared with the `ccscriptctl roadmap add` helper.
+Every later step builds on this file — what-to-do ranks moves against the goal, the musician builds
+straight off the feature list — so a sloppy goal or vague feature aims every automated step at the
+wrong target.
 
 **This is not a run-once form.** You charter the roadmap the first time, and then you keep it honest as
 the product changes: rethink it, or fold in a new feature, whenever the human comes back. So you run in
@@ -94,8 +96,13 @@ check off what's done, drop the obsolete — **one decision at a time**, writing
 
 **Reason about impact before you rewrite.** A revision ripples: reworking the goal can strand features
 that no longer serve it; reordering or dropping a feature shifts the frontier and what downstream skills
-aim at. Say plainly what each change touches. Keep `Mn` ids stable. Urge a read-back once you've changed
+aim at. Say plainly what each change touches. Urge a read-back once you've changed
 much. Stop when the human is satisfied — no forced review, no minimum.
+
+**Triage the capture inbox.** `## TODO`, `## Backlog`, and `## Bugs` collect quick notes dropped in from
+the terminal (`ccscriptctl roadmap add …`). On a revision, look them over: promote what belongs on the
+route into `## Features` at the right spot, leave the rest where it is, drop the obsolete. This is the
+only place raw captures get turned into charted features — one decision at a time, as always.
 
 ---
 
@@ -107,8 +114,8 @@ The human brought **one concrete feature** to add. Don't just append it — help
 - **How** — the rough shape of building it, enough to phrase the feature concretely (not a plan).
 - **When** — where in the ordered list it belongs: what must come before it, what it unblocks.
 
-Then, **only if the human approves it**, write **one line** at the right position: a new stable `Mn` id
-naming the feature. Confirm the line back. If the thinking shows it's premature or
+Then, **only if the human approves it**, append **one line** — `- [ ] <feature>` — at the right position
+in the `## Features` list. Confirm the line back. If the thinking shows it's premature or
 off-goal, don't force it into the list — drop it. The human decides.
 
 ---
@@ -116,8 +123,8 @@ off-goal, don't force it into the list — drop it. The human decides.
 ## Mode 4 — Add a feature, fast (`--force`)
 
 Same target as Mode 3 — add one feature — but the human wants it written **without the discussion. Skip
-the why/how/when.** Formulate the feature yourself into one well-phrased line: a new `Mn` id naming the
-feature, placed at a sensible position in the order. **Then show the exact line and where it will
+the why/how/when.** Formulate the feature yourself into one well-phrased line — `- [ ] <feature>` —
+placed at a sensible position in the `## Features` list. **Then show the exact line and where it will
 go, and ask "write this? (ok / not ok)".** Write it only on **ok**; on "not ok", take their correction.
 
 `--force` skips the *discussion*, **never the confirm** — you formulate and propose, but you never
@@ -128,8 +135,12 @@ silently autowrite. One show-and-confirm gate always stands.
 ## The roadmap file (the contract — keep it exact)
 
 `.claude/ccharness/roadmap.md` (create the directory if needed). The file **opens with the North Star**
-(the goal), then a **flat, ordered checklist of features** — no versions, no stages. **Document order is
-build order**: top to bottom. The **frontier** = the **first unchecked `[ ]` box** (no separate pointer).
+(the goal), then **four sections in this fixed order — `## Features`, `## TODO`, `## Backlog`,
+`## Bugs`** — each a checklist. `## Features` is the charted route: a **flat, ordered list** where
+**document order is build order** (top to bottom) and the **frontier** = the **first unchecked `[ ]` box
+under `## Features`** (no separate pointer). The other three are a **capture inbox** — quick notes
+dropped in from the terminal with `ccscriptctl roadmap add todo|backlog|bug <text>`, for you to triage
+onto the route on a re-run.
 
 ```markdown
 # Roadmap — <product>
@@ -144,21 +155,35 @@ build order**: top to bottom. The **frontier** = the **first unchecked `[ ]` box
 
 ---
 
-<!-- Flat ordered feature list — build top to bottom. Frontier = the first unchecked [ ] box. -->
+## Features
 
-- [ ] M1 — <feature>
-- [ ] M2 — <feature>
-- [ ] M3 — <feature>
+<!-- The charted route — build top to bottom. Frontier = the first unchecked [ ] box here. -->
+
+- [ ] <feature>
+- [ ] <feature>
+- [ ] <feature>
+
+## TODO
+
+<!-- Near-term concrete tasks — also captured via `ccscriptctl roadmap add todo`. -->
+
+## Backlog
+
+<!-- Someday / maybe — also captured via `ccscriptctl roadmap add backlog`. -->
+
+## Bugs
+
+<!-- Known defects — also captured via `ccscriptctl roadmap add bug`. -->
 ```
 
-**Each feature is exactly one line** — a single `- [ ] Mn — <feature>` and nothing else. No `done
-when:` clause, no wrapping onto a second line, no sub-bullets, no indented notes, no multi-line
-description. State the feature concretely enough to know it when it's built. If it won't fit on one
-line, it's too big or too wordy: tighten the wording, or split it into two features — never spill it
-across lines.
+**Each feature is exactly one line** — a single `- [ ] <feature>` and nothing else. No `done when:`
+clause, no wrapping onto a second line, no sub-bullets, no indented notes, no multi-line description.
+State the feature concretely enough to know it when it's built. If it won't fit on one line, it's too
+big or too wordy: tighten the wording, or split it into two features — never spill it across lines.
 
-Ids stay **stable across re-runs** (the musician references them) and are independent of where a
-feature sits — reordering never renumbers it. Every other skill detects grounding by the
+Features are simply appended **in order** into `## Features` — no ids to assign or keep stable, tracking
+is checkboxes only. `## TODO`, `## Backlog`, and `## Bugs` hold the same one-line `- [ ] <text>` shape
+and are shared with `ccscriptctl roadmap add`. Every other skill detects grounding by the
 `## Product North Star` heading.
 
 ---
@@ -168,8 +193,8 @@ feature sits — reordering never renumbers it. Every other skill detects ground
 `dispatch` — no North Star → **Mode 1**; goal + no feature → **Mode 2**; goal + one feature → **Mode 3**
 (or **Mode 4** with `--force`); can't tell 2 vs 3 → **ask** · **Mode 1** Charter — open-question goal
 (1–3 sentences) → survey + feature loop (`AskUserQuestion`, one at a time, _need A before B → A higher_,
-stable `Mn` naming the feature, one line each, urge review) → independent reviewer · **Mode 2** Open revision —
-show goal + list + progress, revise free-form, one decision at a time, reason about ripple · **Mode 3**
+one line each `- [ ] <feature>` into `## Features`, urge review) → independent reviewer · **Mode 2** Open revision —
+show goal + list + progress, triage the capture inbox, revise free-form, one decision at a time, reason about ripple · **Mode 3**
 Add a feature — why / how / when → one line if approved · **Mode 4** `--force` — formulate → **show +
 "ok?"** → write (never silent).
 

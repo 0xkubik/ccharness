@@ -117,12 +117,25 @@ class TestCcfunnelBin(unittest.TestCase):
 
     def test_add_maps_kinds_to_sections(self):
         self.run_bin("roadmap", "add", "feat", "dark mode")
+        self.run_bin("roadmap", "add", "todo", "wire up CI")
         self.run_bin("roadmap", "add", "backlog", "i18n someday")
         text = self.roadmap_text()
         self.assertIn("## Features", text)
         self.assertIn("- [ ] dark mode", text)
+        self.assertIn("## TODO", text)
+        self.assertIn("- [ ] wire up CI", text)
         self.assertIn("## Backlog", text)
         self.assertIn("- [ ] i18n someday", text)
+
+    def test_add_creates_sections_in_canonical_order(self):
+        # Add out of order; sections must still land Features → TODO → Backlog → Bugs.
+        self.run_bin("roadmap", "add", "bug", "a bug")
+        self.run_bin("roadmap", "add", "backlog", "an idea")
+        self.run_bin("roadmap", "add", "feat", "a feature")
+        self.run_bin("roadmap", "add", "todo", "a task")
+        text = self.roadmap_text()
+        order = [text.index(h) for h in ("## Features", "## TODO", "## Backlog", "## Bugs")]
+        self.assertEqual(order, sorted(order), "sections not in canonical order")
 
     def test_add_appends_within_existing_section(self):
         self.run_bin("roadmap", "add", "bug", "first")
@@ -135,18 +148,33 @@ class TestCcfunnelBin(unittest.TestCase):
             "second note not appended after first",
         )
 
-    def test_add_leaves_feature_list_untouched(self):
+    def test_add_feat_appends_into_existing_features_block(self):
         (self.ccdir / "roadmap.md").write_text(
-            "# Roadmap\n\n- [ ] M1 — build it\n"
+            "# Roadmap\n\n## Features\n\n- [ ] build it\n\n## Bugs\n\n- [ ] a bug\n"
         )
         self.run_bin("roadmap", "add", "feat", "new idea")
         text = self.roadmap_text()
-        self.assertIn("- [ ] M1 — build it", text)
-        self.assertLess(
-            text.index("M1 — build it"),
-            text.index("## Features"),
-            "capture section landed above the feature list",
+        self.assertEqual(text.count("## Features"), 1)
+        # New feature joins the route, above the Bugs section.
+        self.assertLess(text.index("- [ ] new idea"), text.index("## Bugs"))
+        self.assertLess(text.index("- [ ] build it"), text.index("- [ ] new idea"))
+
+    def test_add_bug_lands_below_features_route(self):
+        (self.ccdir / "roadmap.md").write_text(
+            "# Roadmap\n\n## Features\n\n- [ ] build it\n"
         )
+        self.run_bin("roadmap", "add", "bug", "crash")
+        text = self.roadmap_text()
+        self.assertLess(text.index("- [ ] build it"), text.index("## Bugs"))
+
+    def test_add_preserves_backslashes(self):
+        # Text with backslashes must land literally — no escape processing, no
+        # split lines that break the one-line-per-item invariant.
+        self.run_bin("roadmap", "add", "bug", r"path C:\temp\nope crashes")
+        self.run_bin("roadmap", "add", "bug", r"also D:\down")  # append-within path
+        text = self.roadmap_text()
+        self.assertIn(r"- [ ] path C:\temp\nope crashes", text)
+        self.assertIn(r"- [ ] also D:\down", text)
 
     def test_add_unknown_kind_exits_2(self):
         r = self.run_bin("roadmap", "add", "chore", "something")

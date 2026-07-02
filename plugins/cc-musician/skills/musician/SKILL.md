@@ -134,8 +134,10 @@ verify appends fix tasks. Each `task` is `{id, subject, status}` with `status` o
 When your work maps to the product's roadmap (`.claude/ccharness/roadmap.md`), keep the **route**
 current as you finish — but never touch the **goal**:
 
-- **You MAY edit the route** — the progress toward an already-agreed goal: mark a feature `[x]` when it
-  is observably done. That is a truthful state update, not invention.
+- **You MAY edit the route** — the progress toward an already-agreed goal: mark a feature `[x]` under the
+  `## Features` section when it is observably done. That is a truthful state update, not invention. The
+  `## TODO`, `## Backlog`, and `## Bugs` sections are the human's capture inbox — not the route: don't
+  build from them and don't check their boxes.
 - **The goal layer is READ-ONLY to you:** the North Star at the top of the roadmap, and the roadmap's
   feature set, ordering, and priorities. Never reorder features, never add a future feature, never re-prioritize.
   That layer is `roadmap-management`'s — set with the human. Silently rewriting it is the goal-drift you must
