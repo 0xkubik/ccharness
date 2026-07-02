@@ -267,6 +267,49 @@ class TestCcfunnelBin(unittest.TestCase):
         self.assertEqual(r.returncode, 2)
         self.assertIn("subcommand", r.stderr)
 
+    def _seed_roadmap(self):
+        (self.ccdir / "roadmap.md").write_text(
+            "# Roadmap\n\n## Features\n\n- [ ] a\n- [ ] b\n\n"
+            "## TODO\n\n- [ ] t\n\n## Backlog\n\n## Bugs\n\n- [ ] x\n"
+        )
+
+    def test_view_all_prints_whole_file(self):
+        self._seed_roadmap()
+        r = self.run_bin("roadmap", "view", "all")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(r.stdout, self.roadmap_text())
+
+    def test_view_defaults_to_all(self):
+        self._seed_roadmap()
+        r = self.run_bin("roadmap", "view")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(r.stdout, self.roadmap_text())
+
+    def test_view_section_prints_only_that_section(self):
+        self._seed_roadmap()
+        r = self.run_bin("roadmap", "view", "feat")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(r.stdout, "## Features\n\n- [ ] a\n- [ ] b\n")
+
+    def test_view_section_not_duplicated(self):
+        self._seed_roadmap()
+        r = self.run_bin("roadmap", "view", "todo")
+        self.assertEqual(r.stdout.count("## TODO"), 1, "section printed twice")
+        self.assertIn("- [ ] t", r.stdout)
+
+    def test_view_missing_section_notes_and_exits_0(self):
+        (self.ccdir / "roadmap.md").write_text("# Roadmap\n")
+        r = self.run_bin("roadmap", "view", "bug")
+        self.assertEqual(r.returncode, 0)
+        self.assertEqual(r.stdout, "")
+        self.assertIn("## Bugs", r.stderr)
+
+    def test_view_unknown_kind_exits_2(self):
+        self._seed_roadmap()
+        r = self.run_bin("roadmap", "view", "zzz")
+        self.assertEqual(r.returncode, 2)
+        self.assertIn("unknown view", r.stderr)
+
 
 if __name__ == "__main__":
     unittest.main()

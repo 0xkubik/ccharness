@@ -20,6 +20,9 @@ Commands:
                               backlog   → the "## Backlog" section
                               bug       → the "## Bugs" section
                             Missing sections are created in that order.
+  roadmap view [what]       Print roadmap.md to the console. [what] is one of:
+                              all       → the whole file (default)
+                              feat / todo / backlog / bug → just that section
   cheatsheet                Open .claude/ccharness/cheatsheet.md in your editor
   help                      Show this help
 
@@ -144,6 +147,26 @@ roadmap_add_note() {
   fi
 }
 
+# Print one "## <section>" (heading + its lines, trailing blanks trimmed) to stdout.
+roadmap_view_section() {
+  local section="$1" file="$2" heading
+  heading="## $section"
+  if ! grep -qxF "$heading" "$file"; then
+    echo "ccscriptctl: no '$heading' section in $file yet." >&2
+    return 0
+  fi
+  awk -v heading="$heading" '
+    function flush() {
+      while (n > 0 && buf[n] ~ /^[[:space:]]*$/) n--
+      for (i = 1; i <= n; i++) print buf[i]
+    }
+    $0 == heading { in_sec = 1; buf[++n] = $0; next }
+    in_sec && /^## / { flush(); in_sec = 0; exit }
+    in_sec { buf[++n] = $0 }
+    END { if (in_sec) flush() }
+  ' "$file"
+}
+
 cmd_roadmap() {
   local sub="${1:-}"
   case "$sub" in
@@ -180,8 +203,30 @@ cmd_roadmap() {
       echo "Added to $section in $file:"
       echo "  - [ ] $text"
       ;;
+    view)
+      shift || true
+      local kind section
+      kind="${1:-all}"
+      case "$kind" in
+        all)     section="" ;;
+        feat)    section="Features" ;;
+        todo)    section="TODO" ;;
+        backlog) section="Backlog" ;;
+        bug)     section="Bugs" ;;
+        *)       echo "ccscriptctl: unknown view '$kind' — use all, feat, todo, backlog, or bug." >&2; exit 2 ;;
+      esac
+      local ccdir file
+      ccdir="$(require_ccharness /roadmap-management)"
+      file="$ccdir/roadmap.md"
+      require_file "$file" /roadmap-management
+      if [ -z "$section" ]; then
+        cat -- "$file"
+      else
+        roadmap_view_section "$section" "$file"
+      fi
+      ;;
     "")
-      echo "ccscriptctl: 'roadmap' needs a subcommand — 'open' or 'add'." >&2
+      echo "ccscriptctl: 'roadmap' needs a subcommand — 'open', 'add', or 'view'." >&2
       echo >&2
       usage >&2
       exit 2

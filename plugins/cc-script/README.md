@@ -68,6 +68,7 @@ ccscriptctl roadmap add feat <text>    # note a feature → "## Features" sectio
 ccscriptctl roadmap add todo <text>    # note a task    → "## TODO" section
 ccscriptctl roadmap add backlog <text> # note an idea   → "## Backlog" section
 ccscriptctl roadmap add bug <text>     # note a bug     → "## Bugs" section
+ccscriptctl roadmap view [what]        # print the roadmap (all | feat|todo|backlog|bug)
 ccscriptctl cheatsheet                 # open .claude/ccharness/cheatsheet.md
 ```
 
@@ -76,6 +77,9 @@ editor, creating a missing section in its canonical slot (Features → TODO → 
 into the same `## Features` route that `/roadmap-management` manages, so a captured feature just joins
 the list in order; TODO / Backlog / Bugs are a shell inbox to triage onto the route later with
 `/roadmap-management`.
+
+`roadmap view` prints straight to the console — `view all` (the default) dumps the whole file, and
+`view feat|todo|backlog|bug` prints just that one section.
 
 It finds `.claude/ccharness/` in the current directory or any parent. `open` hands the file to your
 OS default app (`open` / `xdg-open`) and returns immediately — it never blocks, even if `$EDITOR` is a
@@ -165,4 +169,4 @@ Beyond the marketplace set, `/cc-init` also **offers** two external MCP tools it
 - `skills/how-to-do/SKILL.md` — the decision loop (four proposers → synthesis).
 - `skills/do/SKILL.md` — the gated executor: builds + smoke-checks, then hands off (the brains).
 - `skills/refactor-review-test/SKILL.md` — the autonomous hardener (safety-net → refactor → review → full tests → commit); `/do`'s always-on tail, also standalone.
-- `bin/ccscriptctl` — small terminal helper: opens the project's roadmap / cheat-sheet in your editor (`ccscriptctl roadmap open` · `ccscriptctl cheatsheet`) and captures quick roadmap notes (`ccscriptctl roadmap add feat|todo|backlog|bug <text>`).
+- `bin/ccscriptctl` — small terminal helper: opens the project's roadmap / cheat-sheet in your editor (`ccscriptctl roadmap open` · `ccscriptctl cheatsheet`), captures quick roadmap notes (`ccscriptctl roadmap add feat|todo|backlog|bug <text>`), and prints the roadmap (`ccscriptctl roadmap view [all|feat|todo|backlog|bug]`).
