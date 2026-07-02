@@ -30,6 +30,8 @@ Commands:
                             (fixes gaps and old "- [ ]" bullets)
   roadmap prune             Remove completed ("[x]") items, then renumber
   cheatsheet                Open .claude/ccharness/cheatsheet.md in your editor
+  architecture open         Open docs/architecture/model.c4 (the LikeC4 model) in your editor
+  architecture list         Print the docs/architecture/ tree — every architecture doc
   help                      Show this help
 
 Files open in your OS default app (open / xdg-open) and the command returns at
@@ -406,10 +408,60 @@ cmd_roadmap() {
   esac
 }
 
+# Print docs/architecture/ as an indented tree (folders end with "/"). Depth is
+# counted in pure bash so this needs no extra tools beyond find + sort.
+architecture_list_tree() {
+  local root="$1" p rel rest depth indent name
+  printf '%s/\n' "${root##*/}"
+  find "$root" -mindepth 1 | LC_ALL=C sort | while IFS= read -r p; do
+    rel="${p#"$root"/}"
+    depth=0; rest="$rel"
+    while [ "$rest" != "${rest#*/}" ]; do depth=$((depth + 1)); rest="${rest#*/}"; done
+    indent="$(printf '%*s' "$(( (depth + 1) * 2 ))" '')"
+    name="${p##*/}"
+    [ -d "$p" ] && name="$name/"
+    printf '%s%s\n' "$indent" "$name"
+  done
+}
+
+# The architect skill saves diagrams under docs/architecture/ at the project root
+# (the dir holding .claude/ccharness). The LikeC4 model has a canonical path so
+# `open` always knows where to look.
+cmd_architecture() {
+  local sub="${1:-open}" ccdir root archdir
+  ccdir="$(require_ccharness /architect)"
+  root="${ccdir%/.claude/ccharness}"
+  archdir="$root/docs/architecture"
+  case "$sub" in
+    open)
+      require_file "$archdir/model.c4" /architect
+      open_in_editor "$archdir/model.c4"
+      ;;
+    list)
+      if [ ! -d "$archdir" ]; then
+        echo "ccscriptctl: $archdir does not exist yet." >&2
+        echo "Run /architect to create it." >&2
+        exit 1
+      fi
+      architecture_list_tree "$archdir"
+      ;;
+    *)
+      echo "ccscriptctl: unknown architecture subcommand '$sub' — use 'open' or 'list'." >&2
+      echo >&2
+      usage >&2
+      exit 2
+      ;;
+  esac
+}
+
 case "${1:-help}" in
   roadmap)
     shift
     cmd_roadmap "$@"
+    ;;
+  architecture)
+    shift
+    cmd_architecture "$@"
     ;;
   cheatsheet)
     ccdir="$(require_ccharness /cheatsheet-management)"

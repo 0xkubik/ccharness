@@ -78,6 +78,8 @@ ccscriptctl roadmap drop <kind> <n>    # remove item <n> from that section, then
 ccscriptctl roadmap renumber           # renumber every section's items to 1..N
 ccscriptctl roadmap prune              # drop completed ("[x]") items, then renumber
 ccscriptctl cheatsheet                 # open .claude/ccharness/cheatsheet.md
+ccscriptctl architecture open          # open docs/architecture/model.c4 (the LikeC4 model)
+ccscriptctl architecture list          # print the docs/architecture/ tree
 ```
 
 `roadmap add` appends a numbered item `N. [ ] <text>` under the matching section of `roadmap.md` without
@@ -186,4 +188,4 @@ Beyond the marketplace set, `/cc-init` also **offers** two external MCP tools it
 - `skills/how-to-do/SKILL.md` — the decision loop (four proposers → synthesis).
 - `skills/do/SKILL.md` — the gated executor: builds + smoke-checks, then hands off (the brains).
 - `skills/refactor-review-test/SKILL.md` — the autonomous hardener (safety-net → refactor → review → full tests → commit); `/do`'s always-on tail, also standalone.
-- `bin/ccscriptctl` — small terminal helper: opens the project's roadmap / cheat-sheet in your editor (`ccscriptctl roadmap open` · `ccscriptctl cheatsheet`), captures quick roadmap notes (`ccscriptctl roadmap add feat|todo|backlog|bug <text>`), prints the roadmap (`ccscriptctl roadmap view [all|feat|todo|backlog|bug]`), ticks or removes items by number (`ccscriptctl roadmap done|drop <kind> <n>`), and tidies it (`ccscriptctl roadmap renumber` · `ccscriptctl roadmap prune`).
+- `bin/ccscriptctl` — small terminal helper: opens the project's roadmap / cheat-sheet in your editor (`ccscriptctl roadmap open` · `ccscriptctl cheatsheet`), captures quick roadmap notes (`ccscriptctl roadmap add feat|todo|backlog|bug <text>`), prints the roadmap (`ccscriptctl roadmap view [all|feat|todo|backlog|bug]`), ticks or removes items by number (`ccscriptctl roadmap done|drop <kind> <n>`), and tidies it (`ccscriptctl roadmap renumber` · `ccscriptctl roadmap prune`); also opens the architect's LikeC4 model (`ccscriptctl architecture open`) and prints the `docs/architecture/` tree (`ccscriptctl architecture list`).

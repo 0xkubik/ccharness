@@ -103,6 +103,50 @@ class TestCcfunnelBin(unittest.TestCase):
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertEqual(self.opened.read_text(), str(self.ccdir / "cheatsheet.md"))
 
+    def _make_arch(self):
+        arch = self.proj / "docs" / "architecture"
+        arch.mkdir(parents=True)
+        return arch
+
+    def test_opens_architecture_model(self):
+        arch = self._make_arch()
+        (arch / "model.c4").write_text("model {}\n")
+        r = self.run_bin("architecture", "open")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(self.opened.read_text(), str(arch / "model.c4"))
+
+    def test_bare_architecture_defaults_to_open(self):
+        arch = self._make_arch()
+        (arch / "model.c4").write_text("model {}\n")
+        r = self.run_bin("architecture")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertEqual(self.opened.read_text(), str(arch / "model.c4"))
+
+    def test_architecture_open_missing_model_exits_1(self):
+        r = self.run_bin("architecture", "open")
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("/architect", r.stderr)
+        self.assertFalse(self.opened.exists(), "missing model opened an editor")
+
+    def test_architecture_list_prints_tree(self):
+        arch = self._make_arch()
+        (arch / "api").mkdir()
+        (arch / "model.c4").write_text("model {}\n")
+        (arch / "api" / "flow.md").write_text("```mermaid\n```\n")
+        r = self.run_bin("architecture", "list")
+        self.assertEqual(r.returncode, 0, r.stderr)
+        for token in ("architecture/", "model.c4", "api/", "flow.md"):
+            self.assertIn(token, r.stdout)
+
+    def test_architecture_list_missing_dir_exits_1(self):
+        r = self.run_bin("architecture", "list")
+        self.assertEqual(r.returncode, 1)
+        self.assertIn("/architect", r.stderr)
+
+    def test_architecture_unknown_subcommand_exits_2(self):
+        r = self.run_bin("architecture", "bogus")
+        self.assertEqual(r.returncode, 2)
+
     def test_walks_up_from_subdir(self):
         deep = self.proj / "a" / "b" / "c"
         deep.mkdir(parents=True)

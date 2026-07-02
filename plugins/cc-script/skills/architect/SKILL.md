@@ -48,7 +48,10 @@ skill. Nothing else from the repo — no source files.
 5. **Produce the diagrams.** Keep text to connective tissue and rationale — what each picture shows
    and why the shape is what it is. No prose walls.
 6. **Iterate.** Take the user's feedback and redraw. The design converges through the conversation.
-7. **Save** the output to `docs/architecture/`.
+7. **Save.** Write the LikeC4 model to the canonical path **`docs/architecture/model.c4`** (so
+   `ccscriptctl architecture open` always finds it), and put any Mermaid (`.md`) and Excalidraw
+   files alongside it in `docs/architecture/`. `ccscriptctl architecture list` prints the folder as
+   a tree.
 
 ---
 
@@ -114,8 +117,9 @@ architect is the **optional design step** in the script: set the goal (`/roadmap
 user-led — don't invent a system unprompted · `3` Model in LikeC4 (the collapsible backbone, system
 → code) · Mermaid for leaf detail that can't fold in · Excalidraw for freeform sketches · `4` Load
 the matching cc-instruments reference skill BEFORE drawing · `5` Produce diagrams, text as connective
-tissue only · `6` Iterate on feedback · `7` Save to `docs/architecture/`. No cc-instruments → degrade
-to Mermaid. Folder tree = a projection of the LikeC4 module nesting, not a hand-kept artifact.
+tissue only · `6` Iterate on feedback · `7` Save the model to `docs/architecture/model.c4` (canonical;
+`ccscriptctl architecture open`/`list`), other files alongside. No cc-instruments → degrade to
+Mermaid. Folder tree = a projection of the LikeC4 module nesting, not a hand-kept artifact.
 
 **Invariant:** diagrams first, never read the project's code, one conversational user-led mode;
 LikeC4 is the single collapsible backbone (down to code), Mermaid only for leaf detail; shape the
