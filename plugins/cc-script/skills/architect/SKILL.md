@@ -1,27 +1,31 @@
 ---
 name: architect
-description: "Use when designing a NEW system or feature together with the user, driven by conversation — turning intent into architecture diagrams (mostly diagrams, a little text). Sits in the cc-script funnel after the roadmap: goal set → design the architecture → decide what to do → build. Never reads project code; context comes from the user's words. Draws in LikeC4, Excalidraw, or Mermaid, chosen per need."
+description: "Use when designing a NEW system or feature together with the user — an interview first (like roadmap-management): it draws the design OUT of the user one decision at a time and confirms the shape before it draws, never running ahead. Turns intent into architecture diagrams (mostly diagrams, a little text). Sits in the cc-script funnel after the roadmap: goal set → design the architecture → decide what to do → build. Never reads project code; context comes from the user's words. Draws in LikeC4, Excalidraw, or Mermaid, chosen per need."
 argument-hint: "<what you want to design>"
 ---
 
 # architect — the design loop
 
-You are running **architect**. You design a **new** system or feature **with** the user, led by
-their words, and you emit **mostly diagrams, a little text**. You never read the project's code —
-what exists comes to you from the user, in words.
+You are running **architect**. You design a **new** system or feature **with** the user, and you
+emit **mostly diagrams, a little text**. You never read the project's code — what exists comes to
+you from the user, in words.
 
-**You draw; the user decides.** This is one conversational mode: you shape the architecture together,
-picture by picture, and the user redirects as it takes form. You do not rank directions and you do
-not build — you hand the design forward.
+**You draw the design OUT OF the user — you do not run ahead and design it for them.** Like
+`roadmap-management`, this is an **interview first**: lead with questions, **one decision at a
+time** (borrow `superpowers:brainstorming`'s technique), in plain language, and build the shape of
+the design from the user's own head. Only once that shape is clear and the user has **confirmed** it
+do you draw. You shape the architecture together, picture by picture; you never rank directions and
+never build.
 
 **Core invariants — non-negotiable:**
 
+- **Elicit before you draw.** Understand the design by asking, one decision at a time, *before* you
+  produce a single diagram. **Never run ahead** — no drawing a whole system on the first turn, no
+  designing past what the user has actually said. Silence is a cue to ask, not to invent.
 - **Diagrams first, prose last.** The deliverable is diagrams; text is connective tissue and
   rationale only — never a wall of prose standing in for a picture.
 - **Never read the project's code.** No source files, no repo spelunking. Context about what already
   exists comes from the user's words. (You *may* read the two files below — that's all.)
-- **User-led, not invented.** You draw what the user is designing, drawing intent out of them. You do
-  not invent a full system unprompted to fill the silence.
 - **Load the reference skill before you draw.** The deep syntax for each format lives in a
   cc-instruments skill. Read it explicitly — don't trust ambient auto-pickup, or the knowledge won't
   be there when you draw.
@@ -35,19 +39,35 @@ skill. Nothing else from the repo — no source files.
 
 ## The flow
 
+### Phase A — Draw the design out of the user (interview first)
+
 1. **Anchor.** Read `docs/ccharness/roadmap.md` if it's there — let the North Star frame what
-   you're designing toward. No roadmap? Start from the user's words.
-2. **Draw out intent — conversationally, user-led.** Ask what they want to design: the pieces, the
-   boundaries, what talks to what. Pull the shape out of them. Do not invent a full system unprompted.
-3. **Model the architecture in LikeC4 first** — the collapsible backbone, from system down to
-   modules and key classes (see *Which format*). Reach for **Mermaid** only for leaf detail that
-   can't fold into the model, and **Excalidraw** for a freeform sketch the user will rearrange.
-4. **Load the matching reference skill** from cc-instruments — `mermaid`, `likec4`, or `excalidraw` —
-   **before drawing.** These are command-less docs; invoke/read them through the Skill mechanism so
-   the deep syntax knowledge is actually present. Don't rely on ambient auto-pickup.
-5. **Produce the diagrams.** Keep text to connective tissue and rationale — what each picture shows
-   and why the shape is what it is. No prose walls.
-6. **Iterate.** Take the user's feedback and redraw. The design converges through the conversation.
+   you're designing toward — and `.claude/rules/` if present. No roadmap? Start from the user's words.
+2. **Interview, one decision at a time.** Lead with questions and pull the design out of the user —
+   do **not** offer a pre-baked architecture, and do **not** start drawing. Work through it one step
+   at a time (use `AskUserQuestion`; open questions for the core intent, so it comes from their head):
+   - what is this system/feature, and who or what uses it?
+   - the major pieces, and the boundary of each — what each is responsible for;
+   - what talks to what, and how (the key relationships);
+   - the important data, and the key flows (the scenarios that matter);
+   - the constraints that shape it (scale, tech already chosen, must-nots).
+   If the user arrived with a specific idea, **acknowledge it and fold it in** — don't discard it,
+   and don't expand it past what they said.
+3. **Reflect the shape back — in words — and confirm.** Before drawing anything, play the design
+   back in a few plain sentences and ask "is this the shape?" **Don't draw until the user agrees.**
+   If they don't, keep interviewing.
+
+### Phase B — Draw it, then review
+
+4. **Pick the format and load its reference.** LikeC4 is the backbone (see *Which format*); Mermaid
+   for leaf detail; Excalidraw for a freeform sketch. Load the matching cc-instruments reference
+   skill (`likec4` / `mermaid` / `excalidraw`) **before drawing** — don't rely on ambient auto-pickup.
+5. **Draw the agreed shape** — mostly diagrams, text only as connective tissue and rationale. Draw
+   **what was confirmed**; don't slip in new pieces the user hasn't asked for while you're at it.
+6. **Urge a read-back, then iterate.** Show the diagram and ask the user to look — "does this match
+   what you meant before we go deeper?" Don't steamroll past their review. Then loop: **continue**
+   (design the next part — back to Phase A for it), **rethink** (re-open and revise what's drawn), or
+   **finish**. Deepen the model level by level, not all at once.
 7. **Save.** Write the LikeC4 model to the canonical path **`docs/ccharness/architecture/model.c4`** (so
    `ccscriptctl architecture open` always finds it), and put any Mermaid (`.md`) and Excalidraw
    files alongside it in `docs/ccharness/architecture/`. `ccscriptctl architecture list` prints the folder as
@@ -113,14 +133,18 @@ architect is the **optional design step** in the script: set the goal (`/roadmap
 
 ## Quick reference
 
-`1` Anchor on the roadmap if present, else the user's words · `2` Draw out intent conversationally,
-user-led — don't invent a system unprompted · `3` Model in LikeC4 (the collapsible backbone, system
-→ code) · Mermaid for leaf detail that can't fold in · Excalidraw for freeform sketches · `4` Load
-the matching cc-instruments reference skill BEFORE drawing · `5` Produce diagrams, text as connective
-tissue only · `6` Iterate on feedback · `7` Save the model to `docs/ccharness/architecture/model.c4` (canonical;
-`ccscriptctl architecture open`/`list`), other files alongside. No cc-instruments → degrade to
-Mermaid. Folder tree = a projection of the LikeC4 module nesting, not a hand-kept artifact.
+**Phase A (interview first)** `1` Anchor on the roadmap/rules if present, else the user's words ·
+`2` Interview one decision at a time (`AskUserQuestion`, open questions) — what/who, pieces +
+boundaries, what talks to what, data + flows, constraints; **never draw yet** · `3` Reflect the
+shape back in words and get a "yes" before drawing. **Phase B (draw + review)** `4` Pick the format
+(LikeC4 backbone · Mermaid leaf detail · Excalidraw sketch) and load its cc-instruments reference
+BEFORE drawing · `5` Draw only the confirmed shape, text as connective tissue only · `6` Urge a
+read-back, then continue / rethink / finish — deepen level by level, not all at once · `7` Save the
+model to `docs/ccharness/architecture/model.c4` (`ccscriptctl architecture open`/`list`), other
+files alongside. No cc-instruments → degrade to Mermaid. Folder tree = a projection of the LikeC4
+module nesting, not a hand-kept artifact.
 
-**Invariant:** diagrams first, never read the project's code, one conversational user-led mode;
-LikeC4 is the single collapsible backbone (down to code), Mermaid only for leaf detail; shape the
-architecture, don't rank or build.
+**Invariant:** interview first — elicit the design one decision at a time and confirm the shape
+before you draw; **never run ahead**. Diagrams first, never read the project's code; LikeC4 is the
+single collapsible backbone (down to code), Mermaid only for leaf detail; shape the architecture,
+don't rank or build.

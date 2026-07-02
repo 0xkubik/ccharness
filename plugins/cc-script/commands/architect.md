@@ -7,10 +7,12 @@ Invoke the `architect` skill with what you want to design:
 
 > $ARGUMENTS
 
-The architect designs a **new** system or feature **with you**, led by your words, and emits
-**mostly diagrams, a little text**. It sits in the script after `/roadmap-management`: set the goal
-→ **design the architecture** → `/what-to-do` → `/do`. It **never reads your code** — bring the
-context in words. It models the architecture in **LikeC4** as one collapsible model — from the
+The architect designs a **new** system or feature **with you** and emits **mostly diagrams, a little
+text**. Like `/roadmap-management`, it **interviews you first** — one decision at a time — and draws
+the design out of you, confirming the shape before it draws a thing; it never runs ahead. It sits in
+the script after `/roadmap-management`: set the goal → **design the architecture** → `/what-to-do` →
+`/do`. It **never reads your code** — bring the context in words. It models the architecture in
+**LikeC4** as one collapsible model — from the
 system down to modules and key classes — and reaches for **Mermaid** only for leaf detail that
 can't fold in (a class's fields, a call sequence, a DB schema) and **Excalidraw** for freeform
 sketches, drawing on cc-instruments' diagram references. Diagrams are saved to `docs/ccharness/architecture/`.
