@@ -70,7 +70,7 @@ ccscriptctl roadmap add backlog <text> # note an idea   → "## Backlog" section
 ccscriptctl roadmap add bug <text>     # note a bug     → "## Bugs" section
 ccscriptctl roadmap view [what]        # print the roadmap (all | feat|todo|backlog|bug)
 ccscriptctl roadmap renumber           # renumber every section's items to 1..N
-ccscriptctl roadmap prune              # drop completed ("[x]") items
+ccscriptctl roadmap prune              # drop completed ("[x]") items, then renumber
 ccscriptctl cheatsheet                 # open .claude/ccharness/cheatsheet.md
 ```
 
@@ -86,8 +86,8 @@ joins the list in order; TODO / Backlog / Bugs are a shell inbox to triage onto 
 
 `roadmap renumber` rewrites every section's items to a contiguous `1..N` in document order — closing
 gaps and converting any old `- [ ]` bullets to numbered items (checkbox state preserved). `roadmap
-prune` removes the completed (`[x]`) items from every section; run `renumber` after to close the gaps
-it leaves. Both leave the North Star block untouched.
+prune` removes the completed (`[x]`) items from every section and then renumbers automatically, so the
+list stays tidy. Both leave the North Star block untouched.
 
 It finds `.claude/ccharness/` in the current directory or any parent. `open` hands the file to your
 OS default app (`open` / `xdg-open`) and returns immediately — it never blocks, even if `$EDITOR` is a

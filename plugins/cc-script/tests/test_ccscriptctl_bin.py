@@ -374,10 +374,10 @@ class TestCcfunnelBin(unittest.TestCase):
         self.assertIn("pending", text)
         self.assertIn("- **In production?** no", text)  # not a checkbox item
 
-    def test_prune_then_renumber_is_clean(self):
+    def test_prune_auto_renumbers(self):
+        # prune closes the gaps it leaves by renumbering — no second command needed.
         self._seed_messy()
         self.run_bin("roadmap", "prune")
-        self.run_bin("roadmap", "renumber")
         self.assertEqual(
             self.run_bin("roadmap", "view", "feat").stdout,
             "## Features\n\n1. [ ] old bullet\n2. [ ] gappy\n",

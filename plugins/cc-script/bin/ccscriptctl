@@ -209,8 +209,8 @@ roadmap_renumber() {
   mv "$tmp" "$file"
 }
 
-# Remove completed ("[x]") items from every managed section. Numbers are left as
-# they are — run `renumber` after to close the gaps. Prints how many were removed.
+# Remove completed ("[x]") items from every managed section, leaving the numbers
+# as they are (the caller renumbers afterward). Prints how many were removed.
 roadmap_prune() {
   local file="$1" tmp before after
   tmp="$(mktemp)"
@@ -299,8 +299,8 @@ cmd_roadmap() {
       file="$ccdir/roadmap.md"
       require_file "$file" /roadmap-management
       removed="$(roadmap_prune "$file")"
-      echo "Pruned $removed completed item(s) from $file."
-      [ "$removed" -gt 0 ] && echo "Run 'ccscriptctl roadmap renumber' to close the gaps."
+      roadmap_renumber "$file"
+      echo "Pruned $removed completed item(s) from $file and renumbered."
       ;;
     "")
       echo "ccscriptctl: 'roadmap' needs a subcommand — 'open', 'add', 'view', 'renumber', or 'prune'." >&2
