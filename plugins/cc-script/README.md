@@ -77,8 +77,10 @@ into the same `## Features` route that `/roadmap-management` manages, so a captu
 the list in order; TODO / Backlog / Bugs are a shell inbox to triage onto the route later with
 `/roadmap-management`.
 
-It finds `.claude/ccharness/` in the current directory or any parent, and opens files with
-`$VISUAL`, else `$EDITOR`, else your OS default app (`open` / `xdg-open`).
+It finds `.claude/ccharness/` in the current directory or any parent. `open` hands the file to your
+OS default app (`open` / `xdg-open`) and returns immediately — it never blocks, even if `$EDITOR` is a
+waiting editor like `code --wait`. On a machine with no desktop opener it falls back to `$VISUAL` /
+`$EDITOR`, launched detached.
 
 **You don't symlink it** — once cc-script is installed, `ccscriptctl` is already on your PATH. Claude
 Code adds every installed plugin's `bin/` to PATH, exactly like `ccconductorctl` (cc-conductor) and

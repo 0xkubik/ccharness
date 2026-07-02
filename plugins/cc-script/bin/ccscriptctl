@@ -23,9 +23,10 @@ Commands:
   cheatsheet                Open .claude/ccharness/cheatsheet.md in your editor
   help                      Show this help
 
-Files open with $VISUAL, else $EDITOR, else your OS default app (open /
-xdg-open). ccscriptctl finds .claude/ccharness/ in the current directory or any
-parent, so it works from anywhere inside a project.
+Files open in your OS default app (open / xdg-open) and the command returns at
+once; with no opener it falls back to $VISUAL / $EDITOR. ccscriptctl finds
+.claude/ccharness/ in the current directory or any parent, so it works from
+anywhere inside a project.
 EOF
 }
 
@@ -63,19 +64,24 @@ require_file() {
   fi
 }
 
+# "Open it and get out of the way." Prefer the desktop opener (open / xdg-open) —
+# it hands the file to the default app and returns at once, so ccscriptctl never
+# blocks. $VISUAL/$EDITOR are the headless/terminal fallback, launched detached so
+# a waiting editor (e.g. `code --wait`) can't hang the command either.
 open_in_editor() {
   local file="$1"
-  if [ -n "${VISUAL:-}" ]; then
-    exec ${VISUAL} "$file"
-  elif [ -n "${EDITOR:-}" ]; then
-    exec ${EDITOR} "$file"
-  elif command -v open >/dev/null 2>&1; then
+  if command -v open >/dev/null 2>&1; then
     exec open "$file"
   elif command -v xdg-open >/dev/null 2>&1; then
     exec xdg-open "$file"
+  elif [ -n "${VISUAL:-}" ]; then
+    nohup ${VISUAL} "$file" >/dev/null 2>&1 &
+  elif [ -n "${EDITOR:-}" ]; then
+    nohup ${EDITOR} "$file" >/dev/null 2>&1 &
+  else
+    echo "ccscriptctl: no way to open '$file' — install a desktop opener (open / xdg-open) or set \$EDITOR/\$VISUAL." >&2
+    exit 1
   fi
-  echo "ccscriptctl: no editor found — set \$EDITOR or \$VISUAL." >&2
-  exit 1
 }
 
 # The roadmap's sections keep a fixed order; a missing one is created in its slot.

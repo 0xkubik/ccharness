@@ -1,11 +1,21 @@
 import os
+import shutil
 import subprocess
 import tempfile
+import time
 import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 BIN = ROOT / "bin" / "ccscriptctl"
+
+# Tools the script itself shells out to — symlinked into a curated PATH when a
+# test needs to simulate a machine with no desktop opener (open / xdg-open).
+SCRIPT_DEPS = ["bash", "dirname", "grep", "mktemp", "awk", "mv", "tail", "cat", "nohup"]
+
+
+def _marker_script(marker):
+    return '#!/usr/bin/env bash\nprintf "%s" "$1" > ' f'"{marker}"\n'
 
 
 class TestCcfunnelBin(unittest.TestCase):
@@ -17,23 +27,44 @@ class TestCcfunnelBin(unittest.TestCase):
         self.ccdir.mkdir(parents=True)
         (self.ccdir / "roadmap.md").write_text("# Roadmap\n")
         (self.ccdir / "cheatsheet.md").write_text("# Cheats\n")
-        # A fake editor that records the path it was told to open.
+        # `open` and `$EDITOR` each record the path they were told to open, into
+        # their own marker file, so a test can tell which path the script took.
         self.opened = self.base / "opened"
+        self.edited = self.base / "edited"
+        self.fakebin = self.base / "fakebin"
+        self.fakebin.mkdir()
+        self.fake_open = self.fakebin / "open"
+        self.fake_open.write_text(_marker_script(self.opened))
+        self.fake_open.chmod(0o755)
         self.fake_editor = self.base / "fake_editor"
-        self.fake_editor.write_text(
-            '#!/usr/bin/env bash\nprintf "%s" "$1" > ' f'"{self.opened}"\n'
-        )
+        self.fake_editor.write_text(_marker_script(self.edited))
         self.fake_editor.chmod(0o755)
 
     def tearDown(self):
         self.tmp.cleanup()
 
-    def run_bin(self, *args, cwd=None, env_extra=None):
+    def _no_opener_path(self):
+        # A PATH with the script's deps but no `open` / `xdg-open`, so the
+        # $VISUAL/$EDITOR fallback branch is exercised.
+        d = self.base / "coreutils"
+        if not d.exists():
+            d.mkdir()
+            for tool in SCRIPT_DEPS:
+                real = shutil.which(tool)
+                if real:
+                    (d / tool).symlink_to(real)
+        return str(d)
+
+    def run_bin(self, *args, cwd=None, env_extra=None, no_opener=False):
         target_cwd = cwd or self.proj
         env = dict(os.environ)
         env["EDITOR"] = str(self.fake_editor)
         env["PWD"] = str(target_cwd)
         env.pop("VISUAL", None)
+        if no_opener:
+            env["PATH"] = self._no_opener_path()
+        else:
+            env["PATH"] = str(self.fakebin) + os.pathsep + env.get("PATH", "")
         if env_extra:
             env.update(env_extra)
         return subprocess.run(
@@ -43,6 +74,14 @@ class TestCcfunnelBin(unittest.TestCase):
             capture_output=True,
             text=True,
         )
+
+    def wait_for(self, path, timeout=4.0):
+        deadline = time.time() + timeout
+        while time.time() < deadline:
+            if Path(path).exists():
+                return True
+            time.sleep(0.02)
+        return False
 
     def test_bin_exists_and_executable(self):
         self.assertTrue(BIN.exists(), "bin/ccscriptctl missing")
@@ -71,15 +110,47 @@ class TestCcfunnelBin(unittest.TestCase):
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertEqual(self.opened.read_text(), str(self.ccdir / "roadmap.md"))
 
-    def test_visual_takes_priority_over_editor(self):
-        visual = self.base / "fake_visual"
-        marker = self.base / "vis_opened"
-        visual.write_text('#!/usr/bin/env bash\nprintf "%s" "$1" > ' f'"{marker}"\n')
-        visual.chmod(0o755)
-        r = self.run_bin("roadmap", "open", env_extra={"VISUAL": str(visual)})
+    def test_opener_returns_despite_hanging_editor(self):
+        # The bug: a blocking $EDITOR (e.g. `code --wait`) made `open` hang. The
+        # desktop opener must win and the command must return, not wait.
+        hang = self.base / "hang_editor"
+        hang.write_text("#!/usr/bin/env bash\nsleep 30\n")
+        hang.chmod(0o755)
+        r = subprocess.run(
+            [str(BIN), "roadmap", "open"],
+            cwd=str(self.proj),
+            env={
+                **os.environ,
+                "EDITOR": str(hang),
+                "VISUAL": str(hang),
+                "PWD": str(self.proj),
+                "PATH": str(self.fakebin) + os.pathsep + os.environ.get("PATH", ""),
+            },
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
         self.assertEqual(r.returncode, 0, r.stderr)
-        self.assertEqual(marker.read_text(), str(self.ccdir / "roadmap.md"))
-        self.assertFalse(self.opened.exists(), "$EDITOR ran even though $VISUAL was set")
+        self.assertEqual(self.opened.read_text(), str(self.ccdir / "roadmap.md"))
+        self.assertFalse(self.edited.exists(), "blocking editor ran despite an opener")
+
+    def test_fallback_to_editor_without_opener(self):
+        # No desktop opener on PATH → fall back to $EDITOR, launched detached.
+        r = self.run_bin("roadmap", "open", no_opener=True)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertTrue(self.wait_for(self.edited), "editor fallback never ran")
+        self.assertEqual(self.edited.read_text(), str(self.ccdir / "roadmap.md"))
+
+    def test_visual_beats_editor_without_opener(self):
+        vis = self.base / "fake_visual"
+        vismark = self.base / "vis_opened"
+        vis.write_text(_marker_script(vismark))
+        vis.chmod(0o755)
+        r = self.run_bin("roadmap", "open", no_opener=True, env_extra={"VISUAL": str(vis)})
+        self.assertEqual(r.returncode, 0, r.stderr)
+        self.assertTrue(self.wait_for(vismark), "$VISUAL fallback never ran")
+        self.assertEqual(vismark.read_text(), str(self.ccdir / "roadmap.md"))
+        self.assertFalse(self.edited.exists(), "$EDITOR ran even though $VISUAL was set")
 
     def test_missing_file_exits_1_with_hint(self):
         (self.ccdir / "cheatsheet.md").unlink()
