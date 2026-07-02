@@ -9,12 +9,15 @@ A **product harness** for Claude Code: a `ground → diverge → decide → buil
 product from "what's the goal?" all the way to committed code — and refuses to skip the thinking.
 
 ```
-/roadmap-management  ──►  /what-to-do  ──►  /how-to-do  ──►  /do     (/slap = reset · /crux = unwind a pain — both from cc-instruments)
- GROUND          DIVERGE         DECIDE          BUILD
- set the goal    rank where      work out HOW    take one task to
- (North Star)    it could go     to build the    done: built,
- + the roadmap   next (a menu)   pick (one way)  verified, committed
+/roadmap-management  ──►  /architect  ──►  /what-to-do  ──►  /how-to-do  ──►  /do     (/slap = reset · /crux = unwind a pain — both from cc-instruments)
+ GROUND          DESIGN          DIVERGE         DECIDE          BUILD
+ set the goal    design the      rank where      work out HOW    take one task to
+ (North Star)    architecture    it could go     to build the    done: built,
+ + the roadmap   (diagrams)      next (a menu)   pick (one way)  verified, committed
 ```
+
+`/architect` is the optional design step — it turns intent into architecture diagrams (LikeC4 /
+Excalidraw / Mermaid) before you decide what to build.
 
 The script itself is plain Markdown + JSON (instructions for Claude Code — no app code, no build),
 plus one small terminal helper, [`ccscriptctl`](#ccscriptctl--terminal-helper), for chores best done from a shell.
@@ -47,6 +50,7 @@ This captures the product's *North Star* (the goal) and the ordered feature list
 | Command | What it does | When you reach for it |
 |---|---|---|
 | **`/roadmap-management`** | The **grounding loop** — the front door, and the roadmap's keeper across its life. Captures the product's *North Star* (goal-setting: vision · core problem · level) and a **flat, ordered list of features** to it — both saved to `.claude/ccharness/roadmap.md` (North Star at the top, features below, built top to bottom). Charters the roadmap the first run; re-run any time to rethink it freely or fold in one feature (`--force` writes that feature after one confirm). Every other command routes here when no North Star exists. | "Set the goal, then keep the roadmap honest." |
+| **`/architect <what>`** | The **design loop.** Designs a new system or feature **with you**, led by your words, into **architecture diagrams** (mostly diagrams, little text) — **LikeC4** for structured layered C4, **Excalidraw** for freeform sketches, **Mermaid** for quick/zero-install — saved to `docs/architecture/`. Never reads your code; you bring the context. Leans on cc-instruments' diagram references (falls back to Mermaid if it's absent). Optional step between the roadmap and `/what-to-do`. | "Design the architecture before deciding what to build." |
 | **`/what-to-do [theme]`** | The **direction loop.** Surveys a product and emits a **ranked menu** of where it could go next — across four moves: **add** (new features), **finish** (half-built work), **rebuild** (redo better), **refactor** (tech debt) — each scored against the product's goal, and **biased toward the roadmap's current frontier** (the next unbuilt feature) if one exists. Requires the *North Star* — no North Star → routes you to `/roadmap-management`. Runs with or without a prompt. Decides nothing — you pick. | "Where should this product go next?" |
 | **`/how-to-do <decision>`** | The **decision loop.** Works out HOW to build a picked direction (or resolves a standalone technical fork) — four opposed proposers (MVP / Final / Conventional / Contrarian) argue different ways to build it → cross-examination → synthesis into ONE buildable approach. It decides the *how*, not *whether* (the pick is what-to-do's); a pick that looks wrong it flags rather than overrides. Depth scales to stakes. | "How to build it — and why?" |
 | **`/do <task>`** | The **strict executor.** Runs one well-scoped task through a gated pipeline (below) to a **smoke-checked** finish, then **hands off to `/refactor-review-test`**. Requires the *North Star* (routes to `/roadmap-management` if missing). Refuses fork-laden or ambiguous tasks instead of guessing — a technical fork goes back to `/how-to-do`, a non-technical (business) one it refuses outright, pure ambiguity to brainstorming; never declares done with work open; **never commits** (that's refactor-review-test's). | "Build this concrete task." |

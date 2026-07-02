@@ -16,7 +16,7 @@
     },
     {
       "name": "cc-script",
-      "description": "The product script: /roadmap-management grounds the North Star and charts a roadmap, /what-to-do ranks where to go next, /how-to-do decides one fork, /do builds one task to a smoke-checked finish, /refactor-review-test hardens it and commits — a ground -> diverge -> decide -> build pipeline. Depends on cc-instruments.",
+      "description": "The product script: /roadmap-management grounds the North Star and charts a roadmap, /architect designs the architecture into diagrams (LikeC4 / Excalidraw / Mermaid), /what-to-do ranks where to go next, /how-to-do decides one fork, /do builds one task to a smoke-checked finish, /refactor-review-test hardens it and commits — a ground -> diverge -> decide -> build pipeline. Depends on cc-instruments.",
       "author": { "name": "kubik" },
       "category": "workflow",
       "source": "./plugins/cc-script"
