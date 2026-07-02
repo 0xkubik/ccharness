@@ -25,7 +25,7 @@ and end. The next pass — minutes or hours later — re-reads reality and advan
 
 You keep **no product file and no contract file.** Everything you need is already in the repos:
 
-- what each module wants next → its roadmap (`.claude/ccharness/roadmap.md` — North Star + frontier),
+- what each module wants next → its roadmap (`docs/ccharness/roadmap.md` — North Star + frontier),
 - what's already built → its committed code / git history,
 - who's working on what right now → its live musicians.
 
@@ -40,7 +40,7 @@ never by maintaining a side file.
 1. DISCOVER the product's modules — the immediate subfolders that are git repos:
      for d in */; do [ -e "$d/.git" ] && echo "$d"; done    (.git as a dir OR a file = a module)
    No modules → report "no repositories under here" and stop.
-2. READ each module: its roadmap (.claude/ccharness/roadmap.md → North Star + frontier) and its live
+2. READ each module: its roadmap (docs/ccharness/roadmap.md → North Star + frontier) and its live
    musicians — `"${CLAUDE_PLUGIN_ROOT}/bin/ccconductorctl" musician --json` (status, what was asked, task
    progress, outcome). This is what each module wants next and what is already in flight.
 3. THINK — the part that makes you a conductor (see "The thinking"):

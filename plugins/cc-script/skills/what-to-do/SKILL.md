@@ -47,7 +47,7 @@ usually spans more than one — the empty-lane valve keeps any barren lane hones
 ## Phase 0 — Ground (the gate: North Star, then roadmap)
 
 **North Star detection.** Look for a `## Product North Star` heading at the top of
-`.claude/ccharness/roadmap.md`. The **heading** is the stable contract — its marker comment /
+`docs/ccharness/roadmap.md`. The **heading** is the stable contract — its marker comment /
 parenthetical owner may read `what-to-do` or `roadmap-management`, both count.
 
 | State       | Path                                                                                                                                                                                                                                                                      |
@@ -55,7 +55,7 @@ parenthetical owner may read `what-to-do` or `roadmap-management`, both count.
 | **Absent**  | **Not grounded — route to `/roadmap-management` and stop.** Say _"No North Star yet — run `/roadmap-management` to set the goal, then re-issue this."_ If a prompt was given, tell the human it didn't run and to re-issue `/what-to-do <theme>` after — **never silently discard the prompt.** |
 | **Present** | **Read it = the goal.** A prompt (if given) scopes the run to a theme/area; no prompt = full survey. Then read the roadmap (below) and proceed to Phase 1.                                                                                                                |
 
-**Read the feature list.** The roadmap (`.claude/ccharness/roadmap.md`, located above) holds the North
+**Read the feature list.** The roadmap (`docs/ccharness/roadmap.md`, located above) holds the North
 Star at the top and the charted route in a `## Features` section below it. Derive the **frontier** = the
 **first unchecked `[ ]` box under `## Features`** (the list is flat and ordered; tracking is checkboxes
 only — no separate pointer). The `## TODO`, `## Backlog`, and `## Bugs` sections are a human capture
@@ -195,7 +195,7 @@ what-to-do's.
 
 ## Quick reference
 
-`0` Ground — `## Product North Star` at the top of `.claude/ccharness/roadmap.md`? no → **route to `/roadmap-management`**, stop; yes → North Star = goal, route = the `## Features` section (**frontier** = the
+`0` Ground — `## Product North Star` at the top of `docs/ccharness/roadmap.md`? no → **route to `/roadmap-management`**, stop; yes → North Star = goal, route = the `## Features` section (**frontier** = the
 first unchecked `[ ]` there; TODO/Backlog/Bugs are capture, not the route) · `1` Survey — repo = where we are
 now; if roadmap, check whether the **frontier feature** is built (interactive: offer to check off ·
 under the musician: auto-mark) · `2` Fan-out — four lenses (ADD / FINISH / REBUILD / REFACTOR), parallel,

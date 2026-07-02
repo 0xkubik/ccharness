@@ -157,7 +157,7 @@ degraded.
 ## File placement
 
 Write `.c4` files. When the architect skill is driving the work, put them under
-`docs/architecture/`. Keep the model in one place so "one source of truth" stays true.
+`docs/ccharness/architecture/`. Keep the model in one place so "one source of truth" stays true.
 
 ---
 

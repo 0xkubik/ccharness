@@ -12,7 +12,7 @@ ccscriptctl — small helpers for the cc-script harness
 Usage: ccscriptctl <command>
 
 Commands:
-  roadmap open              Open .claude/ccharness/roadmap.md in your editor
+  roadmap open              Open docs/ccharness/roadmap.md in your editor
   roadmap add <kind> <text> Append a note to roadmap.md without opening it,
                             where <kind> is one of:
                               feat      → the "## Features" section (the route)
@@ -30,14 +30,14 @@ Commands:
                             (fixes gaps and old "- [ ]" bullets)
   roadmap prune             Remove completed ("[x]") items, then renumber
   cheatsheet                Open .claude/ccharness/cheatsheet.md in your editor
-  architecture open         Open docs/architecture/model.c4 (the LikeC4 model) in your editor
-  architecture list         Print the docs/architecture/ tree — every architecture doc
+  architecture open         Open docs/ccharness/architecture/model.c4 (the LikeC4 model) in your editor
+  architecture list         Print the docs/ccharness/architecture/ tree — every architecture doc
   help                      Show this help
 
 Files open in your OS default app (open / xdg-open) and the command returns at
-once; with no opener it falls back to $VISUAL / $EDITOR. ccscriptctl finds
-.claude/ccharness/ in the current directory or any parent, so it works from
-anywhere inside a project.
+once; with no opener it falls back to $VISUAL / $EDITOR. ccscriptctl finds the
+project (.claude/ccharness/ or docs/ccharness/) in the current directory or any
+parent, so it works from anywhere inside a project.
 EOF
 }
 
@@ -63,6 +63,38 @@ require_ccharness() {
     exit 1
   fi
   printf '%s\n' "$dir"
+}
+
+# Walk up to the project root — the ancestor holding .claude/ccharness/ (runtime
+# state) or docs/ccharness/ (the human-facing roadmap + architecture).
+find_root() {
+  local dir="$PWD"
+  while :; do
+    if [ -d "$dir/.claude/ccharness" ] || [ -d "$dir/docs/ccharness" ]; then
+      printf '%s\n' "$dir"
+      return 0
+    fi
+    [ "$dir" = "/" ] && return 1
+    dir="$(dirname "$dir")"
+  done
+}
+
+# Print the project root, or exit 1 with a hint to run the owning skill.
+require_root() {
+  local skill="$1" dir
+  if ! dir="$(find_root)"; then
+    echo "ccscriptctl: no project found (.claude/ccharness/ or docs/ccharness/) in '$PWD' or any parent." >&2
+    echo "Run $skill in your project first." >&2
+    exit 1
+  fi
+  printf '%s\n' "$dir"
+}
+
+# The roadmap lives in docs/ as human-facing documentation: docs/ccharness/roadmap.md.
+roadmap_path() {
+  local root
+  root="$(require_root /roadmap-management)"
+  printf '%s\n' "$root/docs/ccharness/roadmap.md"
 }
 
 # Exit 1 with a hint if the target file does not exist yet.
@@ -289,8 +321,7 @@ cmd_roadmap() {
   case "$sub" in
     open)
       local ccdir file
-      ccdir="$(require_ccharness /roadmap-management)"
-      file="$ccdir/roadmap.md"
+      file="$(roadmap_path)"
       require_file "$file" /roadmap-management
       open_in_editor "$file"
       ;;
@@ -313,8 +344,7 @@ cmd_roadmap() {
         exit 2
       fi
       local ccdir file
-      ccdir="$(require_ccharness /roadmap-management)"
-      file="$ccdir/roadmap.md"
+      file="$(roadmap_path)"
       require_file "$file" /roadmap-management
       local added
       added="$(roadmap_add_note "$section" "$text" "$file")"
@@ -334,8 +364,7 @@ cmd_roadmap() {
         *)       echo "ccscriptctl: unknown view '$kind' — use all, feat, todo, backlog, or bug." >&2; exit 2 ;;
       esac
       local ccdir file
-      ccdir="$(require_ccharness /roadmap-management)"
-      file="$ccdir/roadmap.md"
+      file="$(roadmap_path)"
       require_file "$file" /roadmap-management
       if [ -z "$section" ]; then
         cat -- "$file"
@@ -345,16 +374,14 @@ cmd_roadmap() {
       ;;
     renumber)
       local ccdir file
-      ccdir="$(require_ccharness /roadmap-management)"
-      file="$ccdir/roadmap.md"
+      file="$(roadmap_path)"
       require_file "$file" /roadmap-management
       roadmap_renumber "$file"
       echo "Renumbered every section in $file."
       ;;
     prune)
       local ccdir file removed
-      ccdir="$(require_ccharness /roadmap-management)"
-      file="$ccdir/roadmap.md"
+      file="$(roadmap_path)"
       require_file "$file" /roadmap-management
       removed="$(roadmap_prune "$file")"
       roadmap_renumber "$file"
@@ -372,8 +399,7 @@ cmd_roadmap() {
       case "$num" in
         ''|*[!0-9]*) echo "ccscriptctl: 'roadmap $sub $kind' needs a numeric item number." >&2; exit 2 ;;
       esac
-      ccdir="$(require_ccharness /roadmap-management)"
-      file="$ccdir/roadmap.md"
+      file="$(roadmap_path)"
       require_file "$file" /roadmap-management
       if [ "$sub" = "done" ]; then
         status="$(roadmap_mark_done "$section" "$num" "$file")"
@@ -408,7 +434,7 @@ cmd_roadmap() {
   esac
 }
 
-# Print docs/architecture/ as an indented tree (folders end with "/"). Depth is
+# Print docs/ccharness/architecture/ as an indented tree (folders end with "/"). Depth is
 # counted in pure bash so this needs no extra tools beyond find + sort.
 architecture_list_tree() {
   local root="$1" p rel rest depth indent name
@@ -424,14 +450,13 @@ architecture_list_tree() {
   done
 }
 
-# The architect skill saves diagrams under docs/architecture/ at the project root
-# (the dir holding .claude/ccharness). The LikeC4 model has a canonical path so
-# `open` always knows where to look.
+# The architect skill saves diagrams under docs/ccharness/architecture/ at the
+# project root. The LikeC4 model has a canonical path so `open` always knows
+# where to look.
 cmd_architecture() {
-  local sub="${1:-open}" ccdir root archdir
-  ccdir="$(require_ccharness /architect)"
-  root="${ccdir%/.claude/ccharness}"
-  archdir="$root/docs/architecture"
+  local sub="${1:-open}" root archdir
+  root="$(require_root /architect)"
+  archdir="$root/docs/ccharness/architecture"
   case "$sub" in
     open)
       require_file "$archdir/model.c4" /architect

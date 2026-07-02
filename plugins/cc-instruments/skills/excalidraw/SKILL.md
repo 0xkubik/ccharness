@@ -128,8 +128,8 @@ broken Excalidraw file.
 
 ## File placement
 
-When the **architect** skill drives the diagram, write it under **`docs/architecture/`** (e.g.
-`docs/architecture/<name>.excalidraw`, or `.excalidraw.svg` if a browser/extension export is
+When the **architect** skill drives the diagram, write it under **`docs/ccharness/architecture/`** (e.g.
+`docs/ccharness/architecture/<name>.excalidraw`, or `.excalidraw.svg` if a browser/extension export is
 available). Otherwise place it where the human is working, next to the doc or README it illustrates.
 
 ## Quick reference
@@ -141,4 +141,4 @@ text diagram → `mermaid`. Never hand-write the JSON: build a **skeleton** →
 (editable in `pomdtr.excalidraw-editor`; not a GitHub-rendered image). **`.excalidraw.svg`** (renders
 on GitHub + stays editable) needs a browser/extension export — not the bare Node helper.
 Mermaid→Excalidraw needs a browser DOM — optional only. No Node → fall back to `mermaid`.
-Architect-driven → `docs/architecture/`.
+Architect-driven → `docs/ccharness/architecture/`.

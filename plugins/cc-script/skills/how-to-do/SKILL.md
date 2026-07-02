@@ -50,7 +50,7 @@ leave nothing to decide.
   criteria and carries its assumptions forward; it never just "picks the nicest essay."
 
 **Grounding precondition (the gate).** Before anything else, confirm a `## Product North Star` heading
-exists at the top of `.claude/ccharness/roadmap.md`. **Absent → stop and route to `/roadmap-management`** (don't run ungrounded).
+exists at the top of `docs/ccharness/roadmap.md`. **Absent → stop and route to `/roadmap-management`** (don't run ungrounded).
 how-to-do leans on the North Star's **production flag** (is it live?) to set its depth (Phase 0).
 
 ---

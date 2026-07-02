@@ -25,7 +25,10 @@ class TestCcfunnelBin(unittest.TestCase):
         self.proj = self.base / "proj"
         self.ccdir = self.proj / ".claude" / "ccharness"
         self.ccdir.mkdir(parents=True)
-        (self.ccdir / "roadmap.md").write_text("# Roadmap\n")
+        # The roadmap lives in docs/ (human-facing); cheatsheet + runtime stay in .claude/.
+        self.roadmap = self.proj / "docs" / "ccharness" / "roadmap.md"
+        self.roadmap.parent.mkdir(parents=True)
+        self.roadmap.write_text("# Roadmap\n")
         (self.ccdir / "cheatsheet.md").write_text("# Cheats\n")
         # `open` and `$EDITOR` each record the path they were told to open, into
         # their own marker file, so a test can tell which path the script took.
@@ -90,7 +93,7 @@ class TestCcfunnelBin(unittest.TestCase):
     def test_opens_roadmap(self):
         r = self.run_bin("roadmap", "open")
         self.assertEqual(r.returncode, 0, r.stderr)
-        self.assertEqual(self.opened.read_text(), str(self.ccdir / "roadmap.md"))
+        self.assertEqual(self.opened.read_text(), str(self.roadmap))
 
     def test_bare_roadmap_needs_subcommand(self):
         r = self.run_bin("roadmap")
@@ -104,7 +107,7 @@ class TestCcfunnelBin(unittest.TestCase):
         self.assertEqual(self.opened.read_text(), str(self.ccdir / "cheatsheet.md"))
 
     def _make_arch(self):
-        arch = self.proj / "docs" / "architecture"
+        arch = self.proj / "docs" / "ccharness" / "architecture"
         arch.mkdir(parents=True)
         return arch
 
@@ -152,7 +155,7 @@ class TestCcfunnelBin(unittest.TestCase):
         deep.mkdir(parents=True)
         r = self.run_bin("roadmap", "open", cwd=deep)
         self.assertEqual(r.returncode, 0, r.stderr)
-        self.assertEqual(self.opened.read_text(), str(self.ccdir / "roadmap.md"))
+        self.assertEqual(self.opened.read_text(), str(self.roadmap))
 
     def test_opener_returns_despite_hanging_editor(self):
         # The bug: a blocking $EDITOR (e.g. `code --wait`) made `open` hang. The
@@ -175,7 +178,7 @@ class TestCcfunnelBin(unittest.TestCase):
             timeout=10,
         )
         self.assertEqual(r.returncode, 0, r.stderr)
-        self.assertEqual(self.opened.read_text(), str(self.ccdir / "roadmap.md"))
+        self.assertEqual(self.opened.read_text(), str(self.roadmap))
         self.assertFalse(self.edited.exists(), "blocking editor ran despite an opener")
 
     def test_fallback_to_editor_without_opener(self):
@@ -183,7 +186,7 @@ class TestCcfunnelBin(unittest.TestCase):
         r = self.run_bin("roadmap", "open", no_opener=True)
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertTrue(self.wait_for(self.edited), "editor fallback never ran")
-        self.assertEqual(self.edited.read_text(), str(self.ccdir / "roadmap.md"))
+        self.assertEqual(self.edited.read_text(), str(self.roadmap))
 
     def test_visual_beats_editor_without_opener(self):
         vis = self.base / "fake_visual"
@@ -193,7 +196,7 @@ class TestCcfunnelBin(unittest.TestCase):
         r = self.run_bin("roadmap", "open", no_opener=True, env_extra={"VISUAL": str(vis)})
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertTrue(self.wait_for(vismark), "$VISUAL fallback never ran")
-        self.assertEqual(vismark.read_text(), str(self.ccdir / "roadmap.md"))
+        self.assertEqual(vismark.read_text(), str(self.roadmap))
         self.assertFalse(self.edited.exists(), "$EDITOR ran even though $VISUAL was set")
 
     def test_missing_file_exits_1_with_hint(self):
@@ -220,7 +223,7 @@ class TestCcfunnelBin(unittest.TestCase):
         self.assertIn("ccscriptctl", r.stdout)
 
     def roadmap_text(self):
-        return (self.ccdir / "roadmap.md").read_text()
+        return (self.roadmap).read_text()
 
     def test_add_creates_section_and_appends(self):
         r = self.run_bin("roadmap", "add", "bug", "crash", "on", "empty", "export")
@@ -257,7 +260,7 @@ class TestCcfunnelBin(unittest.TestCase):
 
     def test_add_number_is_max_plus_one_with_gap(self):
         # A gap from a deleted item must not cause a collision — next = max + 1.
-        (self.ccdir / "roadmap.md").write_text(
+        (self.roadmap).write_text(
             "# Roadmap\n\n## Features\n\n1. [ ] a\n3. [x] c\n"
         )
         r = self.run_bin("roadmap", "add", "feat", "new")
@@ -286,7 +289,7 @@ class TestCcfunnelBin(unittest.TestCase):
         )
 
     def test_add_feat_appends_into_existing_features_block(self):
-        (self.ccdir / "roadmap.md").write_text(
+        (self.roadmap).write_text(
             "# Roadmap\n\n## Features\n\n1. [ ] build it\n\n## Bugs\n\n1. [ ] a bug\n"
         )
         self.run_bin("roadmap", "add", "feat", "new idea")
@@ -298,7 +301,7 @@ class TestCcfunnelBin(unittest.TestCase):
         self.assertLess(text.index("1. [ ] build it"), text.index("2. [ ] new idea"))
 
     def test_add_bug_lands_below_features_route(self):
-        (self.ccdir / "roadmap.md").write_text(
+        (self.roadmap).write_text(
             "# Roadmap\n\n## Features\n\n1. [ ] build it\n"
         )
         self.run_bin("roadmap", "add", "bug", "crash")
@@ -324,7 +327,7 @@ class TestCcfunnelBin(unittest.TestCase):
         self.assertEqual(r.returncode, 2)
 
     def test_add_missing_roadmap_exits_1(self):
-        (self.ccdir / "roadmap.md").unlink()
+        (self.roadmap).unlink()
         r = self.run_bin("roadmap", "add", "bug", "x")
         self.assertEqual(r.returncode, 1)
         self.assertIn("/roadmap-management", r.stderr)
@@ -335,7 +338,7 @@ class TestCcfunnelBin(unittest.TestCase):
         self.assertIn("subcommand", r.stderr)
 
     def _seed_roadmap(self):
-        (self.ccdir / "roadmap.md").write_text(
+        (self.roadmap).write_text(
             "# Roadmap\n\n## Features\n\n1. [ ] a\n2. [ ] b\n\n"
             "## TODO\n\n1. [ ] t\n\n## Backlog\n\n## Bugs\n\n1. [ ] x\n"
         )
@@ -365,7 +368,7 @@ class TestCcfunnelBin(unittest.TestCase):
         self.assertIn("1. [ ] t", r.stdout)
 
     def test_view_missing_section_notes_and_exits_0(self):
-        (self.ccdir / "roadmap.md").write_text("# Roadmap\n")
+        (self.roadmap).write_text("# Roadmap\n")
         r = self.run_bin("roadmap", "view", "bug")
         self.assertEqual(r.returncode, 0)
         self.assertEqual(r.stdout, "")
@@ -381,7 +384,7 @@ class TestCcfunnelBin(unittest.TestCase):
 
     def _seed_messy(self):
         # Old dash bullet, a completed item, and a numbering gap, across sections.
-        (self.ccdir / "roadmap.md").write_text(
+        (self.roadmap).write_text(
             "# Roadmap\n\n## Product North Star\n\nGoal.\n\n"
             "- **In production?** no\n\n---\n\n"
             "## Features\n\n- [ ] old bullet\n2. [x] done\n5. [ ] gappy\n\n"
@@ -428,7 +431,7 @@ class TestCcfunnelBin(unittest.TestCase):
         )
 
     def test_prune_missing_roadmap_exits_1(self):
-        (self.ccdir / "roadmap.md").unlink()
+        (self.roadmap).unlink()
         r = self.run_bin("roadmap", "prune")
         self.assertEqual(r.returncode, 1)
         self.assertIn("/roadmap-management", r.stderr)
@@ -436,7 +439,7 @@ class TestCcfunnelBin(unittest.TestCase):
     # --- done / drop ---
 
     def _seed_numbered(self):
-        (self.ccdir / "roadmap.md").write_text(
+        (self.roadmap).write_text(
             "# Roadmap\n\n## Features\n\n1. [ ] auth\n2. [ ] dark mode\n3. [ ] export\n\n"
             "## Bugs\n\n1. [ ] crash\n2. [ ] leak\n"
         )

@@ -1,6 +1,6 @@
 {
   "name": "cc-musician",
-  "version": "0.25.1",
+  "version": "0.26.0",
   "description": "cc-musician — the self-driving agent layer: /musician is the project's brain for ONE piece of work. By default it shapes the idea WITH you first (asks questions, then builds alone); --auto skips straight to full autonomy. Hand it a task/problem/idea (it thinks first and sharpens a misaimed one, but never refuses handed work) or run it with no prompt (it finds a direction itself via what-to-do). It plays the cc-script instruments (what-to-do → how-to-do → do → refactor-review-test) plus cc-instruments's crux/slap side doors, forges its own definition of done, drives to that done, then closes. Every build runs in an isolated git worktree and is integrated to your branch when it lands, so the build never dirties the main tree mid-flight. Bounded and self-closing — no never-stop loop, no spend mode; /musician-cancel is the manual brake. One Stop hook re-feeds the loop. Depends on cc-script and cc-instruments.",
   "author": {
     "name": "kubik",

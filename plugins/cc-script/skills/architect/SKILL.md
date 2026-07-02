@@ -27,7 +27,7 @@ not build — you hand the design forward.
   be there when you draw.
 
 **What you may read.** Only two things, both optional: the goal doc
-`.claude/ccharness/roadmap.md` (the North Star / roadmap) if it exists, to anchor the design to what
+`docs/ccharness/roadmap.md` (the North Star / roadmap) if it exists, to anchor the design to what
 the product is for; and `.claude/rules/` if it exists, which you then obey like every other script
 skill. Nothing else from the repo — no source files.
 
@@ -35,7 +35,7 @@ skill. Nothing else from the repo — no source files.
 
 ## The flow
 
-1. **Anchor.** Read `.claude/ccharness/roadmap.md` if it's there — let the North Star frame what
+1. **Anchor.** Read `docs/ccharness/roadmap.md` if it's there — let the North Star frame what
    you're designing toward. No roadmap? Start from the user's words.
 2. **Draw out intent — conversationally, user-led.** Ask what they want to design: the pieces, the
    boundaries, what talks to what. Pull the shape out of them. Do not invent a full system unprompted.
@@ -48,9 +48,9 @@ skill. Nothing else from the repo — no source files.
 5. **Produce the diagrams.** Keep text to connective tissue and rationale — what each picture shows
    and why the shape is what it is. No prose walls.
 6. **Iterate.** Take the user's feedback and redraw. The design converges through the conversation.
-7. **Save.** Write the LikeC4 model to the canonical path **`docs/architecture/model.c4`** (so
+7. **Save.** Write the LikeC4 model to the canonical path **`docs/ccharness/architecture/model.c4`** (so
    `ccscriptctl architecture open` always finds it), and put any Mermaid (`.md`) and Excalidraw
-   files alongside it in `docs/architecture/`. `ccscriptctl architecture list` prints the folder as
+   files alongside it in `docs/ccharness/architecture/`. `ccscriptctl architecture list` prints the folder as
    a tree.
 
 ---
@@ -117,7 +117,7 @@ architect is the **optional design step** in the script: set the goal (`/roadmap
 user-led — don't invent a system unprompted · `3` Model in LikeC4 (the collapsible backbone, system
 → code) · Mermaid for leaf detail that can't fold in · Excalidraw for freeform sketches · `4` Load
 the matching cc-instruments reference skill BEFORE drawing · `5` Produce diagrams, text as connective
-tissue only · `6` Iterate on feedback · `7` Save the model to `docs/architecture/model.c4` (canonical;
+tissue only · `6` Iterate on feedback · `7` Save the model to `docs/ccharness/architecture/model.c4` (canonical;
 `ccscriptctl architecture open`/`list`), other files alongside. No cc-instruments → degrade to
 Mermaid. Folder tree = a projection of the LikeC4 module nesting, not a hand-kept artifact.
 

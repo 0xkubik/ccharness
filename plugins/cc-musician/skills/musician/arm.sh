@@ -88,7 +88,7 @@ if [ -n "$SID" ] && [ -f "$MUS/by-session/$SID" ]; then
 fi
 
 # --- grounding gate: open mode needs a North Star (now at the top of the roadmap) ---
-if [ "$ENTRY" = "open" ] && ! grep -q '## Product North Star' .claude/ccharness/roadmap.md 2>/dev/null; then
+if [ "$ENTRY" = "open" ] && ! grep -q '## Product North Star' docs/ccharness/roadmap.md 2>/dev/null; then
   printf 'GATE=no-north-star\n'; exit 0
 fi
 

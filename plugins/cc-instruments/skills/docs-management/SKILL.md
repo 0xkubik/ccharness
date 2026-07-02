@@ -17,7 +17,7 @@ and why a thing looks stale.
    docs. If none of these hold → say "fresh project, nothing described yet — nothing to check" and stop.
 2. **Read the descriptive prose only** — `README*`, `docs/**` (including `docs/superpowers/specs/` and
    any plans), `CLAUDE.md`, `.claude/rules/*.md`, `AGENTS.md`, `CHANGELOG*`,
-   `.claude/ccharness/roadmap.md`, and other top-level descriptive `*.md`.
+   `docs/ccharness/roadmap.md`, and other top-level descriptive `*.md`.
    **Code and tests are out of scope.**
 3. **Distill the load-bearing claims** the prose asserts into a concise, plain-language **digest** — a
    bulleted list of claims, each tagged with its source doc. Not a verbatim retelling; the load-bearing

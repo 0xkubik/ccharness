@@ -43,14 +43,14 @@ Then **ground your product** — every script command depends on it:
 /roadmap-management
 ```
 This captures the product's *North Star* (the goal) and the ordered feature list (the route to it) into
-`.claude/ccharness/roadmap.md` — the goal at the top, the features below. Until a North Star exists, the other commands route you here.
+`docs/ccharness/roadmap.md` — the goal at the top, the features below. Until a North Star exists, the other commands route you here.
 
 ## The commands
 
 | Command | What it does | When you reach for it |
 |---|---|---|
-| **`/roadmap-management`** | The **grounding loop** — the front door, and the roadmap's keeper across its life. Captures the product's *North Star* (goal-setting: vision · core problem · level) and a **flat, ordered list of features** to it — both saved to `.claude/ccharness/roadmap.md` (North Star at the top, features below, built top to bottom). Charters the roadmap the first run; re-run any time to rethink it freely or fold in one feature (`--force` writes that feature after one confirm). Every other command routes here when no North Star exists. | "Set the goal, then keep the roadmap honest." |
-| **`/architect <what>`** | The **design loop.** Designs a new system or feature **with you**, led by your words, into **architecture diagrams** (mostly diagrams, little text). **LikeC4** is the one collapsible backbone — system down to modules/key classes; **Mermaid** covers leaf detail that can't fold in (class internals, a call sequence, a DB schema); **Excalidraw** for freeform sketches. Saved to `docs/architecture/`. Never reads your code; you bring the context. Leans on cc-instruments' diagram references (falls back to Mermaid if it's absent). Optional step between the roadmap and `/what-to-do`. | "Design the architecture before deciding what to build." |
+| **`/roadmap-management`** | The **grounding loop** — the front door, and the roadmap's keeper across its life. Captures the product's *North Star* (goal-setting: vision · core problem · level) and a **flat, ordered list of features** to it — both saved to `docs/ccharness/roadmap.md` (North Star at the top, features below, built top to bottom). Charters the roadmap the first run; re-run any time to rethink it freely or fold in one feature (`--force` writes that feature after one confirm). Every other command routes here when no North Star exists. | "Set the goal, then keep the roadmap honest." |
+| **`/architect <what>`** | The **design loop.** Designs a new system or feature **with you**, led by your words, into **architecture diagrams** (mostly diagrams, little text). **LikeC4** is the one collapsible backbone — system down to modules/key classes; **Mermaid** covers leaf detail that can't fold in (class internals, a call sequence, a DB schema); **Excalidraw** for freeform sketches. Saved to `docs/ccharness/architecture/`. Never reads your code; you bring the context. Leans on cc-instruments' diagram references (falls back to Mermaid if it's absent). Optional step between the roadmap and `/what-to-do`. | "Design the architecture before deciding what to build." |
 | **`/what-to-do [theme]`** | The **direction loop.** Surveys a product and emits a **ranked menu** of where it could go next — across four moves: **add** (new features), **finish** (half-built work), **rebuild** (redo better), **refactor** (tech debt) — each scored against the product's goal, and **biased toward the roadmap's current frontier** (the next unbuilt feature) if one exists. Requires the *North Star* — no North Star → routes you to `/roadmap-management`. Runs with or without a prompt. Decides nothing — you pick. | "Where should this product go next?" |
 | **`/how-to-do <decision>`** | The **decision loop.** Works out HOW to build a picked direction (or resolves a standalone technical fork) — four opposed proposers (MVP / Final / Conventional / Contrarian) argue different ways to build it → cross-examination → synthesis into ONE buildable approach. It decides the *how*, not *whether* (the pick is what-to-do's); a pick that looks wrong it flags rather than overrides. Depth scales to stakes. | "How to build it — and why?" |
 | **`/do <task>`** | The **strict executor.** Runs one well-scoped task through a gated pipeline (below) to a **smoke-checked** finish, then **hands off to `/refactor-review-test`**. Requires the *North Star* (routes to `/roadmap-management` if missing). Refuses fork-laden or ambiguous tasks instead of guessing — a technical fork goes back to `/how-to-do`, a non-technical (business) one it refuses outright, pure ambiguity to brainstorming; never declares done with work open; **never commits** (that's refactor-review-test's). | "Build this concrete task." |
@@ -67,7 +67,7 @@ cheat-sheet in your editor, and captures quick roadmap notes straight from the s
 have to dig into `.claude/ccharness/` every time:
 
 ```
-ccscriptctl roadmap open               # open .claude/ccharness/roadmap.md
+ccscriptctl roadmap open               # open docs/ccharness/roadmap.md
 ccscriptctl roadmap add feat <text>    # note a feature → "## Features" section (the route)
 ccscriptctl roadmap add todo <text>    # note a task    → "## TODO" section
 ccscriptctl roadmap add backlog <text> # note an idea   → "## Backlog" section
@@ -78,8 +78,8 @@ ccscriptctl roadmap drop <kind> <n>    # remove item <n> from that section, then
 ccscriptctl roadmap renumber           # renumber every section's items to 1..N
 ccscriptctl roadmap prune              # drop completed ("[x]") items, then renumber
 ccscriptctl cheatsheet                 # open .claude/ccharness/cheatsheet.md
-ccscriptctl architecture open          # open docs/architecture/model.c4 (the LikeC4 model)
-ccscriptctl architecture list          # print the docs/architecture/ tree
+ccscriptctl architecture open          # open docs/ccharness/architecture/model.c4 (the LikeC4 model)
+ccscriptctl architecture list          # print the docs/ccharness/architecture/ tree
 ```
 
 `roadmap add` appends a numbered item `N. [ ] <text>` under the matching section of `roadmap.md` without
@@ -119,7 +119,7 @@ each owning a different kind of thinking:
 - **`/roadmap-management`** *grounds* — the front door. It interviews you for the product's **North Star**
   (vision · core problem · level `1/2/3`) and writes it to `CLAUDE.md`, then offers to chart the
   **roadmap** — a **flat, ordered list of features** toward that goal
-  (`.claude/ccharness/roadmap.md`). Every other command depends on the North
+  (`docs/ccharness/roadmap.md`). Every other command depends on the North
   Star; without it, they route you here.
 - **`/what-to-do`** *diverges* — it generates the agenda. Its menu has **nothing selected**; picking
   is not its job. It reads the North Star and ranks moves *toward it* — **biased toward the roadmap's
@@ -188,4 +188,4 @@ Beyond the marketplace set, `/cc-init` also **offers** two external MCP tools it
 - `skills/how-to-do/SKILL.md` — the decision loop (four proposers → synthesis).
 - `skills/do/SKILL.md` — the gated executor: builds + smoke-checks, then hands off (the brains).
 - `skills/refactor-review-test/SKILL.md` — the autonomous hardener (safety-net → refactor → review → full tests → commit); `/do`'s always-on tail, also standalone.
-- `bin/ccscriptctl` — small terminal helper: opens the project's roadmap / cheat-sheet in your editor (`ccscriptctl roadmap open` · `ccscriptctl cheatsheet`), captures quick roadmap notes (`ccscriptctl roadmap add feat|todo|backlog|bug <text>`), prints the roadmap (`ccscriptctl roadmap view [all|feat|todo|backlog|bug]`), ticks or removes items by number (`ccscriptctl roadmap done|drop <kind> <n>`), and tidies it (`ccscriptctl roadmap renumber` · `ccscriptctl roadmap prune`); also opens the architect's LikeC4 model (`ccscriptctl architecture open`) and prints the `docs/architecture/` tree (`ccscriptctl architecture list`).
+- `bin/ccscriptctl` — small terminal helper: opens the project's roadmap / cheat-sheet in your editor (`ccscriptctl roadmap open` · `ccscriptctl cheatsheet`), captures quick roadmap notes (`ccscriptctl roadmap add feat|todo|backlog|bug <text>`), prints the roadmap (`ccscriptctl roadmap view [all|feat|todo|backlog|bug]`), ticks or removes items by number (`ccscriptctl roadmap done|drop <kind> <n>`), and tidies it (`ccscriptctl roadmap renumber` · `ccscriptctl roadmap prune`); also opens the architect's LikeC4 model (`ccscriptctl architecture open`) and prints the `docs/ccharness/architecture/` tree (`ccscriptctl architecture list`).

@@ -13,6 +13,6 @@ The architect designs a **new** system or feature **with you**, led by your word
 context in words. It models the architecture in **LikeC4** as one collapsible model — from the
 system down to modules and key classes — and reaches for **Mermaid** only for leaf detail that
 can't fold in (a class's fields, a call sequence, a DB schema) and **Excalidraw** for freeform
-sketches, drawing on cc-instruments' diagram references. Diagrams are saved to `docs/architecture/`.
+sketches, drawing on cc-instruments' diagram references. Diagrams are saved to `docs/ccharness/architecture/`.
 If cc-instruments isn't installed, it falls back to Mermaid, which renders everywhere with nothing
 installed.

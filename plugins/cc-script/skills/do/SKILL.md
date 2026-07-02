@@ -22,7 +22,7 @@ checklist has open items.
 
 ## Grounding precondition (the gate — before Stage 0)
 
-Confirm a `## Product North Star` heading exists at the top of `.claude/ccharness/roadmap.md`. **Absent
+Confirm a `## Product North Star` heading exists at the top of `docs/ccharness/roadmap.md`. **Absent
 → STOP and route to `/roadmap-management`** (cc-instruments builds from the goal outward; don't run ungrounded).
 Arriving from how-to-do or under the musician, the North Star already exists — the gate just passes.
 

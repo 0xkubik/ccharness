@@ -1,11 +1,11 @@
 ---
 name: roadmap-management
-description: Use to create OR maintain a product's roadmap (the North Star goal + ordered feature list in .claude/ccharness/roadmap.md) at any point in its life — set it up the first time, rethink it freely on a re-run, or fold in a single new feature (pass --force to formulate and write that feature after one confirm, skipping the discussion).
+description: Use to create OR maintain a product's roadmap (the North Star goal + ordered feature list in docs/ccharness/roadmap.md) at any point in its life — set it up the first time, rethink it freely on a re-run, or fold in a single new feature (pass --force to formulate and write that feature after one confirm, skipping the discussion).
 ---
 
 # roadmap-management — own the product's roadmap across its life
 
-You own `.claude/ccharness/roadmap.md`: the product's **North Star** (the goal) at the top, and a
+You own `docs/ccharness/roadmap.md`: the product's **North Star** (the goal) at the top, and a
 **flat, ordered list of features** (the route to it) in a `## Features` section below — plus three
 capture sections (`## TODO`, `## Backlog`, `## Bugs`) shared with the `ccscriptctl roadmap add` helper.
 Every later step builds on this file — what-to-do ranks moves against the goal, the musician builds
@@ -18,7 +18,7 @@ one of **four modes** — pick the right one before you do anything else.
 
 **How you work (all modes):** lead with questions, **one decision at a time** (borrow
 `superpowers:brainstorming`'s technique), in plain language. The terminal is
-`.claude/ccharness/roadmap.md` — never `writing-plans`. You own the North Star write and lay out the
+`docs/ccharness/roadmap.md` — never `writing-plans`. You own the North Star write and lay out the
 route; you never decide a fork (how-to-do) or build a task (do).
 
 ---
@@ -26,7 +26,7 @@ route; you never decide a fork (how-to-do) or build a task (do).
 ## Pick the mode first (dispatch)
 
 Look at three things: is there already a `## Product North Star` at the top of
-`.claude/ccharness/roadmap.md`? did the human bring **one concrete feature to add**, or just a general
+`docs/ccharness/roadmap.md`? did the human bring **one concrete feature to add**, or just a general
 "let's revise"? was **`--force`** passed?
 
 | What you see                                                          | Mode                                                        |
@@ -55,7 +55,7 @@ goal must come from the human's own head. One question at a time, in plain langu
 finished product look like at the very end — who is it for, what does success look like? And **is it
 already in production (real users), or not yet?** Don't move on until the answer is concrete. Then write
 the North Star block (shape in **The roadmap file** below), keeping the vision to **one to three
-sentences**, as the opening of `.claude/ccharness/roadmap.md` (create the file if needed). Confirm it
+sentences**, as the opening of `docs/ccharness/roadmap.md` (create the file if needed). Confirm it
 back in one line. The goal is **mandatory** — it's what every other skill detects.
 
 **Step 2 — List the features in order.** First build a short, factual picture of the current product
@@ -134,7 +134,7 @@ silently autowrite. One show-and-confirm gate always stands.
 
 ## The roadmap file (the contract — keep it exact)
 
-`.claude/ccharness/roadmap.md` (create the directory if needed). The file **opens with the North Star**
+`docs/ccharness/roadmap.md` (create the directory if needed). The file **opens with the North Star**
 (the goal), then **four sections in this fixed order — `## Features`, `## TODO`, `## Backlog`,
 `## Bugs`** — each a checklist. `## Features` is the charted route: a **flat, ordered list** where
 **document order is build order** (top to bottom) and the **frontier** = the **first unchecked `[ ]` box

@@ -66,8 +66,9 @@ class TestPrepare(unittest.TestCase):
     def test_flags_uncommitted_north_star(self):
         # A build worktree is cut from committed HEAD — an uncommitted North Star / roadmap is absent.
         repo = make_repo()
-        (Path(repo) / ".claude" / "ccharness" / "roadmap.md").write_text(
-            "# Roadmap\n\n## Product North Star\n\nCHANGED\n")
+        roadmap = Path(repo) / "docs" / "ccharness" / "roadmap.md"
+        roadmap.parent.mkdir(parents=True, exist_ok=True)
+        roadmap.write_text("# Roadmap\n\n## Product North Star\n\nCHANGED\n")
         out, _ = run_wt(repo, "prepare")
         self.assertEqual(out.get("GROUNDING_DIRTY"), "1")
 

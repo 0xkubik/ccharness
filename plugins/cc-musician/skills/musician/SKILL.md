@@ -131,7 +131,7 @@ verify appends fix tasks. Each `task` is `{id, subject, status}` with `status` o
 
 ## Roadmap upkeep — the route, never the goal
 
-When your work maps to the product's roadmap (`.claude/ccharness/roadmap.md`), keep the **route**
+When your work maps to the product's roadmap (`docs/ccharness/roadmap.md`), keep the **route**
 current as you finish — but never touch the **goal**:
 
 - **You MAY edit the route** — the progress toward an already-agreed goal: mark a feature `[x]` under the
@@ -195,7 +195,7 @@ scans for crashed runs. **`<run>` = `runs/<run_id>/` from here on.**
    cfg="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"; r="$(jq -r '.plugins["cc-musician@ccharness"][0].installPath // empty' "$cfg/plugins/installed_plugins.json" 2>/dev/null)"; a="$r/skills/musician/arm.sh"; [ -f "$a" ] || a="$(ls "$cfg"/plugins/cache/*/cc-musician/*/skills/musician/arm.sh 2>/dev/null | sort -V | tail -1)"; [ -f "$a" ] && bash "$a" "<the argument you were handed, verbatim>" || echo "MUSICIAN_ARM_ERROR"
    ```
 2. **React to the arm `KEY=VALUE` output:**
-   - `GATE=no-north-star` (open mode, no `## Product North Star` in `.claude/ccharness/roadmap.md`) → no run
+   - `GATE=no-north-star` (open mode, no `## Product North Star` in `docs/ccharness/roadmap.md`) → no run
      was created; tell the user _"No North Star yet — run `/roadmap-management` to set it, then
      `/musician`."_ END TURN. (Task mode does **not** hard-gate: a fuzzy pain can go to `crux`, which
      is grounding-free, and the `do` build enforces its own North Star gate.)
@@ -221,7 +221,7 @@ scans for crashed runs. **`<run>` = `runs/<run_id>/` from here on.**
    `HELPER="$(jq -r .worktree_helper <run>/state.json)"; bash "$HELPER" prepare`. It gitignores
    `.claude/worktrees/` (the build worktree's base is forced per-dispatch by a reset, not a settings
    flag — see **Build in an isolated worktree**). If it reports `GROUNDING_DIRTY=1`, commit the
-   grounding (`.claude/ccharness/roadmap.md` — North Star + features) before the first build, or the
+   grounding (`docs/ccharness/roadmap.md` — North Star + features) before the first build, or the
    build worktree won't carry the North Star. Then **announce** the entry mode and the input (note `[ultracode]` if set, and any
    surfaced orphan), and **fork on `phase`:**
    - `phase:"shaping"` (the default) → **open the shaping conversation** (see **Two phases**): develop
