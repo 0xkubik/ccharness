@@ -1,6 +1,6 @@
 ---
 name: excalidraw
-description: "Use when building a freeform, hand-drawn-style diagram or sketch the user will rearrange by hand — whiteboard-style design, not structured architecture-as-code. Unlike Mermaid and LikeC4, Excalidraw is not LLM-native: build scenes through the Node helper and save as .excalidraw.svg so the file renders on GitHub and stays editable in the pomdtr.excalidraw-editor VS Code extension."
+description: "Use when building a freeform, hand-drawn-style diagram or sketch the user will rearrange by hand — whiteboard-style design, not structured architecture-as-code. Unlike Mermaid and LikeC4, Excalidraw is not LLM-native: build scenes through the Node helper, which writes plain .excalidraw JSON (editable in the pomdtr.excalidraw-editor VS Code extension); export to .excalidraw.svg via that extension when the diagram also needs to render on GitHub."
 ---
 
 # excalidraw — hand-drawn diagrams the human moves by hand
@@ -91,16 +91,22 @@ older or partial elements up to the current schema so nothing opens broken.
 `elements` is the only field that must be fully populated; `appState` and `files` can be empty
 objects for a fresh scene.
 
-## Saving so it's viewable AND editable
+## Saving — what the Node helper can and can't produce
 
-Save as **`.excalidraw.svg`**. This is the sweet spot: it renders as a normal image on GitHub
-and in previews, **and** Excalidraw embeds the scene inside the SVG so it stays fully editable in
-the **`pomdtr.excalidraw-editor`** VS Code extension (open the `.excalidraw.svg` there and drag
-things around). The plain **`.excalidraw`** JSON also opens for editing on excalidraw.com and in
-that extension — it just doesn't render as an image inline.
+The Node helper writes **plain `.excalidraw` JSON**. That file opens for editing on excalidraw.com
+and in the **`pomdtr.excalidraw-editor`** VS Code extension (open it there and drag things around).
+It does **not** render as an image inline on GitHub — it's a working/editable file, not a picture.
 
-Rule of thumb: hand off `.excalidraw.svg` when the file should show up in a repo/README and stay
-editable; keep the plain `.excalidraw` when it's purely a working file.
+To get a **`.excalidraw.svg`** — which renders as an image on GitHub *and* keeps the scene embedded
+so it stays editable in that extension — you need a rendering step the bare Node helper can't do:
+Excalidraw's `exportToSvg()` requires a browser DOM (same limitation as the Mermaid→Excalidraw
+bridge below). In practice, export the SVG from the **`pomdtr.excalidraw-editor`** extension (it has
+an "export to SVG" that embeds the scene), or from excalidraw.com. Only reach for it in a
+Node+browser/`jsdom` setup.
+
+Rule of thumb: from a plain CLI, hand off the **`.excalidraw`** JSON (editable, needs the extension
+to view); produce **`.excalidraw.svg`** only when a browser/extension is available and the file must
+also show up in a repo/README.
 
 ## Optional upgrade: Mermaid → Excalidraw
 
@@ -123,14 +129,16 @@ broken Excalidraw file.
 ## File placement
 
 When the **architect** skill drives the diagram, write it under **`docs/architecture/`** (e.g.
-`docs/architecture/<name>.excalidraw.svg`). Otherwise place it where the human is working, next
-to the doc or README it illustrates.
+`docs/architecture/<name>.excalidraw`, or `.excalidraw.svg` if a browser/extension export is
+available). Otherwise place it where the human is working, next to the doc or README it illustrates.
 
 ## Quick reference
 
 Whiteboard sketch the human rearranges → excalidraw · structured model-as-code → `likec4` · quick
 text diagram → `mermaid`. Never hand-write the JSON: build a **skeleton** →
 `convertToExcalidrawElements()` (→ `restoreElements()` when merging existing elements) → wrap in
-`{ type, version: 2, source, elements, appState, files }` → write **`.excalidraw.svg`** (renders
-on GitHub + editable in `pomdtr.excalidraw-editor`). Mermaid→Excalidraw needs a browser DOM —
-optional only. No Node → fall back to `mermaid`. Architect-driven → `docs/architecture/`.
+`{ type, version: 2, source, elements, appState, files }` → write plain **`.excalidraw`** JSON
+(editable in `pomdtr.excalidraw-editor`; not a GitHub-rendered image). **`.excalidraw.svg`** (renders
+on GitHub + stays editable) needs a browser/extension export — not the bare Node helper.
+Mermaid→Excalidraw needs a browser DOM — optional only. No Node → fall back to `mermaid`.
+Architect-driven → `docs/architecture/`.
