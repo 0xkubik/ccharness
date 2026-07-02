@@ -72,10 +72,11 @@ ccscriptctl roadmap view [what]        # print the roadmap (all | feat|todo|back
 ccscriptctl cheatsheet                 # open .claude/ccharness/cheatsheet.md
 ```
 
-`roadmap add` appends `- [ ] <text>` under the matching section of `roadmap.md` without opening an
-editor, creating a missing section in its canonical slot (Features → TODO → Backlog → Bugs). It writes
-into the same `## Features` route that `/roadmap-management` manages, so a captured feature just joins
-the list in order; TODO / Backlog / Bugs are a shell inbox to triage onto the route later with
+`roadmap add` appends a numbered item `N. [ ] <text>` under the matching section of `roadmap.md` without
+opening an editor — `N` is auto-assigned (the section's highest number + 1), each section numbered
+independently. It creates a missing section in its canonical slot (Features → TODO → Backlog → Bugs) and
+writes into the same `## Features` route that `/roadmap-management` manages, so a captured feature just
+joins the list in order; TODO / Backlog / Bugs are a shell inbox to triage onto the route later with
 `/roadmap-management`.
 
 `roadmap view` prints straight to the console — `view all` (the default) dumps the whole file, and

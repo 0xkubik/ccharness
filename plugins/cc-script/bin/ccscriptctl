@@ -98,13 +98,28 @@ section_successors() {
   esac
 }
 
-# Append "- [ ] <text>" under "## <section>" in the roadmap. If the section isn't
-# there yet, create it in its canonical slot (Features → TODO → Backlog → Bugs):
-# just before the first later section that already exists, else at the end of the
-# file. The "## Features" route is shared with roadmap-management.
+# Highest leading "N." number among the items under "## <section>" (0 if none).
+section_max_num() {
+  awk -v heading="## $1" '
+    $0 == heading { in_sec = 1; next }
+    in_sec && /^## / { in_sec = 0 }
+    in_sec && match($0, /^[0-9]+\./) {
+      num = substr($0, 1, RLENGTH - 1) + 0
+      if (num > max) max = num
+    }
+    END { print max + 0 }
+  ' "$2"
+}
+
+# Append "N. [ ] <text>" under "## <section>", numbering it the next in that
+# section (highest existing + 1). If the section isn't there yet, create it in its
+# canonical slot (Features → TODO → Backlog → Bugs): just before the first later
+# section that exists, else at the end. "## Features" is shared with roadmap-management.
 roadmap_add_note() {
-  local section="$1" bullet="$2" file="$3" heading tmp successor cand
+  local section="$1" text="$2" file="$3" heading tmp successor cand num bullet
   heading="## $section"
+  num=$(( $(section_max_num "$section" "$file") + 1 ))
+  bullet="$num. [ ] $text"
   if grep -qxF "$heading" "$file"; then
     tmp="$(mktemp)"
     BULLET="$bullet" awk -v heading="$heading" '
@@ -126,6 +141,7 @@ roadmap_add_note() {
       END { if (in_sec) flush() }
     ' "$file" > "$tmp"
     mv "$tmp" "$file"
+    printf '%s\n' "$bullet"
     return
   fi
 
@@ -145,6 +161,7 @@ roadmap_add_note() {
     [ -n "$(tail -c1 "$file")" ] && printf '\n' >> "$file"
     printf '\n%s\n\n%s\n' "$heading" "$bullet" >> "$file"
   fi
+  printf '%s\n' "$bullet"
 }
 
 # Print one "## <section>" (heading + its lines, trailing blanks trimmed) to stdout.
@@ -199,9 +216,10 @@ cmd_roadmap() {
       ccdir="$(require_ccharness /roadmap-management)"
       file="$ccdir/roadmap.md"
       require_file "$file" /roadmap-management
-      roadmap_add_note "$section" "- [ ] $text" "$file"
+      local added
+      added="$(roadmap_add_note "$section" "$text" "$file")"
       echo "Added to $section in $file:"
-      echo "  - [ ] $text"
+      echo "  $added"
       ;;
     view)
       shift || true

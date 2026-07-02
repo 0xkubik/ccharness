@@ -114,16 +114,16 @@ The human brought **one concrete feature** to add. Don't just append it — help
 - **How** — the rough shape of building it, enough to phrase the feature concretely (not a plan).
 - **When** — where in the ordered list it belongs: what must come before it, what it unblocks.
 
-Then, **only if the human approves it**, append **one line** — `- [ ] <feature>` — at the right position
-in the `## Features` list. Confirm the line back. If the thinking shows it's premature or
-off-goal, don't force it into the list — drop it. The human decides.
+Then, **only if the human approves it**, append **one line** — `N. [ ] <feature>`, where `N` is the
+next number in the `## Features` list — at the right position. Confirm the line back. If the thinking
+shows it's premature or off-goal, don't force it into the list — drop it. The human decides.
 
 ---
 
 ## Mode 4 — Add a feature, fast (`--force`)
 
 Same target as Mode 3 — add one feature — but the human wants it written **without the discussion. Skip
-the why/how/when.** Formulate the feature yourself into one well-phrased line — `- [ ] <feature>` —
+the why/how/when.** Formulate the feature yourself into one well-phrased line — `N. [ ] <feature>` —
 placed at a sensible position in the `## Features` list. **Then show the exact line and where it will
 go, and ask "write this? (ok / not ok)".** Write it only on **ok**; on "not ok", take their correction.
 
@@ -159,32 +159,43 @@ onto the route on a re-run.
 
 <!-- The charted route — build top to bottom. Frontier = the first unchecked [ ] box here. -->
 
-- [ ] <feature>
-- [ ] <feature>
-- [ ] <feature>
+1. [ ] <feature>
+2. [ ] <feature>
+3. [ ] <feature>
+...
 
 ## TODO
 
 <!-- Near-term concrete tasks — also captured via `ccscriptctl roadmap add todo`. -->
 
+1. [ ] <task>
+...
+
 ## Backlog
 
 <!-- Someday / maybe — also captured via `ccscriptctl roadmap add backlog`. -->
 
+1. [ ] <idea>
+...
+
 ## Bugs
 
 <!-- Known defects — also captured via `ccscriptctl roadmap add bug`. -->
+
+1. [ ] <bug>
+...
 ```
 
-**Each feature is exactly one line** — a single `- [ ] <feature>` and nothing else. No `done when:`
+**Each feature is exactly one line** — a single `N. [ ] <feature>` and nothing else. No `done when:`
 clause, no wrapping onto a second line, no sub-bullets, no indented notes, no multi-line description.
 State the feature concretely enough to know it when it's built. If it won't fit on one line, it's too
 big or too wordy: tighten the wording, or split it into two features — never spill it across lines.
 
-Features are simply appended **in order** into `## Features` — no ids to assign or keep stable, tracking
-is checkboxes only. `## TODO`, `## Backlog`, and `## Bugs` hold the same one-line `- [ ] <text>` shape
-and are shared with `ccscriptctl roadmap add`. Every other skill detects grounding by the
-`## Product North Star` heading.
+Features are **numbered in order** with a checkbox — `N. [ ] <feature>`. The number is the item's
+handle: the next one is **the highest existing number + 1**, so deleting an item never renumbers the
+rest. `## TODO`, `## Backlog`, and `## Bugs` use the same `N. [ ] <text>` shape, each numbered
+independently from `1`. `ccscriptctl roadmap add` assigns the number automatically. Every other skill
+detects grounding by the `## Product North Star` heading.
 
 ---
 
@@ -193,7 +204,7 @@ and are shared with `ccscriptctl roadmap add`. Every other skill detects groundi
 `dispatch` — no North Star → **Mode 1**; goal + no feature → **Mode 2**; goal + one feature → **Mode 3**
 (or **Mode 4** with `--force`); can't tell 2 vs 3 → **ask** · **Mode 1** Charter — open-question goal
 (1–3 sentences) → survey + feature loop (`AskUserQuestion`, one at a time, _need A before B → A higher_,
-one line each `- [ ] <feature>` into `## Features`, urge review) → independent reviewer · **Mode 2** Open revision —
+one line each `N. [ ] <feature>` into `## Features`, urge review) → independent reviewer · **Mode 2** Open revision —
 show goal + list + progress, triage the capture inbox, revise free-form, one decision at a time, reason about ripple · **Mode 3**
 Add a feature — why / how / when → one line if approved · **Mode 4** `--force` — formulate → **show +
 "ok?"** → write (never silent).

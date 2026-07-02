@@ -183,7 +183,7 @@ class TestCcfunnelBin(unittest.TestCase):
         self.assertEqual(r.returncode, 0, r.stderr)
         text = self.roadmap_text()
         self.assertIn("## Bugs", text)
-        self.assertIn("- [ ] crash on empty export", text)
+        self.assertIn("1. [ ] crash on empty export", text)
         self.assertFalse(self.opened.exists(), "add opened an editor")
 
     def test_add_maps_kinds_to_sections(self):
@@ -192,11 +192,33 @@ class TestCcfunnelBin(unittest.TestCase):
         self.run_bin("roadmap", "add", "backlog", "i18n someday")
         text = self.roadmap_text()
         self.assertIn("## Features", text)
-        self.assertIn("- [ ] dark mode", text)
+        self.assertIn("1. [ ] dark mode", text)
         self.assertIn("## TODO", text)
-        self.assertIn("- [ ] wire up CI", text)
+        self.assertIn("1. [ ] wire up CI", text)
         self.assertIn("## Backlog", text)
-        self.assertIn("- [ ] i18n someday", text)
+        self.assertIn("1. [ ] i18n someday", text)
+
+    def test_add_numbers_increment_per_section(self):
+        for f in ("auth", "dark mode", "export"):
+            self.run_bin("roadmap", "add", "feat", f)
+        for b in ("crash", "leak"):
+            self.run_bin("roadmap", "add", "bug", b)
+        text = self.roadmap_text()
+        self.assertIn("1. [ ] auth", text)
+        self.assertIn("2. [ ] dark mode", text)
+        self.assertIn("3. [ ] export", text)
+        # Bugs numbered independently, from 1.
+        self.assertIn("1. [ ] crash", text)
+        self.assertIn("2. [ ] leak", text)
+
+    def test_add_number_is_max_plus_one_with_gap(self):
+        # A gap from a deleted item must not cause a collision — next = max + 1.
+        (self.ccdir / "roadmap.md").write_text(
+            "# Roadmap\n\n## Features\n\n1. [ ] a\n3. [x] c\n"
+        )
+        r = self.run_bin("roadmap", "add", "feat", "new")
+        self.assertIn("4. [ ] new", r.stdout)
+        self.assertIn("4. [ ] new", self.roadmap_text())
 
     def test_add_creates_sections_in_canonical_order(self):
         # Add out of order; sections must still land Features → TODO → Backlog → Bugs.
@@ -214,29 +236,30 @@ class TestCcfunnelBin(unittest.TestCase):
         text = self.roadmap_text()
         self.assertEqual(text.count("## Bugs"), 1, "duplicate section created")
         self.assertLess(
-            text.index("- [ ] first"),
-            text.index("- [ ] second"),
+            text.index("1. [ ] first"),
+            text.index("2. [ ] second"),
             "second note not appended after first",
         )
 
     def test_add_feat_appends_into_existing_features_block(self):
         (self.ccdir / "roadmap.md").write_text(
-            "# Roadmap\n\n## Features\n\n- [ ] build it\n\n## Bugs\n\n- [ ] a bug\n"
+            "# Roadmap\n\n## Features\n\n1. [ ] build it\n\n## Bugs\n\n1. [ ] a bug\n"
         )
         self.run_bin("roadmap", "add", "feat", "new idea")
         text = self.roadmap_text()
         self.assertEqual(text.count("## Features"), 1)
-        # New feature joins the route, above the Bugs section.
-        self.assertLess(text.index("- [ ] new idea"), text.index("## Bugs"))
-        self.assertLess(text.index("- [ ] build it"), text.index("- [ ] new idea"))
+        # New feature joins the route (numbered 2), above the Bugs section.
+        self.assertIn("2. [ ] new idea", text)
+        self.assertLess(text.index("2. [ ] new idea"), text.index("## Bugs"))
+        self.assertLess(text.index("1. [ ] build it"), text.index("2. [ ] new idea"))
 
     def test_add_bug_lands_below_features_route(self):
         (self.ccdir / "roadmap.md").write_text(
-            "# Roadmap\n\n## Features\n\n- [ ] build it\n"
+            "# Roadmap\n\n## Features\n\n1. [ ] build it\n"
         )
         self.run_bin("roadmap", "add", "bug", "crash")
         text = self.roadmap_text()
-        self.assertLess(text.index("- [ ] build it"), text.index("## Bugs"))
+        self.assertLess(text.index("1. [ ] build it"), text.index("## Bugs"))
 
     def test_add_preserves_backslashes(self):
         # Text with backslashes must land literally — no escape processing, no
@@ -244,8 +267,8 @@ class TestCcfunnelBin(unittest.TestCase):
         self.run_bin("roadmap", "add", "bug", r"path C:\temp\nope crashes")
         self.run_bin("roadmap", "add", "bug", r"also D:\down")  # append-within path
         text = self.roadmap_text()
-        self.assertIn(r"- [ ] path C:\temp\nope crashes", text)
-        self.assertIn(r"- [ ] also D:\down", text)
+        self.assertIn(r"1. [ ] path C:\temp\nope crashes", text)
+        self.assertIn(r"2. [ ] also D:\down", text)
 
     def test_add_unknown_kind_exits_2(self):
         r = self.run_bin("roadmap", "add", "chore", "something")
@@ -269,8 +292,8 @@ class TestCcfunnelBin(unittest.TestCase):
 
     def _seed_roadmap(self):
         (self.ccdir / "roadmap.md").write_text(
-            "# Roadmap\n\n## Features\n\n- [ ] a\n- [ ] b\n\n"
-            "## TODO\n\n- [ ] t\n\n## Backlog\n\n## Bugs\n\n- [ ] x\n"
+            "# Roadmap\n\n## Features\n\n1. [ ] a\n2. [ ] b\n\n"
+            "## TODO\n\n1. [ ] t\n\n## Backlog\n\n## Bugs\n\n1. [ ] x\n"
         )
 
     def test_view_all_prints_whole_file(self):
@@ -289,13 +312,13 @@ class TestCcfunnelBin(unittest.TestCase):
         self._seed_roadmap()
         r = self.run_bin("roadmap", "view", "feat")
         self.assertEqual(r.returncode, 0, r.stderr)
-        self.assertEqual(r.stdout, "## Features\n\n- [ ] a\n- [ ] b\n")
+        self.assertEqual(r.stdout, "## Features\n\n1. [ ] a\n2. [ ] b\n")
 
     def test_view_section_not_duplicated(self):
         self._seed_roadmap()
         r = self.run_bin("roadmap", "view", "todo")
         self.assertEqual(r.stdout.count("## TODO"), 1, "section printed twice")
-        self.assertIn("- [ ] t", r.stdout)
+        self.assertIn("1. [ ] t", r.stdout)
 
     def test_view_missing_section_notes_and_exits_0(self):
         (self.ccdir / "roadmap.md").write_text("# Roadmap\n")
