@@ -134,6 +134,21 @@ direct SVG export**. Avoid `export png` unless the user explicitly needs raster 
 
 ---
 
+## Looking it up — full docs and a queryable model
+
+Two ways to fetch information instead of guessing:
+
+- **Exact syntax and features** — the whole documentation is published LLM-readable at
+  `https://likec4.dev/llms.txt` (an index of links) and `https://likec4.dev/llms-full.txt` (every page
+  in one file). Fetch these when you need a keyword or option you don't remember; the same docs are on
+  context7 as the `likec4/likec4` library.
+- **Query a model you've built** — `npx likec4 mcp` starts LikeC4's own MCP server (stdio by default,
+  `--http` for a port; reads `./src`, no dev server needed). It exposes tools to ask an existing model
+  questions — incoming/outgoing relationships of an element, paths between two elements, elements by
+  tag or metadata — so you can navigate a large architecture without re-reading every `.c4` file.
+
+---
+
 ## Viewing — cheapest first
 
 1. **LikeC4 VS Code extension** (primary, cheapest) — opens a live preview of the `.c4` file right in
@@ -172,7 +187,8 @@ labelled `->` relationships) · `views` (`view of X { include * }` projections).
 `build -o ./dist [--output-single-file]` (site) · `gen mermaid|dot|d2|plantuml` · `validate` ·
 `format` · `export png` is the heavy Playwright path, no direct SVG. **View** via the VS Code
 extension first, else `start`/`build`; not in GitHub markdown. **Degrade** to `gen mermaid`, or to
-the `mermaid` skill if Node is missing.
+the `mermaid` skill if Node is missing. **Look up** exact syntax at `likec4.dev/llms.txt` /
+`llms-full.txt`; `likec4 mcp` serves a built model to query in natural language.
 
 **Invariant:** one model, many consistent views; declare kinds in `specification` before use; label
 relationships in the model and views inherit them.
