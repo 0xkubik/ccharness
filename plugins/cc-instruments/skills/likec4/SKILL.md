@@ -22,7 +22,8 @@ use the `mermaid` skill instead.
 ## The model — three blocks
 
 Every `.c4` file is three blocks: `specification` (the vocabulary of element kinds you may use),
-`model` (the actual elements and how they relate), and `views` (which projections to render).
+`model` (the actual elements and how they relate), and `views` (which projections to render) — plus
+an optional `deployment` block for infrastructure (see View kinds below).
 
 ```
 specification {
@@ -69,8 +70,10 @@ windows onto the same elements, so they can never contradict each other.
   component picture, chosen by *what you point `of` at*.
 - **Dynamic view** — `dynamic view { ... }` renders a **step-by-step flow scenario** (a sequence of
   interactions, like "user logs in": step 1 → step 2 → …), not a static structure.
-- **Deployment view** — `deployment { ... }` describes **infrastructure** — where the model's
-  software elements actually run (nodes, environments) — separately from the logical model.
+- **Deployment view** — `deployment view X { ... }` renders **infrastructure**: where the model's
+  software elements actually run. The infrastructure itself is described in a separate top-level
+  `deployment { ... }` block (its nodes declared as `deploymentNode` in `specification`, `instanceOf`
+  placing the logical elements onto them) — kept apart from the logical `model`.
 
 ---
 
@@ -165,7 +168,7 @@ Write `.c4` files. When the architect skill is driving the work, put them under
 
 **Three blocks** — `specification` (element kinds + style) · `model` (elements, nesting,
 labelled `->` relationships) · `views` (`view of X { include * }` projections). **Views**: element
-(`view of X`) · `dynamic view` (a flow) · `deployment` (infra). **CLI**: `start` (dev server) ·
+(`view of X`) · `dynamic view` (a flow) · `deployment view` (infra). **CLI**: `start` (dev server) ·
 `build -o ./dist [--output-single-file]` (site) · `gen mermaid|dot|d2|plantuml` · `validate` ·
 `format` · `export png` is the heavy Playwright path, no direct SVG. **View** via the VS Code
 extension first, else `start`/`build`; not in GitHub markdown. **Degrade** to `gen mermaid`, or to
