@@ -1,194 +1,124 @@
 ---
 name: likec4
-description: "Use when building a structured software-architecture diagram as code — C4-style context / container / component views with drill-down, one model producing many consistent views with automatic layout. Reach for it over Mermaid when the architecture is layered and you want a single source of truth. Viewed via the LikeC4 VS Code extension; generates Mermaid as a zero-install fallback."
+description: "Reference for LikeC4 — a DSL and toolchain for describing software architecture as code (C4-style context / container / component / code), where one model renders many consistent, auto-laid-out views. Covers the language, view kinds, styling, deployment, the CLI, the MCP server, and where the exhaustive syntax lives. Viewed via the LikeC4 VS Code extension; can generate Mermaid."
 ---
 
-# likec4 — architecture as code
+# likec4 — architecture-as-code reference
 
-LikeC4 is a small DSL for describing software architecture the C4 way (context → container →
-component → code). You write **one model** of your system once; the tool renders **many interactive
-views** from it — pan/zoom, and drill from a system down into its internals — with **automatic
-layout**. You never place boxes by hand.
+LikeC4 is a DSL and toolchain for software architecture. You describe one model of a system in `.c4`
+files; the toolchain renders many interactive views from it — pan/zoom, drill from a system into its
+internals — with automatic layout. Every view is a projection of the same model, so views stay
+consistent with each other; layout is computed, not placed by hand.
 
-**Reach for LikeC4 over Mermaid when** the architecture is layered and you want a single source of
-truth: one model, many views that stay consistent because they're all projections of the same
-elements. Mermaid is per-diagram — each picture is drawn independently and drifts. LikeC4 is the
-opposite: change the model once, every view updates. The cost is a real toolchain (Node) and that it
-doesn't render inside GitHub markdown. If you need one throwaway diagram that renders in a README,
-use the `mermaid` skill instead.
+This file is a map of what LikeC4 offers and what each part is for. The exhaustive, always-current
+syntax lives in the official docs and the MCP server — see **Where the full syntax lives**.
 
----
+## The language
 
-## The model — three blocks
+A `.c4` source is organised into top-level blocks. These are the constructs and what each is for:
 
-Every `.c4` file is three blocks: `specification` (the vocabulary of element kinds you may use),
-`model` (the actual elements and how they relate), and `views` (which projections to render) — plus
-an optional `deployment` block for infrastructure (see View kinds below).
+- **`specification`** — the vocabulary. Declares the *element kinds* the model may use (e.g. `system`,
+  `container`, `component`, `actor`, or any custom kind), the *relationship kinds* (e.g. `async`,
+  `calls`), *tags* for categorisation, and *custom colors*. A kind must be declared here before the
+  model uses it; a kind carries default styling.
+- **`model`** — the single source of truth: the actual elements and how they nest. Elements form a
+  hierarchical namespace (an element contains child elements), and each carries properties such as
+  title, description, technology, and metadata. The nesting is what drill-down navigates.
+- **Relationships** — directed connections between elements expressing interaction, data flow, or
+  dependency. A relationship can be typed with a relationship kind and carry a technology and a
+  description; connections can cross nesting levels. Labels are written once in the model and every
+  view inherits them.
+- **References and identifiers** — elements are named uniquely within their scope; fully-qualified
+  names resolve nested elements. Lexical scoping and hoisting make references unambiguous across the
+  model.
+- **Tags and metadata** — tags mark elements and relationships for filtering and styling; metadata
+  stores arbitrary key–value pairs (including arrays). Both feed queries, view predicates, and tooling.
+- **Extending the model (`extend`)** — enriches an existing element (including a nested one) from a
+  separate file with more properties, tags, metadata, or relationships. This is how a large model is
+  split across multiple files without repetition.
 
-```
-specification {
-  element actor { style { shape person } }
-  element system
-  element component
-}
-model {
-  customer = actor 'Customer'
-  saas = system 'Our SaaS' {
-    ui = component 'Frontend'
-    backend = component 'Backend'
-    ui -> backend 'calls over HTTPS'
-  }
-  customer -> ui 'uses'
-}
-views {
-  view index { include * }        // landscape
-  view of saas { include * }      // drill into one system
-}
-```
+## Views
 
-- **`specification`** — declares the *kinds* of element you're allowed to use (`actor`, `system`,
-  `component` here) and their default styling. You must declare a kind before the model can use it.
-  `style { shape person }` is what makes the actor render as a stick figure.
-- **`model`** — the single source of truth. `customer = actor 'Customer'` binds an element to an id
-  you reference elsewhere. **Elements nest**: `ui` and `backend` live *inside* `saas`, so `saas` is a
-  system that contains two components — that nesting is exactly what drill-down navigates.
-  **Relationships carry labels**: `ui -> backend 'calls over HTTPS'`. Relationships can cross nesting
-  levels (`customer -> ui 'uses'` reaches a component inside the system).
-- **`views`** — each `view` projects the one model into a specific picture. `include *` pulls in the
-  relevant elements; `view of saas` scopes the picture to that system and its insides. Connections in
-  a view **inherit their labels from the model** — you write the label once, in the relationship.
+A view is a projection of the one model into a specific picture. The kinds:
 
-The core idea: **model once, view many.** A landscape view and a drill-into-`saas` view are two
-windows onto the same elements, so they can never contradict each other.
+- **Element views** — render an element together with what it contains and connects to; an unscoped
+  view is the top-level landscape. Scoping a view at different elements yields the C4
+  context / container / component levels from the same model.
+- **Dynamic views** — render a scenario as an ordered sequence of steps, with support for parallel
+  flows and notes. They describe a specific use case or workflow without changing the logical model.
+- **Deployment views** — render the deployment model (below), using the same predicate system as
+  logical views.
+- **Generated views** — implicit views produced automatically for elements without an explicit view,
+  plus relationship browsers, for navigation and discovery with no manual view definition.
 
----
+Views are shaped by:
 
-## View kinds
+- **View predicates** — `include` / `exclude` select which elements and relationships appear, via
+  wildcards and filters by kind, tag, or metadata; style rules can be applied conditionally within a
+  view. This is how each view decides its own contents and detail level. Automatic layout can be
+  tuned per view.
+- **Notations** — legend entries explaining what shapes and colors mean, defined globally in the
+  specification or locally per view.
+- **Organisation and navigation** — views can be grouped into folders by a titling convention;
+  elements and relationships can carry `navigateTo` links between views and external links, which is
+  what makes drill-down and cross-view navigation work.
 
-- **Element view** — `view of X { include * }` renders `X` and what it contains/connects to; a bare
-  `view name { include * }` with no `of` is the top-level landscape. This is the C4 context/container/
-  component picture, chosen by *what you point `of` at*.
-- **Dynamic view** — `dynamic view { ... }` renders a **step-by-step flow scenario** (a sequence of
-  interactions, like "user logs in": step 1 → step 2 → …), not a static structure.
-- **Deployment view** — `deployment view X { ... }` renders **infrastructure**: where the model's
-  software elements actually run. The infrastructure itself is described in a separate top-level
-  `deployment { ... }` block (its nodes declared as `deploymentNode` in `specification`, `instanceOf`
-  placing the logical elements onto them) — kept apart from the logical `model`.
+## Styling
 
----
+Controls the visual appearance of elements and relationships: shape, colors, icons, size, opacity,
+and borders. Supports theme overrides and conditional style rules (including rules driven by tags or
+metadata via view predicates). Styling defaults are set on a kind in the specification and can be
+overridden per element or per view.
 
-## Down to the code level — one collapsible model, all the way
+## Deployment model
 
-Nesting is **unlimited** and you declare your own element kinds in `specification` — so the same
-model that holds systems and containers can keep going *down into the code*. Declare `module`,
-`package`, or `class` kinds and nest them inside a component:
+A separate top-level model of physical infrastructure, described as hierarchical deployment nodes.
+`instanceOf` maps the logical model's elements onto those nodes — i.e. where each component actually
+runs. It is kept apart from the logical `model` and is what deployment views render.
 
-```
-specification {
-  element component
-  element module
-}
-model {
-  api = component 'API' {
-    router = module 'Router'
-    auth   = module 'Auth'
-    router -> auth 'verifies token'
-  }
-}
-views {
-  view of api { include * }   // drill into API — its modules and how they link
-}
-```
+## What LikeC4 does not model
 
-That's "one model, many views" carried to the bottom: **one file, foldable from the system down to
-modules and key classes**, a drill-down view at each level and `dynamic view`s for the flows between
-them. It stays a single source of truth — not a pile of disconnected diagrams.
+LikeC4 describes elements, nesting, and relationships. It does not represent leaf-level implementation
+detail — a class's fields and methods, a table's columns, function signatures, low-level design
+patterns, or the internals of a call sequence beyond logical workflow steps. That detail lives in
+other tools (for example the `mermaid` skill's class, sequence, and ER diagrams).
 
-This `module`/`package` nesting also **doubles as the folder structure** — the on-disk layout
-(`api/router/`, `api/auth/`…) is a projection of the model, so the tree is designed once here rather
-than kept in sync as a separate artifact.
+## Tooling
 
-**Where it stops.** LikeC4 models elements, nesting, and relationships — *not* a class's fields and
-methods, the internals of a step-by-step call sequence, or a table's columns. That leaf-level detail
-doesn't fold into the model in any tool. Render it separately with the `mermaid` skill
-(`classDiagram` / `sequenceDiagram` / `erDiagram`) and hang it off the leaf. Keep this model as the
-backbone; use Mermaid only for detail that can't collapse.
+- **CLI** (run via `npx likec4`, no global install): `start` runs an interactive dev server with hot
+  reload; `build` produces a static self-contained site (`--output-single-file` for one HTML file);
+  `gen mermaid|dot|d2|plantuml` emits other formats (Mermaid is the GitHub-viewable one); `validate`
+  checks the model for errors; `format` canonical-formats the source. `export png` also exists but
+  pulls in Playwright and a headless Chromium download; there is no direct SVG export.
+- **MCP server** — `npx likec4 mcp` (stdio, `--http` for a port; reads `./src`, no dev server needed)
+  exposes tools to query an existing model: an element's incoming/outgoing relationships, paths
+  between two elements, elements by tag or metadata. It answers questions about a large model without
+  re-reading every `.c4` file.
+- **Editors** — the LikeC4 VS Code extension shows a live preview of a `.c4` file in the editor, with
+  no server or build.
+- **Programmatic and integration surfaces** — a JavaScript/TypeScript API and a `LikeC4Model` codegen
+  target; React and Web Component generation for embedding views; a Vite plugin; a Docker image;
+  GitHub Actions; and draw.io integration.
+- **Project configuration** — config files define project metadata, include/exclude paths, image
+  aliases, shared styles, and custom generators; multiple independent projects can live in one
+  workspace.
 
----
+## Viewing
 
-## CLI — via `npx`, no global install
-
-- `npx likec4 start` — interactive dev server in the browser, hot reload as you edit. The primary
-  authoring loop when you don't have the VS Code extension.
-- `npx likec4 build -o ./dist` — build a static, self-contained site. Add `--output-single-file` for
-  one shareable HTML file.
-- `npx likec4 gen mermaid` — emit Mermaid text (the zero-friction, GitHub-viewable fallback).
-- `npx likec4 gen dot | d2 | plantuml` — emit other diagram formats.
-- `npx likec4 validate` — check the model for errors (broken references, undeclared kinds).
-- `npx likec4 format` — canonical-format the `.c4` source.
-
-**The heavy path — call it out before using it.** `npx likec4 export png` works but pulls in
-Playwright + a headless Chromium download (large, slow, needs a browser runtime). There is **no
-direct SVG export**. Avoid `export png` unless the user explicitly needs raster images; prefer
-`build` (a real interactive site) or `gen mermaid` (a static image target) instead.
-
----
-
-## Looking it up — full docs and a queryable model
-
-Two ways to fetch information instead of guessing:
-
-- **Exact syntax and features** — the whole documentation is published LLM-readable at
-  `https://likec4.dev/llms.txt` (an index of links) and `https://likec4.dev/llms-full.txt` (every page
-  in one file). Fetch these when you need a keyword or option you don't remember; the same docs are on
-  context7 as the `likec4/likec4` library.
-- **Query a model you've built** — `npx likec4 mcp` starts LikeC4's own MCP server (stdio by default,
-  `--http` for a port; reads `./src`, no dev server needed). It exposes tools to ask an existing model
-  questions — incoming/outgoing relationships of an element, paths between two elements, elements by
-  tag or metadata — so you can navigate a large architecture without re-reading every `.c4` file.
-
----
-
-## Viewing — cheapest first
-
-1. **LikeC4 VS Code extension** (primary, cheapest) — opens a live preview of the `.c4` file right in
-   the editor. If it's installed, this is how you look at your work; no server, no build.
-2. **`npx likec4 start`** — the browser dev server, when there's no extension.
-3. **`npx likec4 build`** — a static site to publish or hand off.
-
-It does **not** render inside GitHub markdown. Don't expect a `.c4` file to show as a diagram in a PR.
-
----
-
-## Degradation — always have a fallback
-
-- **Node present, no viewer** → `npx likec4 gen mermaid` gives a GitHub-viewable diagram with zero
-  extra install. Good enough to drop into a README or PR.
-- **No Node at all** → don't fight the toolchain. Fall back to the `mermaid` skill and hand-write a
-  C4-style Mermaid diagram directly.
-
-The model file is still worth keeping either way — it's the source of truth even when the rendering is
-degraded.
-
----
+The VS Code extension previews a `.c4` file directly in the editor. `npx likec4 start` serves the same
+in a browser; `npx likec4 build` produces a static site to publish or hand off. LikeC4 does not render
+inside GitHub markdown — a `.c4` file does not display as a diagram in a PR; `gen mermaid` produces a
+GitHub-viewable image target from the model.
 
 ## File placement
 
-Write `.c4` files. When the architect skill is driving the work, put them under
-`docs/ccharness/architecture/`. Keep the model in one place so "one source of truth" stays true.
+`.c4` files. When the architect skill is driving the work, they live under
+`docs/ccharness/architecture/`, kept together so the model stays a single source of truth.
 
----
+## Where the full syntax lives
 
-## Quick reference
-
-**Three blocks** — `specification` (element kinds + style) · `model` (elements, nesting,
-labelled `->` relationships) · `views` (`view of X { include * }` projections). **Views**: element
-(`view of X`) · `dynamic view` (a flow) · `deployment view` (infra). **CLI**: `start` (dev server) ·
-`build -o ./dist [--output-single-file]` (site) · `gen mermaid|dot|d2|plantuml` · `validate` ·
-`format` · `export png` is the heavy Playwright path, no direct SVG. **View** via the VS Code
-extension first, else `start`/`build`; not in GitHub markdown. **Degrade** to `gen mermaid`, or to
-the `mermaid` skill if Node is missing. **Look up** exact syntax at `likec4.dev/llms.txt` /
-`llms-full.txt`; `likec4 mcp` serves a built model to query in natural language.
-
-**Invariant:** one model, many consistent views; declare kinds in `specification` before use; label
-relationships in the model and views inherit them.
+- **Docs, LLM-readable** — `https://likec4.dev/llms.txt` (an index of links) and
+  `https://likec4.dev/llms-full.txt` (every page in one file). The same docs are on context7 as the
+  `likec4/likec4` library. These are the source of exact, current syntax for every construct above.
+- **A built model** — `npx likec4 mcp` (see Tooling) answers structural questions about an existing
+  model in natural language.
