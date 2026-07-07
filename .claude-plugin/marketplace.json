@@ -23,7 +23,7 @@
     },
     {
       "name": "cc-musician",
-      "description": "The self-driving agent layer: the musician (/musician) drives one piece of work through the cc-instruments script to its own falsifiable definition of done, then closes itself — bounded and self-closing, not a never-stop loop. By default it shapes the idea with you first, then builds alone (--auto for full autonomy from the start). With a prompt it thinks the task through first (and may decline a bad idea); without one it finds a direction itself. /musician-cancel is the manual brake. Depends on cc-instruments.",
+      "description": "The router layer: /musician is one entry point for any piece of work. It reads the goal (roadmap.md) and the design (architecture), sizes the task, and routes it — build-large / build-medium / build-small for code, or any cc-script/cc-instruments skill for the rest (architect, crux, slap, roadmap-management, what-to-do…). The router decides what; flags tune how — --auto acts without asking, --fast, --worktree, --ultracode. Runs in the conversation, no self-driving loop. Depends on cc-script and cc-instruments.",
       "author": { "name": "kubik" },
       "category": "workflow",
       "source": "./plugins/cc-musician"
