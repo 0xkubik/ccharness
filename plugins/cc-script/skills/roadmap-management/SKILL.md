@@ -5,12 +5,13 @@ description: Use to create OR maintain a product's roadmap (the North Star goal 
 
 # roadmap-management — own the product's roadmap across its life
 
-You own `docs/ccharness/roadmap.md`: the product's **North Star** (the goal) at the top, and a
-**flat, ordered list of features** (the route to it) in a `## Features` section below — plus three
-capture sections (`## TODO`, `## Backlog`, `## Bugs`) shared with the `ccscriptctl roadmap add` helper.
-Every later step builds on this file — what-to-do ranks moves against the goal, the musician builds
-straight off the feature list — so a sloppy goal or vague feature aims every automated step at the
-wrong target.
+You own `docs/ccharness/roadmap.md`: the product's **North Star** (the goal) at the top, and below it
+**three buildable sections, graded by size** — `## Features` (whole features → `build-large`),
+`## TODO` (medium changes → `build-medium`), `## Fixes` (small fixes → `build-small`). `## Features` is
+the ordered spine — the route to the North Star; the section an item lives in tells the musician which
+build tier to use. All three are shared with the `ccscriptctl roadmap add` helper. Every later step
+builds on this file — what-to-do ranks moves against the goal, the musician builds straight off these
+sections — so a sloppy goal or vague item aims every automated step at the wrong target.
 
 **This is not a run-once form.** You charter the roadmap the first time, and then you keep it honest as
 the product changes: rethink it, or fold in a new feature, whenever the human comes back. So you run in
@@ -99,10 +100,11 @@ that no longer serve it; reordering or dropping a feature shifts the frontier an
 aim at. Say plainly what each change touches. Urge a read-back once you've changed
 much. Stop when the human is satisfied — no forced review, no minimum.
 
-**Triage the capture inbox.** `## TODO`, `## Backlog`, and `## Bugs` collect quick notes dropped in from
-the terminal (`ccscriptctl roadmap add …`). On a revision, look them over: promote what belongs on the
-route into `## Features` at the right spot, leave the rest where it is, drop the obsolete. This is the
-only place raw captures get turned into charted features — one decision at a time, as always.
+**Reconcile the three sections.** `## TODO` (medium) and `## Fixes` (small) collect items dropped in
+from the terminal (`ccscriptctl roadmap add …`) alongside the `## Features` spine. On a revision, look
+them over and put each in the section that matches its real size: a `## TODO` line that's really a
+whole feature belongs in `## Features`, a `## Features` line that's really a small fix belongs in
+`## Fixes`. Reorder within a section, drop the obsolete — one decision at a time, as always.
 
 ---
 
@@ -135,12 +137,13 @@ silently autowrite. One show-and-confirm gate always stands.
 ## The roadmap file (the contract — keep it exact)
 
 `docs/ccharness/roadmap.md` (create the directory if needed). The file **opens with the North Star**
-(the goal), then **four sections in this fixed order — `## Features`, `## TODO`, `## Backlog`,
-`## Bugs`** — each a checklist. `## Features` is the charted route: a **flat, ordered list** where
-**document order is build order** (top to bottom) and the **frontier** = the **first unchecked `[ ]` box
-under `## Features`** (no separate pointer). The other three are a **capture inbox** — quick notes
-dropped in from the terminal with `ccscriptctl roadmap add todo|backlog|bug <text>`, for you to triage
-onto the route on a re-run.
+(the goal), then **three buildable sections in this fixed order — `## Features`, `## TODO`,
+`## Fixes`** — each a checklist, and each **graded by build tier**: a whole feature → `## Features`
+(`build-large`), a medium change → `## TODO` (`build-medium`), a small fix → `## Fixes` (`build-small`).
+The section an item lives in is its size tier. `## Features` is the ordered spine — a **flat, ordered
+list** where **document order is build order** (top to bottom) and the **frontier** = the **first
+unchecked `[ ]` box under `## Features`** (the path to the North Star; no separate pointer). Items reach
+any section from the terminal with `ccscriptctl roadmap add feat|todo|fix <text>`.
 
 ```markdown
 # Roadmap — <product>
@@ -166,23 +169,16 @@ onto the route on a re-run.
 
 ## TODO
 
-<!-- Near-term concrete tasks — also captured via `ccscriptctl roadmap add todo`. -->
+<!-- Medium changes (build-medium) — also captured via `ccscriptctl roadmap add todo`. -->
 
-1. [ ] <task>
+1. [ ] <medium change>
 ...
 
-## Backlog
+## Fixes
 
-<!-- Someday / maybe — also captured via `ccscriptctl roadmap add backlog`. -->
+<!-- Small fixes (build-small) — also captured via `ccscriptctl roadmap add fix`. -->
 
-1. [ ] <idea>
-...
-
-## Bugs
-
-<!-- Known defects — also captured via `ccscriptctl roadmap add bug`. -->
-
-1. [ ] <bug>
+1. [ ] <small fix>
 ...
 ```
 
@@ -193,7 +189,7 @@ big or too wordy: tighten the wording, or split it into two features — never s
 
 Features are **numbered in order** with a checkbox — `N. [ ] <feature>`. The number is the item's
 handle: the next one is **the highest existing number + 1**, so deleting an item never renumbers the
-rest. `## TODO`, `## Backlog`, and `## Bugs` use the same `N. [ ] <text>` shape, each numbered
+rest. `## TODO` and `## Fixes` use the same `N. [ ] <text>` shape, each numbered
 independently from `1`. `ccscriptctl roadmap add` assigns the number automatically. Every other skill
 detects grounding by the `## Product North Star` heading.
 
@@ -205,7 +201,7 @@ detects grounding by the `## Product North Star` heading.
 (or **Mode 4** with `--force`); can't tell 2 vs 3 → **ask** · **Mode 1** Charter — open-question goal
 (1–3 sentences) → survey + feature loop (`AskUserQuestion`, one at a time, _need A before B → A higher_,
 one line each `N. [ ] <feature>` into `## Features`, urge review) → independent reviewer · **Mode 2** Open revision —
-show goal + list + progress, triage the capture inbox, revise free-form, one decision at a time, reason about ripple · **Mode 3**
+show goal + list + progress, reconcile the three tier-sections, revise free-form, one decision at a time, reason about ripple · **Mode 3**
 Add a feature — why / how / when → one line if approved · **Mode 4** `--force` — formulate → **show +
 "ok?"** → write (never silent).
 

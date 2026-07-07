@@ -58,8 +58,9 @@ parenthetical owner may read `what-to-do` or `roadmap-management`, both count.
 **Read the feature list.** The roadmap (`docs/ccharness/roadmap.md`, located above) holds the North
 Star at the top and the charted route in a `## Features` section below it. Derive the **frontier** = the
 **first unchecked `[ ]` box under `## Features`** (the list is flat and ordered; tracking is checkboxes
-only — no separate pointer). The `## TODO`, `## Backlog`, and `## Bugs` sections are a human capture
-inbox, **not the route** — read them as raw signal if useful, but the frontier is `## Features`-only. The
+only — no separate pointer). The `## TODO` (medium) and `## Fixes` (small) sections are the smaller-tier
+buckets — buildable at their tier, but the **frontier tracks the `## Features` spine only** (the path to
+the North Star); read TODO/Fixes as raw signal if useful. The
 frontier biases Phase 2 and Phase 3. If `## Features` has no lines yet (goal set, route not charted),
 what-to-do runs unbiased — you may nudge _("no feature list yet — `/roadmap-management` charts the route
 far ahead")_, then proceed.
@@ -196,7 +197,7 @@ what-to-do's.
 ## Quick reference
 
 `0` Ground — `## Product North Star` at the top of `docs/ccharness/roadmap.md`? no → **route to `/roadmap-management`**, stop; yes → North Star = goal, route = the `## Features` section (**frontier** = the
-first unchecked `[ ]` there; TODO/Backlog/Bugs are capture, not the route) · `1` Survey — repo = where we are
+first unchecked `[ ]` there; TODO/Fixes are the smaller-tier buckets, frontier tracks Features only) · `1` Survey — repo = where we are
 now; if roadmap, check whether the **frontier feature** is built (interactive: offer to check off ·
 under the musician: auto-mark) · `2` Fan-out — four lenses (ADD / FINISH / REBUILD / REFACTOR), parallel,
 empty-lane valve, **fed the frontier milestone as a steer (not a gate)** · `3`

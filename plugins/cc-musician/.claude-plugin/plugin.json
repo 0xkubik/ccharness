@@ -1,6 +1,6 @@
 {
   "name": "cc-musician",
-  "version": "0.27.0",
+  "version": "0.27.1",
   "description": "cc-musician — the router layer: /musician is one entry point for any piece of work. It reads the goal (roadmap.md) and the design (architecture), sizes the task, and routes it to the right skill — build-large / build-medium / build-small for code, or any cc-script/cc-instruments skill (architect, crux, slap, roadmap-management, what-to-do…) for the rest. The router decides WHAT; flags only tune HOW: --auto acts without asking, --fast is lighter and faster, --worktree forces isolation, --ultracode fans out wide. It runs in the conversation — no arming, no run state, no self-perpetuating loop. Depends on cc-script and cc-instruments.",
   "author": {
     "name": "kubik",

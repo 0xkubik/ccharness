@@ -14,18 +14,17 @@ Usage: ccscriptctl <command>
 Commands:
   roadmap open              Open docs/ccharness/roadmap.md in your editor
   roadmap add <kind> <text> Append a note to roadmap.md without opening it,
-                            where <kind> is one of:
-                              feat      → the "## Features" section (the route)
-                              todo      → the "## TODO" section
-                              backlog   → the "## Backlog" section
-                              bug       → the "## Bugs" section
+                            where <kind> is one of (each maps to a build tier):
+                              feat      → the "## Features" section (build-large)
+                              todo      → the "## TODO" section (build-medium)
+                              fix       → the "## Fixes" section (build-small)
                             Missing sections are created in that order.
   roadmap view [what]       Print roadmap.md to the console. [what] is one of:
                               all       → the whole file (default)
-                              feat / todo / backlog / bug → just that section
+                              feat / todo / fix → just that section
   roadmap done <kind> <n>   Mark item <n> in that section done ("[x]")
   roadmap drop <kind> <n>   Remove item <n> from that section, then renumber
-                            (<kind> is feat | todo | backlog | bug)
+                            (<kind> is feat | todo | fix)
   roadmap renumber          Renumber every section's items to 1..N in order
                             (fixes gaps and old "- [ ]" bullets)
   roadmap prune             Remove completed ("[x]") items, then renumber
@@ -132,8 +131,7 @@ kind_to_section() {
   case "$1" in
     feat)    echo Features ;;
     todo)    echo TODO ;;
-    backlog) echo Backlog ;;
-    bug)     echo Bugs ;;
+    fix)     echo Fixes ;;
     *)       return 1 ;;
   esac
 }
@@ -142,10 +140,9 @@ kind_to_section() {
 # Print the sections that should sit after the given one (its ordered successors).
 section_successors() {
   case "$1" in
-    Features) printf '%s\n' TODO Backlog Bugs ;;
-    TODO)     printf '%s\n' Backlog Bugs ;;
-    Backlog)  printf '%s\n' Bugs ;;
-    Bugs)     : ;;
+    Features) printf '%s\n' TODO Fixes ;;
+    TODO)     printf '%s\n' Fixes ;;
+    Fixes)    : ;;
   esac
 }
 
@@ -164,8 +161,9 @@ section_max_num() {
 
 # Append "N. [ ] <text>" under "## <section>", numbering it the next in that
 # section (highest existing + 1). If the section isn't there yet, create it in its
-# canonical slot (Features → TODO → Backlog → Bugs): just before the first later
-# section that exists, else at the end. "## Features" is shared with roadmap-management.
+# canonical slot (Features → TODO → Fixes): just before the first later
+# section that exists, else at the end (Features → TODO → Fixes). "## Features" is
+# shared with roadmap-management.
 roadmap_add_note() {
   local section="$1" text="$2" file="$3" heading tmp successor cand num bullet
   heading="## $section"
@@ -243,7 +241,7 @@ roadmap_renumber() {
   local file="$1" tmp
   tmp="$(mktemp)"
   awk '
-    function managed(h) { return h == "## Features" || h == "## TODO" || h == "## Backlog" || h == "## Bugs" }
+    function managed(h) { return h == "## Features" || h == "## TODO" || h == "## Fixes" }
     /^## / { in_sec = managed($0); count = 0; print; next }
     in_sec && /^[[:space:]]*(([0-9]+\.)|[-*])[[:space:]]+\[[ xX]\]/ {
       count++
@@ -263,7 +261,7 @@ roadmap_prune() {
   local file="$1" tmp before after
   tmp="$(mktemp)"
   awk '
-    function managed(h) { return h == "## Features" || h == "## TODO" || h == "## Backlog" || h == "## Bugs" }
+    function managed(h) { return h == "## Features" || h == "## TODO" || h == "## Fixes" }
     /^## / { in_sec = managed($0); print; next }
     in_sec && /^[[:space:]]*(([0-9]+\.)|[-*])[[:space:]]+\[[xX]\]/ { next }
     { print }
@@ -332,10 +330,9 @@ cmd_roadmap() {
       case "$kind" in
         feat)    section="Features" ;;
         todo)    section="TODO" ;;
-        backlog) section="Backlog" ;;
-        bug)     section="Bugs" ;;
-        "")      echo "ccscriptctl: 'roadmap add' needs a kind (feat|todo|backlog|bug) and text." >&2; exit 2 ;;
-        *)       echo "ccscriptctl: unknown kind '$kind' — use feat, todo, backlog, or bug." >&2; exit 2 ;;
+        fix)     section="Fixes" ;;
+        "")      echo "ccscriptctl: 'roadmap add' needs a kind (feat|todo|fix) and text." >&2; exit 2 ;;
+        *)       echo "ccscriptctl: unknown kind '$kind' — use feat, todo, or fix." >&2; exit 2 ;;
       esac
       shift || true
       local text="$*"
@@ -359,9 +356,8 @@ cmd_roadmap() {
         all)     section="" ;;
         feat)    section="Features" ;;
         todo)    section="TODO" ;;
-        backlog) section="Backlog" ;;
-        bug)     section="Bugs" ;;
-        *)       echo "ccscriptctl: unknown view '$kind' — use all, feat, todo, backlog, or bug." >&2; exit 2 ;;
+        fix)     section="Fixes" ;;
+        *)       echo "ccscriptctl: unknown view '$kind' — use all, feat, todo, or fix." >&2; exit 2 ;;
       esac
       local ccdir file
       file="$(roadmap_path)"
@@ -392,7 +388,7 @@ cmd_roadmap() {
       local kind section num ccdir file status
       kind="${1:-}"
       if ! section="$(kind_to_section "$kind")"; then
-        echo "ccscriptctl: 'roadmap $sub' needs a kind (feat|todo|backlog|bug) and an item number." >&2
+        echo "ccscriptctl: 'roadmap $sub' needs a kind (feat|todo|fix) and an item number." >&2
         exit 2
       fi
       num="${2:-}"

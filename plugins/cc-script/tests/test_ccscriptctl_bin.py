@@ -226,35 +226,35 @@ class TestCcfunnelBin(unittest.TestCase):
         return (self.roadmap).read_text()
 
     def test_add_creates_section_and_appends(self):
-        r = self.run_bin("roadmap", "add", "bug", "crash", "on", "empty", "export")
+        r = self.run_bin("roadmap", "add", "fix", "crash", "on", "empty", "export")
         self.assertEqual(r.returncode, 0, r.stderr)
         text = self.roadmap_text()
-        self.assertIn("## Bugs", text)
+        self.assertIn("## Fixes", text)
         self.assertIn("1. [ ] crash on empty export", text)
         self.assertFalse(self.opened.exists(), "add opened an editor")
 
     def test_add_maps_kinds_to_sections(self):
         self.run_bin("roadmap", "add", "feat", "dark mode")
         self.run_bin("roadmap", "add", "todo", "wire up CI")
-        self.run_bin("roadmap", "add", "backlog", "i18n someday")
+        self.run_bin("roadmap", "add", "fix", "crash on export")
         text = self.roadmap_text()
         self.assertIn("## Features", text)
         self.assertIn("1. [ ] dark mode", text)
         self.assertIn("## TODO", text)
         self.assertIn("1. [ ] wire up CI", text)
-        self.assertIn("## Backlog", text)
-        self.assertIn("1. [ ] i18n someday", text)
+        self.assertIn("## Fixes", text)
+        self.assertIn("1. [ ] crash on export", text)
 
     def test_add_numbers_increment_per_section(self):
         for f in ("auth", "dark mode", "export"):
             self.run_bin("roadmap", "add", "feat", f)
         for b in ("crash", "leak"):
-            self.run_bin("roadmap", "add", "bug", b)
+            self.run_bin("roadmap", "add", "fix", b)
         text = self.roadmap_text()
         self.assertIn("1. [ ] auth", text)
         self.assertIn("2. [ ] dark mode", text)
         self.assertIn("3. [ ] export", text)
-        # Bugs numbered independently, from 1.
+        # Fixes numbered independently, from 1.
         self.assertIn("1. [ ] crash", text)
         self.assertIn("2. [ ] leak", text)
 
@@ -268,20 +268,19 @@ class TestCcfunnelBin(unittest.TestCase):
         self.assertIn("4. [ ] new", self.roadmap_text())
 
     def test_add_creates_sections_in_canonical_order(self):
-        # Add out of order; sections must still land Features → TODO → Backlog → Bugs.
-        self.run_bin("roadmap", "add", "bug", "a bug")
-        self.run_bin("roadmap", "add", "backlog", "an idea")
+        # Add out of order; sections must still land Features → TODO → Fixes.
+        self.run_bin("roadmap", "add", "fix", "a fix")
         self.run_bin("roadmap", "add", "feat", "a feature")
         self.run_bin("roadmap", "add", "todo", "a task")
         text = self.roadmap_text()
-        order = [text.index(h) for h in ("## Features", "## TODO", "## Backlog", "## Bugs")]
+        order = [text.index(h) for h in ("## Features", "## TODO", "## Fixes")]
         self.assertEqual(order, sorted(order), "sections not in canonical order")
 
     def test_add_appends_within_existing_section(self):
-        self.run_bin("roadmap", "add", "bug", "first")
-        self.run_bin("roadmap", "add", "bug", "second")
+        self.run_bin("roadmap", "add", "fix", "first")
+        self.run_bin("roadmap", "add", "fix", "second")
         text = self.roadmap_text()
-        self.assertEqual(text.count("## Bugs"), 1, "duplicate section created")
+        self.assertEqual(text.count("## Fixes"), 1, "duplicate section created")
         self.assertLess(
             text.index("1. [ ] first"),
             text.index("2. [ ] second"),
@@ -290,29 +289,29 @@ class TestCcfunnelBin(unittest.TestCase):
 
     def test_add_feat_appends_into_existing_features_block(self):
         (self.roadmap).write_text(
-            "# Roadmap\n\n## Features\n\n1. [ ] build it\n\n## Bugs\n\n1. [ ] a bug\n"
+            "# Roadmap\n\n## Features\n\n1. [ ] build it\n\n## Fixes\n\n1. [ ] a fix\n"
         )
         self.run_bin("roadmap", "add", "feat", "new idea")
         text = self.roadmap_text()
         self.assertEqual(text.count("## Features"), 1)
-        # New feature joins the route (numbered 2), above the Bugs section.
+        # New feature joins the route (numbered 2), above the Fixes section.
         self.assertIn("2. [ ] new idea", text)
-        self.assertLess(text.index("2. [ ] new idea"), text.index("## Bugs"))
+        self.assertLess(text.index("2. [ ] new idea"), text.index("## Fixes"))
         self.assertLess(text.index("1. [ ] build it"), text.index("2. [ ] new idea"))
 
-    def test_add_bug_lands_below_features_route(self):
+    def test_add_fix_lands_below_features_route(self):
         (self.roadmap).write_text(
             "# Roadmap\n\n## Features\n\n1. [ ] build it\n"
         )
-        self.run_bin("roadmap", "add", "bug", "crash")
+        self.run_bin("roadmap", "add", "fix", "crash")
         text = self.roadmap_text()
-        self.assertLess(text.index("1. [ ] build it"), text.index("## Bugs"))
+        self.assertLess(text.index("1. [ ] build it"), text.index("## Fixes"))
 
     def test_add_preserves_backslashes(self):
         # Text with backslashes must land literally — no escape processing, no
         # split lines that break the one-line-per-item invariant.
-        self.run_bin("roadmap", "add", "bug", r"path C:\temp\nope crashes")
-        self.run_bin("roadmap", "add", "bug", r"also D:\down")  # append-within path
+        self.run_bin("roadmap", "add", "fix", r"path C:\temp\nope crashes")
+        self.run_bin("roadmap", "add", "fix", r"also D:\down")  # append-within path
         text = self.roadmap_text()
         self.assertIn(r"1. [ ] path C:\temp\nope crashes", text)
         self.assertIn(r"2. [ ] also D:\down", text)
@@ -320,15 +319,15 @@ class TestCcfunnelBin(unittest.TestCase):
     def test_add_unknown_kind_exits_2(self):
         r = self.run_bin("roadmap", "add", "chore", "something")
         self.assertEqual(r.returncode, 2)
-        self.assertIn("bug", r.stderr)
+        self.assertIn("fix", r.stderr)
 
     def test_add_without_text_exits_2(self):
-        r = self.run_bin("roadmap", "add", "bug")
+        r = self.run_bin("roadmap", "add", "fix")
         self.assertEqual(r.returncode, 2)
 
     def test_add_missing_roadmap_exits_1(self):
         (self.roadmap).unlink()
-        r = self.run_bin("roadmap", "add", "bug", "x")
+        r = self.run_bin("roadmap", "add", "fix", "x")
         self.assertEqual(r.returncode, 1)
         self.assertIn("/roadmap-management", r.stderr)
 
@@ -340,7 +339,7 @@ class TestCcfunnelBin(unittest.TestCase):
     def _seed_roadmap(self):
         (self.roadmap).write_text(
             "# Roadmap\n\n## Features\n\n1. [ ] a\n2. [ ] b\n\n"
-            "## TODO\n\n1. [ ] t\n\n## Backlog\n\n## Bugs\n\n1. [ ] x\n"
+            "## TODO\n\n1. [ ] t\n\n## Fixes\n\n1. [ ] x\n"
         )
 
     def test_view_all_prints_whole_file(self):
@@ -369,10 +368,10 @@ class TestCcfunnelBin(unittest.TestCase):
 
     def test_view_missing_section_notes_and_exits_0(self):
         (self.roadmap).write_text("# Roadmap\n")
-        r = self.run_bin("roadmap", "view", "bug")
+        r = self.run_bin("roadmap", "view", "fix")
         self.assertEqual(r.returncode, 0)
         self.assertEqual(r.stdout, "")
-        self.assertIn("## Bugs", r.stderr)
+        self.assertIn("## Fixes", r.stderr)
 
     def test_view_unknown_kind_exits_2(self):
         self._seed_roadmap()
@@ -389,7 +388,7 @@ class TestCcfunnelBin(unittest.TestCase):
             "- **In production?** no\n\n---\n\n"
             "## Features\n\n- [ ] old bullet\n2. [x] done\n5. [ ] gappy\n\n"
             "## TODO\n\n1. [x] done task\n2. [ ] pending\n\n"
-            "## Bugs\n\n- [x] fixed\n"
+            "## Fixes\n\n- [x] fixed\n"
         )
 
     def test_renumber_makes_sections_contiguous(self):
@@ -441,7 +440,7 @@ class TestCcfunnelBin(unittest.TestCase):
     def _seed_numbered(self):
         (self.roadmap).write_text(
             "# Roadmap\n\n## Features\n\n1. [ ] auth\n2. [ ] dark mode\n3. [ ] export\n\n"
-            "## Bugs\n\n1. [ ] crash\n2. [ ] leak\n"
+            "## Fixes\n\n1. [ ] crash\n2. [ ] leak\n"
         )
 
     def test_done_marks_item(self):
@@ -454,7 +453,7 @@ class TestCcfunnelBin(unittest.TestCase):
 
     def test_done_targets_the_right_section(self):
         self._seed_numbered()
-        self.run_bin("roadmap", "done", "bug", "1")
+        self.run_bin("roadmap", "done", "fix", "1")
         text = self.roadmap_text()
         self.assertIn("1. [x] crash", text)
         self.assertIn("1. [ ] auth", text)  # Features #1 not touched
@@ -494,7 +493,7 @@ class TestCcfunnelBin(unittest.TestCase):
 
     def test_drop_notfound_exits_1(self):
         self._seed_numbered()
-        r = self.run_bin("roadmap", "drop", "bug", "9")
+        r = self.run_bin("roadmap", "drop", "fix", "9")
         self.assertEqual(r.returncode, 1)
         self.assertIn("no item #9", r.stderr)
 

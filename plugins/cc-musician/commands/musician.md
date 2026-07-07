@@ -39,6 +39,9 @@ The lower cc-script instruments (`what-to-do`, `how-to-do`, `do`, `refactor-revi
 their own right; the build tiers call them internally. Route straight to one only when the task
 obviously **is** that single step.
 
+**When the work is a roadmap item, its section already names the tier:** `## Features` → `build-large`,
+`## TODO` → `build-medium`, `## Fixes` → `build-small`.
+
 ## 3. North Star gate (build work only)
 
 If the task is build work and `docs/ccharness/roadmap.md` has no `## Product North Star`, don't build:
