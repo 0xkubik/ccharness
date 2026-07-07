@@ -1,58 +1,69 @@
 ---
-description: "Hand the project ONE thing to carry to a real finish — a task, problem, or idea. The musician thinks it through (sharpening a misaimed idea), forges its own definition of done, builds to that done via the cc-script pipeline, then closes. With a prompt: think → build. Without one: find a direction itself via what-to-do → build. Bounded and self-closing."
-argument-hint: "[task / problem / idea — or nothing to let it find the work] [--auto] [--ultracode]"
+description: "Hand the project any piece of work — a fix, a change, a feature, a question. /musician is a router: it reads the goal + design, sizes the work, and routes it to the right skill. Flags tune how (--auto acts without asking, --fast, --worktree, --ultracode); the router decides what."
+argument-hint: "[task / problem / idea — or nothing to find the work] [--auto] [--fast] [--worktree] [--ultracode]"
 ---
 
 You were handed this argument:
 
 > $ARGUMENTS
 
-**First action — arm the run yourself.** Arming is *not* auto-run; **you** run it. Only here, on a
-fresh `/musician` (never on a Stop-hook re-feed, where the run already exists). Run this **exactly
-once**, as your first Bash command — it locates `arm.sh` via the install manifest (`$CLAUDE_PLUGIN_ROOT`
-is empty here) and passes your argument to it:
+`/musician` is a **router**. It runs in this conversation — there is no arming, no run state, and no
+self-perpetuating loop. Read the goal, size the work, route it to the right skill, and let that skill
+carry it. **You decide *what* to do; the flags only tune *how*.**
 
-```bash
-cfg="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"; r="$(jq -r '.plugins["cc-musician@ccharness"][0].installPath // empty' "$cfg/plugins/installed_plugins.json" 2>/dev/null)"; a="$r/skills/musician/arm.sh"; [ -f "$a" ] || a="$(ls "$cfg"/plugins/cache/*/cc-musician/*/skills/musician/arm.sh 2>/dev/null | sort -V | tail -1)"; [ -f "$a" ] && bash "$a" "$ARGUMENTS" || echo "MUSICIAN_ARM_ERROR: could not locate arm.sh under $cfg/plugins — report this, do not improvise"
-```
+## 1. Ground first
 
-It creates (or re-adopts) the run and prints `KEY=VALUE` lines. Then **invoke the `musician` skill and
-follow it**, reacting to that arm output:
+Before deciding anything, read the goal and the design as context:
 
-- `RUN_DIR` / `RUN_ID` / `ENTRY` → your run; `phase:"shaping"|"building"` → fork on it.
-- `GATE=no-north-star` → tell the user to run `/roadmap-management`; do not proceed.
-- `ORPHAN=…` → surface it (resume with `/musician --resume <id>`); don't auto-adopt.
-- `RESUMED=…` / `RESUME_MISSING=…` → continue that run / report missing.
-- `BUSY=<id>` → this session already has an ACTIVE run; tell the user to `/musician-cancel` it first.
-- `MUSICIAN_ARM_ERROR` → report it; do **not** improvise a hand-written run.
+- `docs/ccharness/roadmap.md` — the North Star + the feature route.
+- `docs/ccharness/architecture/` — the architecture.
 
-**Run `arm.sh` exactly once.** After it has run, do not run it again this turn — a second run is
-refused as a duplicate (`BUSY`). The skill's Arm step reacts to this output; it does not re-arm.
+## 2. Classify the task and route to ONE component
 
-The musician is the project's brain for ONE piece of work. It plays the cc-script instruments
-(`what-to-do` → `how-to-do` → `do` → `refactor-review-test`) plus cc-instruments's `crux`/`slap`, and drives
-the work to a REAL finish, then **closes**.
+Read the argument and decide what kind of work it is, then route. The router decides the route —
+**flags never pick it.** An empty argument means "find the work": route to `cc-script:what-to-do`.
 
-- **With a prompt** (a task/problem/idea): it **thinks first** — sized to the input — and **sharpens
-  a misaimed target** rather than blindly building, but handed work is always carried to a build, never
-  refused. It forges a falsifiable definition of done and builds to it.
-- **Without a prompt:** it **finds the work itself** via `what-to-do` (auto-picking the top
-  direction), then builds that one direction to done.
+| The task is… | Route to |
+| --- | --- |
+| a large feature / substantial build | skill `build-large` |
+| a medium change | skill `build-medium` |
+| a small fix | skill `build-small` |
+| designing a new system | `cc-script:architect` |
+| a fuzzy pain / "something's off" | `cc-instruments:crux` |
+| stuck in a debugging rabbit hole | `cc-instruments:slap` |
+| changing the goal / priorities | `cc-script:roadmap-management` |
+| "what should I do next" (empty prompt) | `cc-script:what-to-do` |
+| rules / cheatsheet / docs / diagrams upkeep | the matching cc-instruments management or diagram skill |
 
-By default it **shapes the idea with you first, then builds alone.** Before any building it develops
-the idea together with you — asking questions, running the thinking instruments — then derives its
-definition of done and asks whether you want to review *how* it'll build it (run `how-to-do` and get
-your approval) or just go. Only after that does it flip into the fully autonomous build loop.
-**`--auto` skips the shaping** and goes straight to autonomy from the first turn (the old behaviour;
-this is what `nonstop` uses to walk the roadmap hands-off).
+The lower cc-script instruments (`what-to-do`, `how-to-do`, `do`, `refactor-review-test`) are skills in
+their own right; the build tiers call them internally. Route straight to one only when the task
+obviously **is** that single step.
 
-It is **bounded and self-closing**: one piece of work, to its end, then stop — there is no
-never-stop loop above it. Exits: **achieved** (done), **empty** (open mode only — nothing left worth
-building, the roadmap frontier is exhausted), and **cancelled** (`/musician-cancel`). Handed work is
-never refused: a build that can't get past a wall keeps trying a different approach, and a genuine
-dead-end is yours to stop with `/musician-cancel` — there is no try-count and no give-up. Open mode
-needs the North Star — with none it routes you to **`/roadmap-management`**.
+## 3. North Star gate (build work only)
 
-`--ultracode` forces maximum parallelism in the build step (mandatory Workflow + parallel subagents +
-git worktrees). There is **no spend flag** — the musician is bounded by design. Stop it early with
-**`/musician-cancel`**.
+If the task is build work and `docs/ccharness/roadmap.md` has no `## Product North Star`, don't build:
+tell the user to run `/roadmap-management` first to set the goal. Non-build routes (`crux`, `slap`) are
+**not** gated — a fuzzy pain can go to `crux` without a North Star.
+
+## 4. Asking vs deciding
+
+- **Default — interactive.** At a genuine fork — including "is this small or medium?" — you MAY ask the
+  human with `AskUserQuestion`.
+- **`--auto` — decide.** Do **not** ask; resolve every fork yourself.
+
+## 5. Flags — how, not what
+
+Pass the active flags to the chosen skill so it adjusts its weight. Flags stack; they never change the
+route.
+
+- `--auto` — act without asking; resolve every fork yourself.
+- `--fast` — lighter model, fewer subagents, minimal hardening. Bias to speed.
+- `--worktree` — force worktree isolation for the build even on a small/medium change.
+- `--ultracode` — maximum fan-out (a Workflow and/or parallel `do` subagents, each worktree-isolated).
+  Bias to thoroughness.
+
+## 6. Reconcile after
+
+If the work advanced a roadmap feature, mark it `[x]` under `## Features` (route only — never reorder,
+add, or reprioritise). If it shifted the design, update the architecture. Work that touched neither →
+no upkeep.
