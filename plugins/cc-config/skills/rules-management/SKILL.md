@@ -14,18 +14,18 @@ understand what's happening and why, not just watch files appear.
 
 ## 1 — Install the recommended rules
 
-The harness ships a set of recommended rules inside the **cc-instruments plugin**. Plugin-root paths aren't
+The harness ships a set of recommended rules inside the **cc-config plugin**. Plugin-root paths aren't
 reliable in skill context, so locate the plugin's `rules/` directory from the installed-plugins
 manifest, with a cache-glob fallback — the same way the rest of the harness resolves its own files:
 
 ```
 cfg="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
-root="$(jq -r '.plugins["cc-instruments@ccharness"][0].installPath // empty' "$cfg/plugins/installed_plugins.json" 2>/dev/null)"
-[ -d "$root/rules" ] || root="$(ls -d "$cfg"/plugins/cache/*/cc-instruments/*/ 2>/dev/null | sort -V | tail -1)"
+root="$(jq -r '.plugins["cc-config@ccharness"][0].installPath // empty' "$cfg/plugins/installed_plugins.json" 2>/dev/null)"
+[ -d "$root/rules" ] || root="$(ls -d "$cfg"/plugins/cache/*/cc-config/*/ 2>/dev/null | sort -V | tail -1)"
 RULES_DIR="$root/rules"
 ```
 
-If `$RULES_DIR` doesn't resolve to a real directory, say cc-instruments couldn't be located and stop — don't
+If `$RULES_DIR` doesn't resolve to a real directory, say cc-config couldn't be located and stop — don't
 improvise a path. Otherwise explain these are general working guidance (scope discipline, lean files,
 git autonomy, plain speech, grounding work in a goal, …) — then:
 

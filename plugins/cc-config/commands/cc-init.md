@@ -1,5 +1,5 @@
 ---
-description: "Onboarding orchestrator for the cc-* harness, driven by AskUserQuestion. Opens with an orientation explaining the four plugins (cc-instruments, cc-script, cc-musician, cc-conductor); Stage 0 installs missing marketplace dependencies and offers the recommended external tools (codegraph, headroom); then it runs three skills behind skip/stop gates — rules-management (recommended + project rules), cheatsheet-management (the reminder cheat-sheet), docs-management (find stale prose) — and finally offers /roadmap-management. Every step is offered and skippable; idempotent — safe to re-run."
+description: "Onboarding orchestrator for the cc-* harness, driven by AskUserQuestion. Ships in cc-config (the front desk). Opens with an orientation explaining the plugins (cc-config, cc-instruments, cc-script, cc-musician, cc-conductor); Stage 0 installs missing marketplace dependencies and offers the recommended external tools (codegraph, headroom); then it runs three cc-config skills behind skip/stop gates — rules-management (recommended + project rules), cheatsheet-management (the reminder cheat-sheet), docs-management (find stale prose) — and finally offers /roadmap-management. Every step is offered and skippable; idempotent — safe to re-run."
 argument-hint: "(no arguments)"
 ---
 
@@ -23,15 +23,17 @@ for and why before you act, so it's always clear what's happening and why — no
 
 ---
 
-## Orientation — what the harness is (the four plugins)
+## Orientation — what the harness is (the plugins)
 
-Before doing anything, explain the harness to the human in plain language — what the four plugins are,
+Before doing anything, explain the harness to the human in plain language — what the plugins are,
 how they work together, and what's in each. Keep it short and concrete:
 
-- **cc-instruments** (this plugin) — the **helpers layer**, usable in any project: `/crux` (unwind a pain or
-  doubt into one diagnosis), `/slap` (reset a fix stuck in a rabbit hole), this `/cc-init`, the three
-  setup skills it orchestrates (`rules-management`, `cheatsheet-management`, `docs-management`), and a
-  set of recommended project rules.
+- **cc-config** (this plugin) — the **front desk**, the thing you run first: this `/cc-init`, the three
+  setup skills it orchestrates (`rules-management`, `cheatsheet-management`, `docs-management`), a set of
+  recommended project rules, and the cheat-sheet reminder hook. Installs and maintains the harness itself.
+- **cc-instruments** — the **primitives layer**, usable in any project: `/crux` (unwind a pain or doubt
+  into one diagnosis), `/slap` (reset a fix stuck in a rabbit hole), the diagram skills
+  (`/likec4`, `/mermaid`, `/excalidraw`), and `cctreectl` (map the project tree).
 - **cc-script** — the **product script**: `/roadmap-management` (set the goal + ordered feature list) →
   `/what-to-do` (rank where to go next) → `/how-to-do` (decide one fork) → `/do` (build one task to a
   smoke-checked finish) → `/refactor-review-test` (harden it and commit). A ground → diverge → decide →

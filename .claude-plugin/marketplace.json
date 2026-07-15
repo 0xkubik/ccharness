@@ -1,15 +1,22 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
   "name": "cc-harness",
-  "description": "cc-harness — a layered harness for Claude Code: cc-instruments (philosophy-agnostic helpers: crux, slap, cc-init, rules) + cc-script (the ground -> diverge -> decide -> build product script) -> cc-musician (the musician, one self-driving agent) -> cc-conductor (the ccconductorctl console that watches and controls many agents at once).",
+  "description": "cc-harness — a layered harness for Claude Code: cc-config (the front desk — /cc-init onboarding, recommended rules, the cheat-sheet hook) sets it up; cc-instruments (philosophy-agnostic primitives: crux, slap, likec4/mermaid/excalidraw, cctreectl) + cc-script (the ground -> diverge -> decide -> build product script) are what you drive; cc-musician (the musician, one self-driving agent) runs them; cc-conductor (the ccconductorctl console) watches and controls many agents at once.",
   "owner": {
     "name": "kubik",
     "email": "dev@noxlabs.xyz"
   },
   "plugins": [
     {
+      "name": "cc-config",
+      "description": "The front desk: install, configure, and maintain the harness itself. /cc-init is the onboarding orchestrator — it explains the layers, installs missing dependencies and recommended tools, then runs three setup skills behind skip/stop gates: /rules-management (recommended + project rules), /cheatsheet-management (the reminder cheat-sheet a hook re-surfaces), /docs-management (find stale prose). Ships the recommended project rules and the cheat-sheet hook. Install this first.",
+      "author": { "name": "kubik" },
+      "category": "workflow",
+      "source": "./plugins/cc-config"
+    },
+    {
       "name": "cc-instruments",
-      "description": "The tools layer: philosophy-agnostic helpers usable in any project — /crux unwinds a pain or doubt into one diagnosis, /slap resets a stuck fix, /cc-init onboards a project onto the harness, plus a set of recommended project rules. Zero-config.",
+      "description": "The primitives layer: philosophy-agnostic tools you reach for while working, usable in any project — /crux unwinds a pain or doubt into one diagnosis, /slap resets a stuck fix, /likec4 + /mermaid + /excalidraw draw architecture and sketches, and cctreectl maps the project tree. Zero-config.",
       "author": { "name": "kubik" },
       "category": "workflow",
       "source": "./plugins/cc-instruments"

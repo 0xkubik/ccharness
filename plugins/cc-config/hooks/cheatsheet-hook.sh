@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# cc-instruments reminder (UserPromptSubmit): every Nth real user prompt, re-surface a short
+# cc-config reminder (UserPromptSubmit): every Nth real user prompt, re-surface a short
 # cheat-sheet of the tools and rules available in this project, right before the new prompt
 # where it's most visible — so they don't fade from the model's attention mid-session.
 #

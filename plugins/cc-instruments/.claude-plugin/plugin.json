@@ -1,7 +1,7 @@
 {
   "name": "cc-instruments",
-  "version": "0.29.0",
-  "description": "cc-instruments — the tools layer of the cc-* harness: philosophy-agnostic helpers usable in any project. /crux unwinds a pain, doubt, or blockage into ONE diagnosis and angle of attack; /slap resets a fix stuck in a rabbit hole; /cc-init is the onboarding orchestrator — it explains the four plugins, installs dependencies and recommended tools, then runs three setup skills (/rules-management installs recommended + project rules, /cheatsheet-management builds the reminder cheat-sheet, /docs-management finds stale prose) and offers /roadmap-management; plus a set of recommended project rules installed into .claude/rules/. Also ships command-less diagram references (mermaid / likec4 / excalidraw) that the cc-script architect draws on. The product script lives in cc-script; the musician (cc-musician) drives it; cc-conductor supervises.",
+  "version": "0.30.0",
+  "description": "cc-instruments — the primitives layer of the cc-* harness: philosophy-agnostic tools you reach for while working, usable in any project or by any layer. Two reasoning side doors — /crux unwinds a pain, doubt, or blockage into ONE diagnosis and angle of attack; /slap resets a fix stuck in a rabbit hole. Three diagramming skills — /likec4 (structured C4 architecture-as-code), /mermaid (portable diagrams that render in GitHub), /excalidraw (freeform hand-drawn sketches). And cctreectl, a .gitignore-aware project-tree helper the script's map-the-codebase stage uses. Zero-config. The harness's own setup lives in cc-config; the product script in cc-script; the musician in cc-musician; the fleet console in cc-conductor.",
   "author": {
     "name": "kubik",
     "email": "dev@noxlabs.xyz"
