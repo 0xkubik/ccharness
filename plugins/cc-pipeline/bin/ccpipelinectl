@@ -1,0 +1,503 @@
+#!/usr/bin/env bash
+# ccpipelinectl — small terminal helpers for the cc-pipeline harness.
+# It opens the project's roadmap or cheat-sheet in your editor, and captures quick
+# roadmap notes from the shell, so you don't have to dig into .claude/ccharness/ by
+# hand. More helpers may be added over time.
+set -eu
+
+usage() {
+  cat <<'EOF'
+ccpipelinectl — small helpers for the cc-pipeline harness
+
+Usage: ccpipelinectl <command>
+
+Commands:
+  roadmap open              Open docs/ccharness/roadmap.md in your editor
+  roadmap add <kind> <text> Append a note to roadmap.md without opening it,
+                            where <kind> is one of:
+                              feat      → the "## Features" section
+                              todo      → the "## TODO" section
+                              fix       → the "## Fixes" section
+                            Missing sections are created in that order.
+  roadmap view [what]       Print roadmap.md to the console. [what] is one of:
+                              all       → the whole file (default)
+                              feat / todo / fix → just that section
+  roadmap done <kind> <n>   Mark item <n> in that section done ("[x]")
+  roadmap drop <kind> <n>   Remove item <n> from that section, then renumber
+                            (<kind> is feat | todo | fix)
+  roadmap renumber          Renumber every section's items to 1..N in order
+                            (fixes gaps and old "- [ ]" bullets)
+  roadmap prune             Remove completed ("[x]") items, then renumber
+  cheatsheet                Open .claude/ccharness/cheatsheet.md in your editor
+  architecture open         Open docs/ccharness/architecture/model.c4 (the LikeC4 model) in your editor
+  architecture list         Print the docs/ccharness/architecture/ tree — every architecture doc
+  help                      Show this help
+
+Files open in your OS default app (open / xdg-open) and the command returns at
+once; with no opener it falls back to $VISUAL / $EDITOR. ccpipelinectl finds the
+project (.claude/ccharness/ or docs/ccharness/) in the current directory or any
+parent, so it works from anywhere inside a project.
+EOF
+}
+
+# Walk up from the current directory to the nearest ancestor holding .claude/ccharness/.
+find_ccharness() {
+  local dir="$PWD"
+  while :; do
+    if [ -d "$dir/.claude/ccharness" ]; then
+      printf '%s\n' "$dir/.claude/ccharness"
+      return 0
+    fi
+    [ "$dir" = "/" ] && return 1
+    dir="$(dirname "$dir")"
+  done
+}
+
+# Print the ccharness dir, or exit 1 with a hint to run the owning skill.
+require_ccharness() {
+  local skill="$1" dir
+  if ! dir="$(find_ccharness)"; then
+    echo "ccpipelinectl: no .claude/ccharness/ found in '$PWD' or any parent." >&2
+    echo "Run $skill in your project to create it." >&2
+    exit 1
+  fi
+  printf '%s\n' "$dir"
+}
+
+# Walk up to the project root — the ancestor holding .claude/ccharness/ (runtime
+# state) or docs/ccharness/ (the human-facing roadmap + architecture).
+find_root() {
+  local dir="$PWD"
+  while :; do
+    if [ -d "$dir/.claude/ccharness" ] || [ -d "$dir/docs/ccharness" ]; then
+      printf '%s\n' "$dir"
+      return 0
+    fi
+    [ "$dir" = "/" ] && return 1
+    dir="$(dirname "$dir")"
+  done
+}
+
+# Print the project root, or exit 1 with a hint to run the owning skill.
+require_root() {
+  local skill="$1" dir
+  if ! dir="$(find_root)"; then
+    echo "ccpipelinectl: no project found (.claude/ccharness/ or docs/ccharness/) in '$PWD' or any parent." >&2
+    echo "Run $skill in your project first." >&2
+    exit 1
+  fi
+  printf '%s\n' "$dir"
+}
+
+# The roadmap lives in docs/ as human-facing documentation: docs/ccharness/roadmap.md.
+roadmap_path() {
+  local root
+  root="$(require_root /planner)"
+  printf '%s\n' "$root/docs/ccharness/roadmap.md"
+}
+
+# Exit 1 with a hint if the target file does not exist yet.
+require_file() {
+  local file="$1" skill="$2"
+  if [ ! -f "$file" ]; then
+    echo "ccpipelinectl: $file does not exist yet." >&2
+    echo "Run $skill to create it." >&2
+    exit 1
+  fi
+}
+
+# "Open it and get out of the way." Prefer the desktop opener (open / xdg-open) —
+# it hands the file to the default app and returns at once, so ccpipelinectl never
+# blocks. $VISUAL/$EDITOR are the headless/terminal fallback, launched detached so
+# a waiting editor (e.g. `code --wait`) can't hang the command either.
+open_in_editor() {
+  local file="$1"
+  if command -v open >/dev/null 2>&1; then
+    exec open "$file"
+  elif command -v xdg-open >/dev/null 2>&1; then
+    exec xdg-open "$file"
+  elif [ -n "${VISUAL:-}" ]; then
+    nohup ${VISUAL} "$file" >/dev/null 2>&1 &
+  elif [ -n "${EDITOR:-}" ]; then
+    nohup ${EDITOR} "$file" >/dev/null 2>&1 &
+  else
+    echo "ccpipelinectl: no way to open '$file' — install a desktop opener (open / xdg-open) or set \$EDITOR/\$VISUAL." >&2
+    exit 1
+  fi
+}
+
+# Map an add/view/drop/done <kind> to its section heading name; fail on unknown.
+kind_to_section() {
+  case "$1" in
+    feat)    echo Features ;;
+    todo)    echo TODO ;;
+    fix)     echo Fixes ;;
+    *)       return 1 ;;
+  esac
+}
+
+# The roadmap's sections keep a fixed order; a missing one is created in its slot.
+# Print the sections that should sit after the given one (its ordered successors).
+section_successors() {
+  case "$1" in
+    Features) printf '%s\n' TODO Fixes ;;
+    TODO)     printf '%s\n' Fixes ;;
+    Fixes)    : ;;
+  esac
+}
+
+# Highest leading "N." number among the items under "## <section>" (0 if none).
+section_max_num() {
+  awk -v heading="## $1" '
+    $0 == heading { in_sec = 1; next }
+    in_sec && /^## / { in_sec = 0 }
+    in_sec && match($0, /^[0-9]+\./) {
+      num = substr($0, 1, RLENGTH - 1) + 0
+      if (num > max) max = num
+    }
+    END { print max + 0 }
+  ' "$2"
+}
+
+# Append "N. [ ] <text>" under "## <section>", numbering it the next in that
+# section (highest existing + 1). If the section isn't there yet, create it in its
+# canonical slot (Features → TODO → Fixes): just before the first later
+# section that exists, else at the end (Features → TODO → Fixes). "## Features" is
+# shared with planner.
+roadmap_add_note() {
+  local section="$1" text="$2" file="$3" heading tmp successor cand num bullet
+  heading="## $section"
+  num=$(( $(section_max_num "$section" "$file") + 1 ))
+  bullet="$num. [ ] $text"
+  if grep -qxF "$heading" "$file"; then
+    tmp="$(mktemp)"
+    BULLET="$bullet" awk -v heading="$heading" '
+      function flush() {
+        while (n > 0 && buf[n] ~ /^[[:space:]]*$/) n--
+        for (i = 1; i <= n; i++) print buf[i]
+        print ENVIRON["BULLET"]
+        n = 0; in_sec = 0
+      }
+      BEGIN { in_sec = 0; n = 0 }
+      {
+        if (!in_sec && $0 == heading) { print; in_sec = 1; next }
+        if (in_sec) {
+          if (/^## /) { flush(); print ""; print; next }
+          buf[++n] = $0; next
+        }
+        print
+      }
+      END { if (in_sec) flush() }
+    ' "$file" > "$tmp"
+    mv "$tmp" "$file"
+    printf '%s\n' "$bullet"
+    return
+  fi
+
+  successor=""
+  for cand in $(section_successors "$section"); do
+    if grep -qxF "## $cand" "$file"; then successor="## $cand"; break; fi
+  done
+
+  if [ -n "$successor" ]; then
+    tmp="$(mktemp)"
+    BULLET="$bullet" awk -v succ="$successor" -v heading="$heading" '
+      $0 == succ && !done { print heading; print ""; print ENVIRON["BULLET"]; print ""; done = 1 }
+      { print }
+    ' "$file" > "$tmp"
+    mv "$tmp" "$file"
+  else
+    [ -n "$(tail -c1 "$file")" ] && printf '\n' >> "$file"
+    printf '\n%s\n\n%s\n' "$heading" "$bullet" >> "$file"
+  fi
+  printf '%s\n' "$bullet"
+}
+
+# Print one "## <section>" (heading + its lines, trailing blanks trimmed) to stdout.
+roadmap_view_section() {
+  local section="$1" file="$2" heading
+  heading="## $section"
+  if ! grep -qxF "$heading" "$file"; then
+    echo "ccpipelinectl: no '$heading' section in $file yet." >&2
+    return 0
+  fi
+  awk -v heading="$heading" '
+    function flush() {
+      while (n > 0 && buf[n] ~ /^[[:space:]]*$/) n--
+      for (i = 1; i <= n; i++) print buf[i]
+    }
+    $0 == heading { in_sec = 1; buf[++n] = $0; next }
+    in_sec && /^## / { flush(); in_sec = 0; exit }
+    in_sec { buf[++n] = $0 }
+    END { if (in_sec) flush() }
+  ' "$file"
+}
+
+# Renumber each managed section's items to a contiguous 1..N in document order —
+# converts old "- [ ]" bullets and closes gaps; the checkbox state is preserved.
+# (The item regex is inlined literally — passing it via `awk -v` would mangle the
+# \[ \] escapes.)
+roadmap_renumber() {
+  local file="$1" tmp
+  tmp="$(mktemp)"
+  awk '
+    function managed(h) { return h == "## Features" || h == "## TODO" || h == "## Fixes" }
+    /^## / { in_sec = managed($0); count = 0; print; next }
+    in_sec && /^[[:space:]]*(([0-9]+\.)|[-*])[[:space:]]+\[[ xX]\]/ {
+      count++
+      line = $0
+      sub(/^[[:space:]]*(([0-9]+\.)|[-*])[[:space:]]+/, "", line)
+      print count ". " line
+      next
+    }
+    { print }
+  ' "$file" > "$tmp"
+  mv "$tmp" "$file"
+}
+
+# Remove completed ("[x]") items from every managed section, leaving the numbers
+# as they are (the caller renumbers afterward). Prints how many were removed.
+roadmap_prune() {
+  local file="$1" tmp before after
+  tmp="$(mktemp)"
+  awk '
+    function managed(h) { return h == "## Features" || h == "## TODO" || h == "## Fixes" }
+    /^## / { in_sec = managed($0); print; next }
+    in_sec && /^[[:space:]]*(([0-9]+\.)|[-*])[[:space:]]+\[[xX]\]/ { next }
+    { print }
+  ' "$file" > "$tmp"
+  before=$(wc -l < "$file")
+  after=$(wc -l < "$tmp")
+  mv "$tmp" "$file"
+  printf '%s\n' "$(( before - after ))"
+}
+
+# Flip item <num> in "## <section>" from "[ ]" to "[x]". Prints one of:
+# changed | already (was already done) | notfound.
+roadmap_mark_done() {
+  local section="$1" num="$2" file="$3" heading tmp st status
+  heading="## $section"
+  tmp="$(mktemp)"; st="$(mktemp)"
+  awk -v heading="$heading" -v num="$num" -v st="$st" '
+    $0 == heading { in_sec = 1; print; next }
+    in_sec && /^## / { in_sec = 0 }
+    in_sec && !found && /^[[:space:]]*[0-9]+\.[[:space:]]+\[[ xX]\]/ && ($0 + 0) == num {
+      found = 1
+      if ($0 ~ /\[ \]/) { sub(/\[ \]/, "[x]"); changed = 1 }
+      print; next
+    }
+    { print }
+    END { print (found ? (changed ? "changed" : "already") : "notfound") > st }
+  ' "$file" > "$tmp"
+  mv "$tmp" "$file"
+  status="$(cat "$st")"; rm -f "$st"
+  printf '%s\n' "$status"
+}
+
+# Remove item <num> from "## <section>". Prints "dropped" or "notfound". Leaves
+# numbering as-is (the caller renumbers afterward).
+roadmap_drop_item() {
+  local section="$1" num="$2" file="$3" heading tmp st status
+  heading="## $section"
+  tmp="$(mktemp)"; st="$(mktemp)"
+  awk -v heading="$heading" -v num="$num" -v st="$st" '
+    $0 == heading { in_sec = 1; print; next }
+    in_sec && /^## / { in_sec = 0 }
+    in_sec && !found && /^[[:space:]]*[0-9]+\.[[:space:]]+\[[ xX]\]/ && ($0 + 0) == num {
+      found = 1; next
+    }
+    { print }
+    END { print (found ? "dropped" : "notfound") > st }
+  ' "$file" > "$tmp"
+  mv "$tmp" "$file"
+  status="$(cat "$st")"; rm -f "$st"
+  printf '%s\n' "$status"
+}
+
+cmd_roadmap() {
+  local sub="${1:-}"
+  case "$sub" in
+    open)
+      local ccdir file
+      file="$(roadmap_path)"
+      require_file "$file" /planner
+      open_in_editor "$file"
+      ;;
+    add)
+      shift || true
+      local kind section
+      kind="${1:-}"
+      case "$kind" in
+        feat)    section="Features" ;;
+        todo)    section="TODO" ;;
+        fix)     section="Fixes" ;;
+        "")      echo "ccpipelinectl: 'roadmap add' needs a kind (feat|todo|fix) and text." >&2; exit 2 ;;
+        *)       echo "ccpipelinectl: unknown kind '$kind' — use feat, todo, or fix." >&2; exit 2 ;;
+      esac
+      shift || true
+      local text="$*"
+      if [ -z "$text" ]; then
+        echo "ccpipelinectl: 'roadmap add $kind' needs some text to record." >&2
+        exit 2
+      fi
+      local ccdir file
+      file="$(roadmap_path)"
+      require_file "$file" /planner
+      local added
+      added="$(roadmap_add_note "$section" "$text" "$file")"
+      echo "Added to $section in $file:"
+      echo "  $added"
+      ;;
+    view)
+      shift || true
+      local kind section
+      kind="${1:-all}"
+      case "$kind" in
+        all)     section="" ;;
+        feat)    section="Features" ;;
+        todo)    section="TODO" ;;
+        fix)     section="Fixes" ;;
+        *)       echo "ccpipelinectl: unknown view '$kind' — use all, feat, todo, or fix." >&2; exit 2 ;;
+      esac
+      local ccdir file
+      file="$(roadmap_path)"
+      require_file "$file" /planner
+      if [ -z "$section" ]; then
+        cat -- "$file"
+      else
+        roadmap_view_section "$section" "$file"
+      fi
+      ;;
+    renumber)
+      local ccdir file
+      file="$(roadmap_path)"
+      require_file "$file" /planner
+      roadmap_renumber "$file"
+      echo "Renumbered every section in $file."
+      ;;
+    prune)
+      local ccdir file removed
+      file="$(roadmap_path)"
+      require_file "$file" /planner
+      removed="$(roadmap_prune "$file")"
+      roadmap_renumber "$file"
+      echo "Pruned $removed completed item(s) from $file and renumbered."
+      ;;
+    done|drop)
+      shift || true
+      local kind section num ccdir file status
+      kind="${1:-}"
+      if ! section="$(kind_to_section "$kind")"; then
+        echo "ccpipelinectl: 'roadmap $sub' needs a kind (feat|todo|fix) and an item number." >&2
+        exit 2
+      fi
+      num="${2:-}"
+      case "$num" in
+        ''|*[!0-9]*) echo "ccpipelinectl: 'roadmap $sub $kind' needs a numeric item number." >&2; exit 2 ;;
+      esac
+      file="$(roadmap_path)"
+      require_file "$file" /planner
+      if [ "$sub" = "done" ]; then
+        status="$(roadmap_mark_done "$section" "$num" "$file")"
+        case "$status" in
+          changed)  echo "Marked $kind #$num done in $section." ;;
+          already)  echo "$kind #$num in $section was already done." ;;
+          notfound) echo "ccpipelinectl: no item #$num in $section." >&2; exit 1 ;;
+        esac
+      else
+        status="$(roadmap_drop_item "$section" "$num" "$file")"
+        if [ "$status" = "dropped" ]; then
+          roadmap_renumber "$file"
+          echo "Dropped $kind #$num from $section and renumbered."
+        else
+          echo "ccpipelinectl: no item #$num in $section." >&2
+          exit 1
+        fi
+      fi
+      ;;
+    "")
+      echo "ccpipelinectl: 'roadmap' needs a subcommand — 'open', 'add', 'view', 'done', 'drop', 'renumber', or 'prune'." >&2
+      echo >&2
+      usage >&2
+      exit 2
+      ;;
+    *)
+      echo "ccpipelinectl: unknown roadmap subcommand '$sub'." >&2
+      echo >&2
+      usage >&2
+      exit 2
+      ;;
+  esac
+}
+
+# Print docs/ccharness/architecture/ as an indented tree (folders end with "/"). Depth is
+# counted in pure bash so this needs no extra tools beyond find + sort.
+architecture_list_tree() {
+  local root="$1" p rel rest depth indent name
+  printf '%s/\n' "${root##*/}"
+  find "$root" -mindepth 1 | LC_ALL=C sort | while IFS= read -r p; do
+    rel="${p#"$root"/}"
+    depth=0; rest="$rel"
+    while [ "$rest" != "${rest#*/}" ]; do depth=$((depth + 1)); rest="${rest#*/}"; done
+    indent="$(printf '%*s' "$(( (depth + 1) * 2 ))" '')"
+    name="${p##*/}"
+    [ -d "$p" ] && name="$name/"
+    printf '%s%s\n' "$indent" "$name"
+  done
+}
+
+# The architect skill saves diagrams under docs/ccharness/architecture/ at the
+# project root. The LikeC4 model has a canonical path so `open` always knows
+# where to look.
+cmd_architecture() {
+  local sub="${1:-open}" root archdir
+  root="$(require_root /architect)"
+  archdir="$root/docs/ccharness/architecture"
+  case "$sub" in
+    open)
+      require_file "$archdir/model.c4" /architect
+      open_in_editor "$archdir/model.c4"
+      ;;
+    list)
+      if [ ! -d "$archdir" ]; then
+        echo "ccpipelinectl: $archdir does not exist yet." >&2
+        echo "Run /architect to create it." >&2
+        exit 1
+      fi
+      architecture_list_tree "$archdir"
+      ;;
+    *)
+      echo "ccpipelinectl: unknown architecture subcommand '$sub' — use 'open' or 'list'." >&2
+      echo >&2
+      usage >&2
+      exit 2
+      ;;
+  esac
+}
+
+case "${1:-help}" in
+  roadmap)
+    shift
+    cmd_roadmap "$@"
+    ;;
+  architecture)
+    shift
+    cmd_architecture "$@"
+    ;;
+  cheatsheet)
+    ccdir="$(require_ccharness /cheatsheet-management)"
+    file="$ccdir/cheatsheet.md"
+    require_file "$file" /cheatsheet-management
+    open_in_editor "$file"
+    ;;
+  -h|--help|help)
+    usage
+    exit 0
+    ;;
+  *)
+    echo "ccpipelinectl: unknown command '$1'" >&2
+    echo >&2
+    usage >&2
+    exit 2
+    ;;
+esac

@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
   "name": "cc-harness",
-  "description": "cc-harness — a layered harness for Claude Code: cc-config (the front desk — /cc-init onboarding, recommended rules, the cheat-sheet hook) sets it up; cc-instruments (philosophy-agnostic primitives: crux, slap, likec4/mermaid/excalidraw, cctreectl) + cc-script (the ground -> diverge -> decide -> build product script) are what you drive; cc-musician (the musician, one self-driving agent) runs them; cc-conductor (the ccconductorctl console) watches and controls many agents at once.",
+  "description": "cc-harness — a layered harness for Claude Code: cc-config (the front desk — /cc-init onboarding, recommended rules, the cheat-sheet hook) sets it up; cc-tools (philosophy-agnostic primitives: slap, likec4, reminder, cctreectl) + cc-pipeline (the ground -> diverge -> decide -> build product script) are what you drive; cc-worker (the second pilot — skill + native subagent) runs them; cc-chief (the top brain) orchestrates workers across the product's sub-projects.",
   "owner": {
     "name": "kubik",
     "email": "dev@noxlabs.xyz"
@@ -9,38 +9,38 @@
   "plugins": [
     {
       "name": "cc-config",
-      "description": "The front desk: install, configure, and maintain the harness itself. /cc-init is the onboarding orchestrator — it explains the layers, installs missing dependencies and recommended tools, then runs three setup skills behind skip/stop gates: /rules-management (recommended + project rules), /cheatsheet-management (the reminder cheat-sheet a hook re-surfaces), /docs-management (find stale prose). Ships the recommended project rules and the cheat-sheet hook. Install this first.",
+      "description": "The front desk: install, configure, and maintain the harness itself. Commands only — config is the human's to run; the model can't invoke it. /cc-init is the onboarding orchestrator — it explains the layers, installs missing dependencies and recommended tools, then runs three setup commands behind skip/stop gates: /rules-management (recommended + project rules), /cheatsheet-management (the reminder cheat-sheet a hook re-surfaces), /docs-management (find stale prose). Ships the recommended project rules and the cheat-sheet hook. Install this first.",
       "author": { "name": "kubik" },
       "category": "workflow",
       "source": "./plugins/cc-config"
     },
     {
-      "name": "cc-instruments",
-      "description": "The primitives layer: philosophy-agnostic tools you reach for while working, usable in any project — /crux unwinds a pain or doubt into one diagnosis, /slap resets a stuck fix, /likec4 + /mermaid + /excalidraw draw architecture and sketches, and cctreectl maps the project tree. Zero-config.",
+      "name": "cc-tools",
+      "description": "The primitives layer: philosophy-agnostic skills you reach for while working, usable in any project, invokable by the model or by you — /slap resets a stuck fix, /likec4 draws C4 architecture-as-code, /reminder pins one rule file as a hard constraint, and cctreectl maps the project tree. Skills only, zero-config.",
       "author": { "name": "kubik" },
       "category": "workflow",
-      "source": "./plugins/cc-instruments"
+      "source": "./plugins/cc-tools"
     },
     {
-      "name": "cc-script",
-      "description": "The product script: /roadmap-management grounds the North Star and charts a roadmap, /architect designs the architecture into diagrams (LikeC4 / Excalidraw / Mermaid), /what-to-do ranks where to go next, /how-to-do decides one fork, /do builds one task to a smoke-checked finish, /refactor-review-test hardens it and commits — a ground -> diverge -> decide -> build pipeline. Depends on cc-instruments.",
+      "name": "cc-pipeline",
+      "description": "The product script: six stage skills, no commands (invoke each by slash or let the model route to it). /planner grounds the North Star and charts a roadmap, /architect is the architecture gateway (routes to architect-design or architect-reflect, one invariant: only architecturally-significant pieces in the LikeC4 model), /what-to-do ranks where to go next, /how-to-do decides one fork, /do builds one task to a smoke-checked finish, /refactor-review-test hardens it and commits — a ground -> diverge -> decide -> build pipeline. Depends on cc-tools.",
       "author": { "name": "kubik" },
       "category": "workflow",
-      "source": "./plugins/cc-script"
+      "source": "./plugins/cc-pipeline"
     },
     {
-      "name": "cc-musician",
-      "description": "The router layer: /musician is one entry point for any piece of work. It reads the goal (roadmap.md) and the design (architecture), sizes the task, and routes it — build-large / build-medium / build-small for code, or any cc-script/cc-instruments skill for the rest (architect, crux, slap, roadmap-management, what-to-do…). The router decides what; flags tune how — --auto acts without asking, --fast, --worktree, --ultracode. Runs in the conversation, no self-driving loop. Depends on cc-script and cc-instruments.",
+      "name": "cc-worker",
+      "description": "The project's second pilot: hand /worker any piece of work and it adapts — reading the goal (roadmap.md) and design (architecture) and reaching for the right cc-pipeline and cc-tools skills to carry it out. Ships as both a skill (invoke /worker, or the model routes to it) and a native subagent (delegate a whole task to a worker in its own context). Three invariants: keeps the roadmap true, changes architecture only through architect first, obeys the flags (--auto/--fast/--worktree/--ultracode). Depends on cc-pipeline and cc-tools.",
       "author": { "name": "kubik" },
       "category": "workflow",
-      "source": "./plugins/cc-musician"
+      "source": "./plugins/cc-worker"
     },
     {
-      "name": "cc-conductor",
-      "description": "The conductor layer: the ccconductorctl console observes and controls many coding agents and musicians at once (tokens, stalls, loops, stop/steer).",
+      "name": "cc-chief",
+      "description": "The top brain: the /chief skill orchestrates the workers across a product's sub-projects (each a git repo under the current folder). Two responsibilities — keep each sub-project's roadmap true (via its cc-pipeline:planner), and orchestrate the workers: reason about cross-repo dependencies, sequence provider-first, and dispatch workers as native subagents selectively. It conducts; the workers build. Depends on cc-worker.",
       "author": { "name": "kubik" },
       "category": "workflow",
-      "source": "./plugins/cc-conductor"
+      "source": "./plugins/cc-chief"
     }
   ]
 }

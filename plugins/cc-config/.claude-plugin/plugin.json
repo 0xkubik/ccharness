@@ -1,7 +1,7 @@
 {
   "name": "cc-config",
-  "version": "0.1.0",
-  "description": "cc-config — the front desk of the cc-* harness: install, configure, and maintain the harness itself. /cc-init is the onboarding orchestrator — it explains the layers, installs missing dependencies and recommended tools, then runs three setup skills behind skip/stop gates: /rules-management (install the recommended + capture the project's own rules into .claude/rules/), /cheatsheet-management (build the reminder cheat-sheet a UserPromptSubmit hook re-surfaces every few prompts), /docs-management (find stale prose). Ships the recommended project rules and the cheat-sheet hook. Install this first; it bootstraps the rest. The primitives live in cc-instruments; the product script in cc-script; the musician in cc-musician; the fleet console in cc-conductor.",
+  "version": "0.2.0",
+  "description": "cc-config — the front desk of the cc-* harness: install, configure, and maintain the harness itself. Commands only — config is always the human's to run; the model can't invoke any of it. /cc-init is the onboarding orchestrator — it explains the layers, installs missing dependencies and recommended tools, then runs three setup commands behind skip/stop gates: /rules-management (install the recommended + capture the project's own rules into .claude/rules/), /cheatsheet-management (build the reminder cheat-sheet a UserPromptSubmit hook re-surfaces every few prompts), /docs-management (find stale prose). Ships the recommended project rules and the cheat-sheet hook. Install this first; it bootstraps the rest. The primitives live in cc-tools; the product script in cc-pipeline; the worker in cc-worker; the chief in cc-chief.",
   "author": {
     "name": "kubik",
     "email": "dev@noxlabs.xyz"

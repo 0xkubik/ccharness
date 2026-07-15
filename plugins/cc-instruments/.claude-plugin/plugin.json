@@ -1,9 +1,0 @@
-{
-  "name": "cc-instruments",
-  "version": "0.30.0",
-  "description": "cc-instruments — the primitives layer of the cc-* harness: philosophy-agnostic tools you reach for while working, usable in any project or by any layer. Two reasoning side doors — /crux unwinds a pain, doubt, or blockage into ONE diagnosis and angle of attack; /slap resets a fix stuck in a rabbit hole. Three diagramming skills — /likec4 (structured C4 architecture-as-code), /mermaid (portable diagrams that render in GitHub), /excalidraw (freeform hand-drawn sketches). And cctreectl, a .gitignore-aware project-tree helper the script's map-the-codebase stage uses. Zero-config. The harness's own setup lives in cc-config; the product script in cc-script; the musician in cc-musician; the fleet console in cc-conductor.",
-  "author": {
-    "name": "kubik",
-    "email": "dev@noxlabs.xyz"
-  }
-}

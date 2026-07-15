@@ -3,7 +3,7 @@
 # cheat-sheet of the tools and rules available in this project, right before the new prompt
 # where it's most visible — so they don't fade from the model's attention mid-session.
 #
-# Dumb by design: it only prints a file that the cheatsheet-management skill generated. No file →
+# Dumb by design: it only prints a file that the cheatsheet-management command generated. No file →
 # no-op, so shipping the hook is harmless until that skill has run. Delete or rename the file to turn
 # the reminder off.
 #
@@ -21,7 +21,7 @@ EVERY=3
 
 RAW="$(cat 2>/dev/null || true)"
 
-# transcript_path from stdin — jq if present, else a bash-regex fallback (mirrors the musician
+# transcript_path from stdin — jq if present, else a bash-regex fallback (mirrors the worker
 # hooks' tool-independent parsing).
 TPATH=""
 if command -v jq >/dev/null 2>&1; then

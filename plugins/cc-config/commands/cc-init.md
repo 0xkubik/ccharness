@@ -1,12 +1,12 @@
 ---
-description: "Onboarding orchestrator for the cc-* harness, driven by AskUserQuestion. Ships in cc-config (the front desk). Opens with an orientation explaining the plugins (cc-config, cc-instruments, cc-script, cc-musician, cc-conductor); Stage 0 installs missing marketplace dependencies and offers the recommended external tools (codegraph, headroom); then it runs three cc-config skills behind skip/stop gates — rules-management (recommended + project rules), cheatsheet-management (the reminder cheat-sheet), docs-management (find stale prose) — and finally offers /roadmap-management. Every step is offered and skippable; idempotent — safe to re-run."
+description: "Onboarding orchestrator for the cc-* harness, driven by AskUserQuestion. Ships in cc-config (the front desk). Opens with an orientation explaining the plugins (cc-config, cc-tools, cc-pipeline, cc-worker, cc-chief); Stage 0 installs missing marketplace dependencies and offers the recommended external tools (codegraph, headroom); then it runs three cc-config commands behind skip/stop gates — rules-management (recommended + project rules), cheatsheet-management (the reminder cheat-sheet), docs-management (find stale prose) — and finally offers /planner. Every step is offered and skippable; idempotent — safe to re-run."
 argument-hint: "(no arguments)"
 ---
 
 # cc-init — onboard the harness, explaining as you go
 
 A guided onboarding **orchestrator**. It opens by explaining the harness, installs dependencies itself,
-then hands the rest to three focused skills, gating every step with `AskUserQuestion`.
+then hands the rest to three focused commands, gating every step with `AskUserQuestion`.
 **Explain as you go — don't just run steps.** At each stage, tell the human in plain language what it's
 for and why before you act, so it's always clear what's happening and why — not just files changing.
 
@@ -29,20 +29,22 @@ Before doing anything, explain the harness to the human in plain language — wh
 how they work together, and what's in each. Keep it short and concrete:
 
 - **cc-config** (this plugin) — the **front desk**, the thing you run first: this `/cc-init`, the three
-  setup skills it orchestrates (`rules-management`, `cheatsheet-management`, `docs-management`), a set of
-  recommended project rules, and the cheat-sheet reminder hook. Installs and maintains the harness itself.
-- **cc-instruments** — the **primitives layer**, usable in any project: `/crux` (unwind a pain or doubt
-  into one diagnosis), `/slap` (reset a fix stuck in a rabbit hole), the diagram skills
-  (`/likec4`, `/mermaid`, `/excalidraw`), and `cctreectl` (map the project tree).
-- **cc-script** — the **product script**: `/roadmap-management` (set the goal + ordered feature list) →
+  setup commands it orchestrates (`/rules-management`, `/cheatsheet-management`, `/docs-management`), a
+  set of recommended project rules, and the cheat-sheet reminder hook. Commands only — config is the
+  human's to run; the model never invokes it. Installs and maintains the harness itself.
+- **cc-tools** — the **primitives layer**, usable in any project: `/slap` (reset a fix stuck in a
+  rabbit hole), `/likec4` (draw C4 architecture-as-code), `/reminder` (pin one rule file as a hard
+  constraint), and `cctreectl` (map the project tree).
+- **cc-pipeline** — the **product script**: `/planner` (set the goal + ordered feature list) →
   `/what-to-do` (rank where to go next) → `/how-to-do` (decide one fork) → `/do` (build one task to a
   smoke-checked finish) → `/refactor-review-test` (harden it and commit). A ground → diverge → decide →
   build pipeline.
-- **cc-musician** — the **self-driving layer**: `/musician` carries ONE piece of work end to end — it
-  thinks first (and may decline a bad idea), plays the script instruments, builds in an isolated
-  worktree, and closes itself. Bounded, not a never-stop loop.
-- **cc-conductor** — the **conductor**: the `ccconductorctl` console (`/conductor`) watches and controls many
-  running agents at once — token burn, stalls, loops, stop/steer.
+- **cc-worker** — the **second pilot**: hand `/worker` any piece of work and it adapts — reading the
+  goal and design and reaching for the right cc-tools/cc-pipeline skills to carry it out. Ships as a
+  skill and a native subagent, so it works in the conversation or is delegated a whole task on its own.
+- **cc-chief** — the **top brain**: `/chief` orchestrates the workers across a product's sub-projects
+  (each a git repo under the current folder) — it keeps each sub-project's roadmap true and sequences
+  the cross-repo work, dispatching workers as native subagents. It conducts; the workers build.
 
 Then move into the stages.
 
@@ -50,7 +52,7 @@ Then move into the stages.
 
 ## Stage 0 — Install dependencies & tools
 
-The cc-script is glue: `/what-to-do`, `/how-to-do`, and `/do` route to skills from **other**
+The cc-pipeline is glue: `/what-to-do`, `/how-to-do`, and `/do` route to skills from **other**
 plugins. Those plugins are not bundled — this stage installs them.
 
 ### The dependency set
@@ -68,7 +70,7 @@ All of these live in the official marketplace `claude-plugins-official`
 | `code-review` | the review pass (do stage 5) |
 
 > **Source of truth:** this table mirrors the "What it orchestrates" section of
-> `plugins/cc-script/README.md`. If you add or drop a dependency, update **both**.
+> `plugins/cc-pipeline/README.md`. If you add or drop a dependency, update **both**.
 
 Missing plugins are not fatal — the harness simply skips those routes. This stage just makes the full
 set available.
@@ -162,9 +164,10 @@ Explain why first: rules are the always-loaded guidance Claude reads every sessi
 - question: "Set up this project's rules now?"
 - options: **Set up rules** / **Skip this stage** / **Stop the wizard**
 
-On **Skip** → go to Stage 2. On **Stop** → end the wizard. On **Set up rules** → **invoke the
-`rules-management` skill**: it installs the recommended rules you pick into `.claude/rules/`, then offers
-to capture the project's own. It explains itself as it goes.
+On **Skip** → go to Stage 2. On **Stop** → end the wizard. On **Set up rules** → **read and follow
+`${CLAUDE_PLUGIN_ROOT}/commands/rules-management.md`** (that command IS this step): it installs the
+recommended rules you pick into `.claude/rules/`, then offers to capture the project's own. It explains
+itself as it goes.
 
 ---
 
@@ -176,9 +179,10 @@ cheat-sheet, re-surfaced by a hook, keeps it in view. Gate with `AskUserQuestion
 - question: "Build the reminder cheat-sheet?"
 - options: **Build it** / **Skip this stage** / **Stop the wizard**
 
-On **Skip** → go to Stage 3. On **Stop** → end the wizard. On **Build it** → **invoke the
-`cheatsheet-management` skill**: it inventories the always-loaded tooling, lets you pick the lines, and
-writes `.claude/ccharness/cheatsheet.md`. It explains itself as it goes.
+On **Skip** → go to Stage 3. On **Stop** → end the wizard. On **Build it** → **read and follow
+`${CLAUDE_PLUGIN_ROOT}/commands/cheatsheet-management.md`** (that command IS this step): it inventories
+the always-loaded tooling, lets you pick the lines, and writes `.claude/ccharness/cheatsheet.md`. It
+explains itself as it goes.
 
 ---
 
@@ -190,19 +194,19 @@ longer true. Gate with `AskUserQuestion`:
 - question: "Check this project's docs for stale prose?"
 - options: **Check docs** / **Skip this stage** / **Stop the wizard**
 
-On **Skip** → go to Stage 4. On **Stop** → end the wizard. On **Check docs** → **invoke the
-`docs-management` skill**: it reads the project's prose, surfaces what looks stale for you to confirm,
-and fixes the confirmed ones. (On a fresh project with nothing described yet, the skill says so and does
-nothing.) It explains itself as it goes.
+On **Skip** → go to Stage 4. On **Stop** → end the wizard. On **Check docs** → **read and follow
+`${CLAUDE_PLUGIN_ROOT}/commands/docs-management.md`** (that command IS this step): it reads the project's
+prose, surfaces what looks stale for you to confirm, and fixes the confirmed ones. (On a fresh project
+with nothing described yet, the command says so and does nothing.) It explains itself as it goes.
 
 ---
 
 ## Stage 4 — Set the product's direction
 
 **Gate** with `AskUserQuestion`:
-- question: "Run /roadmap-management now to set the product's North Star?"
-- options: **Run /roadmap-management now** / **Not now**
+- question: "Run /planner now to set the product's North Star?"
+- options: **Run /planner now** / **Not now**
 
-On **Run /roadmap-management now**, hand off to `/roadmap-management` (it owns the North Star write).
+On **Run /planner now**, hand off to `/planner` (it owns the North Star write).
 Note for the user: plugins installed in Stage 0 only activate on the next session, but
-`/roadmap-management` does not hard-require them, so running it now is safe.
+`/planner` does not hard-require them, so running it now is safe.

@@ -1,0 +1,9 @@
+{
+  "name": "cc-pipeline",
+  "version": "0.24.0",
+  "description": "cc-pipeline — the product script of the cc-* harness: the ground -> diverge -> decide -> build pipeline, as six stage skills (no commands — each is invocable by you via slash or by the model). /planner captures the product's North Star and charts a roadmap; /architect is the architecture gateway — it routes to architect-design (interview a new design out of you, top-down) or architect-reflect (walk the code and update the LikeC4 model to match), holding one invariant: only architecturally-significant components and relationships belong in the model; /what-to-do ranks where a product could go next; /how-to-do thinks one fork through to ONE decision; /do builds one task to a smoke-checked finish, then hands off to /refactor-review-test, which hardens it (behavior-preserving refactor, /code-review, full tests) and commits. Driven by cc-worker (the worker) and supervised by cc-chief. Depends on cc-tools (its likec4 reference and /slap).",
+  "author": {
+    "name": "kubik",
+    "email": "dev@noxlabs.xyz"
+  }
+}
