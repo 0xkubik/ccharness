@@ -35,13 +35,13 @@ how they work together, and what's in each. Keep it short and concrete:
 - **cc-tools** — the **primitives layer**, usable in any project: `/slap` (reset a fix stuck in a
   rabbit hole), `/likec4` (draw C4 architecture-as-code), `/reminder` (pin one rule file as a hard
   constraint), and `cctreectl` (map the project tree).
-- **cc-pipeline** — the **product script**: `/planner` (set the goal + ordered feature list) →
-  `/what-to-do` (rank where to go next) → `/how-to-do` (decide one fork) → `/do` (build one task to a
-  smoke-checked finish) → `/refactor-review-test` (harden it and commit). A ground → diverge → decide →
-  build pipeline.
+- **cc-pipeline** — the **build pipeline**: `/what-to-do` (rank where to go next) → `/how-to-do`
+  (decide one fork) → `/do` (build one task by the writing rules) → `/refactor` → `/review` → `/test`
+  (harden it). A diverge → decide → build → harden pipeline.
 - **cc-worker** — the **second pilot**: hand `/worker` any piece of work and it adapts — reading the
-  goal and design and reaching for the right cc-tools/cc-pipeline skills to carry it out. Ships as a
-  skill and a native subagent, so it works in the conversation or is delegated a whole task on its own.
+  goal and design and reaching for the right skills to carry it out. Also houses `/planner` (draw the
+  product's features out of the human) and `/sysdesign` (shape the architecture as a living tree).
+  Ships as a skill and a native subagent, so it works in the conversation or is delegated a task on its own.
 - **cc-chief** — the **top brain**: `/chief` orchestrates the workers across a product's sub-projects
   (each a git repo under the current folder) — it keeps each sub-project's roadmap true and sequences
   the cross-repo work, dispatching workers as native subagents. It conducts; the workers build.
@@ -143,7 +143,7 @@ marketplace — they install through their own tooling, not `claude plugin insta
   tokens, same answers). Repo: https://github.com/headroomlabs-ai/headroom
   - `pip install "headroom-ai[all]"` → `headroom mcp install`.
 - **eza** — a tree-capable `ls`. The `cctreectl` helper uses it (or `tree`) to draw the project's folder
-  tree, respecting `.gitignore`, for the "Map the codebase" step in `/do` and `/refactor-review-test`.
+  tree, respecting `.gitignore`, for the "Map the codebase" step in `/do` and `/refactor`.
   Without a tree tool `cctreectl` still works — it falls back to a flat git file list — so this just buys
   the nicer tree view. Repo: https://github.com/eza-community/eza
   - `brew install eza` (macOS) or `cargo install eza` — or install the classic `tree` instead.
@@ -204,9 +204,9 @@ with nothing described yet, the command says so and does nothing.) It explains i
 ## Stage 4 — Set the product's direction
 
 **Gate** with `AskUserQuestion`:
-- question: "Run /planner now to set the product's North Star?"
+- question: "Run /planner now to start the product's roadmap?"
 - options: **Run /planner now** / **Not now**
 
-On **Run /planner now**, hand off to `/planner` (it owns the North Star write).
+On **Run /planner now**, hand off to `/planner` (it draws the product's features out of you into the roadmap).
 Note for the user: plugins installed in Stage 0 only activate on the next session, but
 `/planner` does not hard-require them, so running it now is safe.

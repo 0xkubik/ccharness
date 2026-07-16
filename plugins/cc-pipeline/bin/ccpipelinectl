@@ -446,22 +446,22 @@ architecture_list_tree() {
   done
 }
 
-# The architect skill saves diagrams under docs/ccharness/architecture/ at the
+# The sysdesign skill saves the model under docs/ccharness/architecture/ at the
 # project root. The LikeC4 model has a canonical path so `open` always knows
 # where to look.
 cmd_architecture() {
   local sub="${1:-open}" root archdir
-  root="$(require_root /architect)"
+  root="$(require_root /sysdesign)"
   archdir="$root/docs/ccharness/architecture"
   case "$sub" in
     open)
-      require_file "$archdir/model.c4" /architect
+      require_file "$archdir/model.c4" /sysdesign
       open_in_editor "$archdir/model.c4"
       ;;
     list)
       if [ ! -d "$archdir" ]; then
         echo "ccpipelinectl: $archdir does not exist yet." >&2
-        echo "Run /architect to create it." >&2
+        echo "Run /sysdesign to create it." >&2
         exit 1
       fi
       architecture_list_tree "$archdir"

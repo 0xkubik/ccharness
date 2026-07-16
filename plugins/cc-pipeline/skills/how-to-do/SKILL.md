@@ -1,283 +1,102 @@
 ---
 name: how-to-do
-description: Use when a task carries a real fork — a technical or implementation decision with materially different options and no obvious winner — or when an idea needs thinking through before building, or when what-to-do hands over a checked list of picked directions to work out how to build. A rigorous replacement for open-ended brainstorming.
+description: "Use when a task carries a real fork — a technical or implementation decision with materially different options and no obvious winner — or when what-to-do hands over picked directions to work out how to build. Fans out four partisan subagents and synthesizes ONE buildable approach. A rigorous replacement for open-ended brainstorming."
 argument-hint: "<the fork or question to work through>"
 ---
 
-# how-to-do — the decision loop
+## Gate — this is an implementation fork
 
-You are running **how-to-do**. Your job is to work out **HOW** to build something and land on one
-buildable approach — crisp enough to wave through or redirect at a glance — then flow it into the
-build. **You do the thinking; the human owns direction and rules at the boundaries.**
+how-to-do works out **HOW to build something in code**. Confirm the task is that before spending
+four poles:
 
-**Two modes — the difference matters.**
+- **Product direction** (what to build / where to go — not how) → `/what-to-do` or `/planner`.
+- **Trivial & clear how** (one obvious way to implement) → straight to `cc-pipeline:do`.
+- **A real implementation/architecture fork** — materially different ways to build it, no obvious
+  winner → you're in the right place. Continue.
 
-- **From what-to-do (the script):** the human already picked *what* to do (the checked direction[s]).
-  Your job is **not to re-pick it** — what-to-do diverges and the human chooses the *what*; you work
-  out the *how*. You get a list of checked directions, each tagged with its move (ADD / FINISH /
-  REBUILD / REFACTOR). See the whole list at once — so you can order and relate the items — then
-  work each, **scaling depth to the move** (Phase 0). One approach per item; the list is the wrapper.
-- **Standalone (`/how-to-do <fork>`):** no upstream pick — you resolve one arbitrary fork to one
-  decision from scratch.
+## The four poles
 
-**"ONE" means one buildable approach for the *how*, not one pick among directions.** You still
-converge — but on how to build the pick, not on which pick to make. This is load-bearing: the next
-stage, **do, refuses a task that still carries a live fork** (it routes it right back
-here), so the *how*-forks must be resolved into a single buildable approach before the work flows on.
-Phases 0–3 describe working ONE item; **Phase 4** says how the list flows out to the build.
+Two **orthogonal** axes. Keep each pole on its own axis — Speed argues *less now*, not *reuse*;
+Reuse argues *proven/existing*, not *minimal*.
 
-**Stay in the how-lane.** When the direction came from a human's pick (what-to-do), the human already
-settled *whether* to do it — so if the grilling concludes the **pick itself** is wrong or
-unnecessary, you do **not** silently drop it or silently build something else: you **flag it to the
-human** and stop (Phase 4). (Standalone, or when the direction was machine-generated under the
-worker with no human in the loop, there is no human pick to protect — there you may rule it out
-yourself.)
+```
+              Quality  ("survives prod & 10× — what breaks in 6 months?")
+                 │
+     Reuse ──────┼────── Build own
+ ("already       │       ("off-the-shelf
+  solved — what  │        won't fit — what
+  do we reuse?") │        do we build?")
+                 │
+              Speed    ("least that ships the core, soonest")
+```
 
-The engine is _structured disagreement_. Four proposers each argue a fixed corner of the
-decision space and **pull hard in their own direction** — they never compromise. They are then
-grilled against each other. Objectivity lives in exactly ONE place: the final synthesis.
-Anywhere else a "balanced" voice is a bug — four balanced voices collapse to the same mush and
-leave nothing to decide.
-
-**Core invariants — non-negotiable:**
-
-- **Proposers stay partisan.** No pole is ever asked to "be objective" or "weigh both sides."
-  That is synthesis's job, and only synthesis's.
-- **Convergence must be earned, not instructed.** Agreement that _survives_ the grilling is
-  signal; agreement _imposed_ by a "be balanced" prompt is noise.
-- **Depth scales to stakes.** The full grill is for irreversible/expensive decisions. Cheap,
-  reversible ones take the fast path — or how-to-do doesn't run at all.
-- **Synthesis is load-bearing.** All decision quality lives there. It scores against explicit
-  criteria and carries its assumptions forward; it never just "picks the nicest essay."
-
-**Grounding precondition (the gate).** Before anything else, confirm a `## Product North Star` heading
-exists at the top of `docs/ccharness/roadmap.md`. **Absent → stop and route to `/planner`** (don't run ungrounded).
-how-to-do leans on the North Star's **production flag** (is it live?) to set its depth (Phase 0).
+- **Speed** — fastest path to something working. Sacrifices robustness/completeness.
+- **Quality** — the version you'd run in prod at 10× load. Sacrifices speed/present simplicity.
+- **Reuse** — existing libraries, existing code, proven patterns, match the codebase. Sacrifices
+  case-specific optimality.
+- **Build own** — bespoke, fit-to-purpose. Sacrifices predictability/speed.
 
 ---
 
-## The compass
+## Step 1 — Frame the idea to build
+
+State in one sentence **what is to be built** and the **decision that forks** it. Then write the
+**criteria** — what "best" means *for this decision* (e.g. "lowest time-to-first-working" vs "lowest
+12-month maintenance"). Derive them from the task; the synthesis (Step 4) scores against exactly
+these. Handed a direction from `what-to-do`, this is that direction sharpened into a buildable
+question.
+
+
+## Step 2 — Fan out (four partisan subagents, parallel)
+
+Dispatch four subagents in parallel, one per pole, each on the **`sonnet` model**. Hand each the
+framed decision + its pole mandate. **Each runs internally before answering:** propose the strongest
+plan under its locked stance → self-attack (where does *this* plan break?) → repair → emit:
 
 ```
-                 N · Final / Robust
-          "build the version that survives prod & 10×"
-                          │
-  W · Conventional ───────┼─────── E · Contrarian
-  "reuse, boring, proven, │    "question the framing,
-   matches the codebase"  │     the non-obvious approach"
-                          │
-                 S · MVP / Minimal
-          "smallest thing that delivers the core value"
-                          │
-                   CENTRE · synthesis
-```
-
-Two **orthogonal** axes: **N–S = how much we invest now** (scope/maturity); **W–E = how we
-approach it** (convention vs invention). Keep them clean — each pole pulls on its own axis
-only. S argues _less_, not _boring_. W argues _proven_, not _small_. If a pole drifts onto the
-other axis you have lost the orthogonality that makes the four genuinely distinct.
-
----
-
-## Phase 0 — Triage (frame + pick depth)
-
-**If you were handed a list** (from what-to-do), split it by move first: **ADD / REBUILD** are the
-*heavy* items — each gets its own full triage below. **FINISH / REFACTOR** are the *light* items —
-group them and give the group one quick pass, not four-proposer grilling. Decide the heavy items
-individually; clear the light group together. Then, per item:
-
-Before spawning anyone, do two things:
-
-1. **Frame the decision in one sentence**, and write the **synthesis criteria** — what "best"
-   means _for this specific decision_ (e.g. "lowest time-to-first-working" vs "lowest 12-month
-   maintenance"). Synthesis scores against these; derive them from the task, don't default them.
-2. **Classify the door** (after Bezos):
-
-| Door                                          | Path           | What runs                                                                                                                     |
-| --------------------------------------------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| **Reversible & low-stakes** (most tasks)      | **Fast path**  | Skip the compass. Produce ONE direct proposal, take it to the human. The full grill is the expensive case, never the default. |
-| **Material stakes, reversible**               | **Compass**    | Phase 1 + Synthesis. No cross-examination.                                                                                    |
-| **Irreversible / expensive / hard to unwind** | **Full grill** | Phase 1 + Phase 2 + Synthesis.                                                                                                |
-
-**Seed the door from the move.** A what-to-do tag is a depth prior — let the move set the *default*
-door, then let the stakes-test above refine it:
-
-| Move                      | Default door             | Why                                                                                          |
-| ------------------------- | ------------------------ | -------------------------------------------------------------------------------------------- |
-| **ADD** / **REBUILD**     | **Compass → Full grill** | reshapes or extends the product — materially different options, real forks; grill it properly |
-| **FINISH** / **REFACTOR** | **Fast path → light**    | closes a debt with a usually-obvious best way — analyse it, don't grill it                    |
-
-The prior is not a cage: a FINISH hiding a real fork (two genuinely different ways to finish) can
-climb to the compass; an obvious ADD can drop to the fast path. **Whether the product is in production** (from the North Star)
-pushes the same way — a REBUILD in production earns more depth than one in a prototype.
-
-If the task is actually unambiguous with no fork → say so and hand it straight to
-`cc-pipeline:do` (the script's build stage). It doesn't need a decision loop, it just
-needs building.
-
----
-
-## Phase 1 — Compass (4 partisan proposers, parallel)
-
-Dispatch four subagents in parallel, one per pole — each on the **`sonnet` model**, and likewise the
-Phase-2 grill (the proposers are partisan breadth run in parallel; the Phase-3 synthesis you do
-yourself stays on your stronger model). Hand each the framed decision and its pole's
-mandate. **Each proposer runs this internal pipeline before answering:**
-
-1. **Propose** the strongest plan under its locked stance.
-2. **Self-attack** — find where _this concrete proposal_ breaks (failure modes, hidden
-   assumptions, cost). Attack the _execution_, never the stance itself.
-3. **Repair** — strengthen it.
-4. **Emit** the contract below.
-
-**Pole mandates:**
-
-- **N — Final/Robust:** the version you'd be unashamed of in prod at 10× load. Ask _"what breaks
-  in six months?"_ Sacrifices speed and present-day simplicity.
-- **S — MVP/Minimal:** the smallest thing that delivers the core value. Ask _"what's the least
-  that actually works?"_ May challenge whether to do it at all. Sacrifices completeness and robustness.
-- **W — Conventional:** reuse existing patterns, boring proven tech, match the codebase. Ask
-  _"how is this already solved? what do we reuse?"_ Sacrifices novelty and case-specific optimality.
-- **E — Contrarian:** question the framing; find the non-obvious or inverted approach. Ask
-  _"what if the obvious solution is wrong, or unnecessary?"_ Sacrifices predictability and safety.
-
-**Proposer output contract:**
-
-```
-pole:          N | S | W | E
-conviction:    high | medium | low     # low = "this axis doesn't bite for this task" — say so
+pole:          Speed | Quality | Reuse | BuildOwn
+conviction:    high | medium | low     # low = "this axis doesn't bite here" — say so, don't fake it
 approach:      <concrete plan sketch under this stance>
-core_bet:      <the central wager / what it optimizes>
-assumptions:   [ { claim, confidence: 0–1 } ]
+core_bet:      <what it optimizes / the central wager>
 sacrifices:    <what it deliberately gives up>
-weakest_point: <where this is most vulnerable — honest; it is reused downstream>
+weakest_point: <where it's most vulnerable — honest; synthesis reuses it>
 cost:          <rough effort / complexity>
 ```
 
-**The low-conviction valve — this is what makes "always 4" safe.** If a pole has no real case
-for this task (a bugfix has no genuine MVP-vs-Final tension), it must say so via `conviction:
-low` and stop — **NOT fabricate an argument to justify its existence.** A confident argument on
-a non-issue is exactly the "too-strong argument" failure mode. Synthesis reads uniformly-low
-conviction on an axis as "no tension here" and weights it out.
+## Step 3 — Cross-evaluate the opposite (second round)
 
----
-
-## Phase 2 — The grilling (full grill only, parallel)
-
-Hand each pole its opposite's Phase-1 output — N↔S, W↔E. The opposite is the sharpest
-counter on that axis. The pole **stays partisan** — it is not switching sides or balancing.
-It emits:
+Now the poles drop pure partisanship and get honest. Dispatch four subagents in parallel again, each
+handed **its own proposal + its axis-opposite's** (Speed⟷Quality, Reuse⟷BuildOwn). Each weighs the
+opposite squarely and returns its **real** read — this is where the debate actually happens, opposite
+against opposite:
 
 ```
-pole: …    vs: <opposite>
-attack:    <hit the opposite's weakest_point>
-defense:   <rebut the opposite's implied critique of me>
-ledger:
-  conceded: [ <points I now grant my opposite> ]
-  held:     [ { point, why_i_hold } ]
-refined_approach: <my plan, battle-tested — still partisan>
+pole:           Speed | Quality | Reuse | BuildOwn
+opposite:       <the opposing pole>
+steelman:       <the opposite's strongest point, put fairly — not a strawman>
+concede:        [ where the opposite is genuinely right for THIS task ]
+hold:           [ where your stance still wins — grounded reason, not partisan reflex ]
+real_position:  <your honest verdict now that you've weighed the opposite>
 ```
 
-**The ledger is the prize.** A point a pole _concedes to its opposite under pressure_ is robust
-— even the maximalist granted it. A point _held_ against the opposite is a live decision axis
-the human will rule on. This — not a "balanced final opinion" — is what grilling the poles buys.
+## Step 4 — Synthesize (aggregate all outputs)
 
----
+One neutral pass, main thread, on your stronger model, over **all outputs — the partisan proposals
+and the cross-evals**. Do **not** pick the nicest proposal — **construct** the decision:
 
-## Phase 3 — Synthesis (the one objective step)
-
-One neutral pass (you, in the main thread). Inputs: the refined poles + (if Phase 2 ran) the
-four ledgers. Do NOT pick the nicest proposal — **construct** the decision:
-
-1. **Robust core** = points poles converged on _through the grilling_ (mutual concessions). High
-   confidence; these go in.
-2. **Live axes** = points held in disagreement. These are the real choices.
-3. **Score** the surviving alternatives against the Phase-0 criteria. Weight out any axis where
+1. **Robust core** — what the poles agree on. High confidence; goes in.
+2. **Live axes** — where they genuinely disagree. These are the real choices.
+3. **Score** the surviving alternatives against the Step-1 criteria; weight out any axis where
    conviction was uniformly low.
-4. **Decide** — pick the point on the compass and justify _why it beat the named alternatives_.
-5. **Guard rights:** if every pole is weak, or they all attack the same *how*-framing → **reframe**
-   the *how* and restart Phase 0. If there is no real difference → **collapse** to one proposal.
-   Synthesis is allowed to refuse to choose between four bad options. **But if the grilling concludes
-   the human-picked direction *itself* is wrong or unnecessary** (not just that the *how* was
-   mis-framed), do **not** silently reframe it away or build a different thing — emit
-   `framing: flag_to_human(<why>)` so Phase 4 stops and surfaces it. Reframing is only ever for the
-   *how*; vetoing a human's *what* is the human's call, not yours. (A standalone fork or a
-   machine-generated direction has no human pick to protect — reframe / rule it out freely there.)
-
-**Synthesis output contract:**
+4. **Decide** one approach and say why it beat the named alternatives.
 
 ```
-decision:            <chosen approach (the *how*) + plan sketch>
-robust_core:         [ <points that converged through the grilling> ]
+decision:            <chosen *how* + thin plan sketch>
+robust_core:         [ <points that held across poles> ]
 beaten_alternatives: [ { alternative, why_not } ]
-assumptions:         [ { claim, confidence, kill_signal } ]   # kill_signal = a FALSIFIABLE trip-condition: "a single export > 50k rows" or "the library buffers instead of streams" — NEVER "if it gets too big"
-decision_axes:       [ { axis, options, recommendation } ]    # held disagreements — how-to-do rules each; human can veto
-framing:             ok | reframe(<the *how* was mis-framed — restart Phase 0>) | flag_to_human(<the human-picked direction itself looks wrong/unnecessary — stop, surface, do NOT build>)
+assumptions:         [ { claim, confidence, kill_signal } ]   # kill_signal = FALSIFIABLE trip-condition ("the library buffers instead of streams"), never a vibe ("if it gets too big")
+framing:             ok | reframe(<the *how* was mis-framed — redo Step 1>) | flag_to_human(<the picked direction itself looks wrong — stop, surface, do NOT build>)
 ```
 
-`assumptions[].kill_signal` is the **load-bearing field for not getting carried by the wind.**
-During the build, reality is re-checked against these — so each one must be _falsifiable_: a
-condition a fresh reader could confirm true or false by looking, never a vibe. A vague kill_signal
-can't be checked and protects nothing; a sharp one ("the library buffers instead of streams")
-catches the drift the moment it surfaces. This is why Phase 4 carries them into the build hand-off.
-
-Keep `decision`'s plan sketch **thin** — _what_ approach won and _why_. The ordered build
-checklist (and any written plan) is **do's** Stage 2, not synthesis's job: how-to-do
-decides the *how* (the approach), do plans and builds it. Don't do its work here.
-
----
-
-## Phase 4 — Hand off to build (flow through, veto-able)
-
-The human's directional choice already happened upstream — the pick(s) that opened this
-decision. So how-to-do does **not** stop for a fresh approval. It **resolves every open axis
-itself** and flows the decided, fork-free approach straight into the build.
-
-**One exception — flag, don't override.** If synthesis set `framing: flag_to_human` (the grilling
-concluded the *picked direction itself* is wrong or unnecessary, not just that the *how* needed
-reframing), how-to-do does **not** build and does **not** silently drop it. It **stops** and surfaces
-the finding to the human — the picked direction, why it looks wrong, and the recommended
-alternative — then lets them re-pick (back to what-to-do), override ("build it anyway"), or drop it.
-This applies only to a **human-picked** direction; a standalone fork or a worker-generated
-direction (no human in the loop) how-to-do rules on itself.
-
-**For one item** (a standalone fork, or one entry of a list), in one pass:
-
-1. Present, tightly:
-   - the **decision** and its one-line justification,
-   - the **decision_axes** — each with _your_ ruling and why, recommendation first (you decide
-     them; you do not hand the human a quiz to fill in),
-   - the **assumptions** it rests on (each with its `kill_signal`).
-2. Hand the decided approach to **`cc-pipeline:do`** (the script's build stage) by
-   default, **without waiting** — carry the synthesis contract (`decision`, `robust_core`,
-   `assumptions` + their `kill_signal`s, `beaten_alternatives`) into the hand-off so the build
-   re-checks against it as drift surfaces. Make the veto cheap and explicit, e.g.:
-   _"Building this via do unless you redirect — say so to change direction, or to stop
-   at the decision."_
-
-**For a list** (from what-to-do): first **order and relate** the items — rank order by default,
-but pull dependencies earlier and fold any that overlap. Then walk the list, running the
-per-item pass above for each: **one do hand-off, one veto line — per item.** Heavy items (ADD/REBUILD) are decided individually; the light FINISH/REFACTOR group
-is reasoned in one pass but still **fans out to a per-item build** so each lands as its own
-commit. The cadence is **autonomous, veto-only** by default — the human curated the list by
-checking boxes, so you don't re-ask between items; you build them in rank order and they
-interrupt to redirect or stop any one. (5 checked boxes ⇒ up to 5 decisions ⇒ 5 local commits.)
-
-The human rules by **interrupting**, not by being asked. On a redirect → fold their ruling into
-Phase 0 and re-run only what changed. (Invoked standalone via `/how-to-do` for just a decision?
-The same veto is your stop — say so and how-to-do ends at the decision instead of building.)
-
----
-
-## Quick reference
-
-`0` Triage — (list? split heavy ADD/REBUILD from light FINISH/REFACTOR) frame + criteria + pick
-depth **seeded by move** (ADD/REBUILD grill properly · FINISH/REFACTOR light), fast path the floor ·
-`1` Compass — 4 partisan poles, parallel, low-conviction valve · `2` Grill — opposites cross-examine, harvest
-the ledger (full grill only) · `3` Synthesis — the one objective pass: robust core + live axes +
-scored decision · `4` Hand off — per item: resolve axes, flow into do (veto per item) —
-**unless** synthesis flagged the human-picked direction itself as wrong (`flag_to_human`) → stop &
-surface, don't build; a **list** → order/relate, then one approach + one commit per item, autonomous
-veto-only.
-
-**Invariant:** proposers pull, synthesis judges. A balanced proposer is a bug.
+Keep `decision`'s sketch **thin** — *what* approach won and *why*. The ordered build checklist is
+`do`'s job, not synthesis's.

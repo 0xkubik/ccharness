@@ -1,7 +1,7 @@
 {
   "name": "cc-worker",
   "version": "0.28.0",
-  "description": "cc-worker — the project's second pilot: hand /worker any piece of work (a fix, a change, a feature, a question) and it adapts to the request, reading the goal (roadmap.md) and design (architecture) and reaching for the right cc-tools and cc-pipeline skills to carry it out. Ships as BOTH a skill (invoke /worker in the conversation, or the model routes to it) AND a native subagent (delegate a whole task to a worker that runs in its own context). Three invariants: it keeps the roadmap true (reflects intended work, marks done what it finishes), it changes architecture only through cc-pipeline:architect first, and it obeys the flags (--auto, --fast, --worktree, --ultracode — how, never what). Depends on cc-pipeline and cc-tools.",
+  "description": "cc-worker — the project's second pilot: hand /worker any piece of work (a fix, a change, a feature, a question) and it adapts to the request, reading the goal (roadmap.md) and design (architecture) and reaching for the right cc-pipeline, cc-tools, and its own sibling skills to carry it out. Also houses /planner (draw the product's features out of the human) and /sysdesign (shape the architecture as a living model.c4 tree). Ships as BOTH a skill (invoke /worker in the conversation, or the model routes to it) AND a native subagent (delegate a whole task to a worker that runs in its own context). Three invariants: it keeps the roadmap true (reflects intended work, marks done what it finishes), it changes architecture only through cc-worker:sysdesign first, and it obeys the flags (--auto, --fast, --worktree, --ultracode — how, never what). Depends on cc-pipeline and cc-tools.",
   "author": {
     "name": "kubik",
     "email": "dev@noxlabs.xyz"
