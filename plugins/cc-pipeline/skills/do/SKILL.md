@@ -41,8 +41,10 @@ Before implementing, judge how the new code lands in the **existing** project:
   deserves (**error / warn / info / debug**), phrased as the action **underway** — `"connecting to
   X…"`, `"writing N rows…"` — not past-tense `"connected"` / `"wrote"`. Never log secrets; bulky
   dumps stay at `debug`.
-- Match the surrounding code. Read the neighbours first — naming, layout, error style, idioms — 
+- **Match the surrounding code.** Read the neighbours first — naming, layout, error style, idioms — 
   and write code that looks like it was already there. Consistency with the codebase beats your 
   personal preference.
-- Fail fast, don't swallow. Validate at the boundaries, surface errors with context, let them propagate — 
+- **Fail fast, don't swallow.** Validate at the boundaries, surface errors with context, let them propagate — 
   never catch-and-ignore or return a silent empty. An operation that can't do its job says so loudly.
+- **Write new state not a change.** When editing a file do not write what changed and why, 
+  just change the behavior without explanation why it changed and what was before.
