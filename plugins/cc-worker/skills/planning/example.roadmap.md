@@ -1,12 +1,7 @@
 # Roadmap — <project name>
 
 <!-- Template for docs/ccharness/roadmap.md. Sections are fixed; fill them in.
-     Checkbox lists: `- [ ]` = open, `- [x]` = done. -->
-
-## North Star
-
-<!-- One sentence: what this product is for and where it's headed — the goal every
-     stage scores against. Not a feature list; the single guiding intent. -->
+     Checkbox lists: `- [ ]` = open, `- [x]` = done. 
 
 ## Features
 

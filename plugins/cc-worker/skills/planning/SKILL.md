@@ -30,9 +30,9 @@ only what they affirm. You fill **only the Features** of the roadmap.
 
 1. **Open the roadmap.** Read `docs/ccharness/roadmap.md` if it exists — the existing `## Features`
    tell you what's already captured (don't re-ask it). **Missing → seed it from the
-   `example.roadmap.md` template shipped alongside this skill** (its fixed sections: North Star,
-   Features, Todo, Fixes). You still fill **only** Features; the other sections stay as the template
-   leaves them for others.
+   `example.roadmap.md` template shipped alongside this skill** (its fixed sections: Features, Todo,
+   Fixes). You still fill **only** Features; the other sections stay as the template leaves them for
+   others. The product's North Star is not in the roadmap — it's the chief's, in the product CLAUDE.md.
 2. **Ask** — one question, fresh angle, via `AskUserQuestion`. Give options that make it easy to answer
    (concrete directions drawn *from what they've already said*), but the user's own words (the free
    `Other` field) are the real target.

@@ -26,16 +26,23 @@ Discover the product's sub-projects — the immediate subfolders that are git re
 for d in */; do [ -e "$d/.git" ] && echo "$d"; done   # .git as dir OR file = a sub-project
 ```
 
-Read each one's roadmap (`<repo>/docs/ccharness/roadmap.md` → North Star + frontier) and what's already
-committed. That is the whole-product picture — re-derive it each time; **the repos ARE the state**, you
-keep no product **state** file of your own.
+Read each one's roadmap (`<repo>/docs/ccharness/roadmap.md` → the `## Features` frontier) and what's
+already committed. That is the whole-product picture — re-derive it each time; **the repos ARE the
+state**, you keep no product **state** file of your own.
 
 **Check the product's `CLAUDE.md`.** The folder you run in is the product root — it should carry a
-`CLAUDE.md` that orients anyone (human or worker) to the product: a brief on what it is, plus a top-level
-map of its components — each sub-project, its role, and how they fit together. If that file is **missing**,
-offer to create it from what take-stock just found, and write it only once the human approves. This is
-product **orientation** (what the product IS), not state — roadmaps and orchestration stay in the repos
-and are re-derived.
+`CLAUDE.md` that orients anyone (human or worker) to the product: the **North Star** (the product's
+single guiding intent — see below), a brief on what it is, and a top-level map of its components —
+each sub-project, its role, and how they fit together. If that file is **missing**, offer to create it
+from what take-stock just found (drawing the North Star out of the human), and write it only once they
+approve. This is product **orientation** (what the product IS), not state — roadmaps and orchestration
+stay in the repos and are re-derived.
+
+**The North Star is yours.** The product's single guiding intent lives **here, in the product
+`CLAUDE.md`** — not in any sub-project's roadmap (a North Star per sub-project is meaningless; the
+product has one). You own it: draw it out of the human and keep it current. The sub-projects' roadmaps
+carry only their work (Features / Todo / Fixes); every stage that needs the goal reads the North Star
+from this file.
 
 ## Product architecture — one index, content in the repos
 

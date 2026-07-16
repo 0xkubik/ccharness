@@ -4,15 +4,11 @@ description: "Use when you want to find product direction — surface where a pr
 argument-hint: "[optional focus — or nothing to survey the whole product]"
 ---
 
-## Gate — the roadmap must exist
+## Gate — ground before you fan out
 
-Before anything, check for `docs/ccharness/roadmap.md`.
-
-- **Missing → stop and route to `/planner`.** Without a North Star the four lenses drift into
-  fortune-cookie moves ("add SSO, add analytics, add dark mode") that fit any product. You do not
-  run ungrounded — `/planner` sets the goal first, then come back.
-- **Present** → read the **North Star** (top) and the **frontier** (first unchecked `[ ]` under
-  `## Features`); they anchor every lens. Then fan out.
+- **The roadmap** — `docs/ccharness/roadmap.md`. **Missing or no features yet → route to `/planner`**
+  first (it grounds the feature list). Present → read the `## Features` **frontier** (first unchecked
+  `[ ]`) as the steer. Then fan out.
 
 ## Step 1 — Fan out (four subagents, parallel)
 
