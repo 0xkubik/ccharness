@@ -1,7 +1,8 @@
 # Roadmap — <project name>
 
 <!-- Template for docs/ccharness/roadmap.md. Sections are fixed; fill them in.
-     Checkbox lists: `- [ ]` = open, `- [x]` = done. 
+     Checkbox lists: `- [ ]` = open, `- [x]` = done.
+     The product's North Star is NOT here — it lives in the product CLAUDE.md, owned by the chief. -->
 
 ## Features
 

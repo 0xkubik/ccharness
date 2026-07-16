@@ -92,7 +92,7 @@ require_root() {
 # The roadmap lives in docs/ as human-facing documentation: docs/ccharness/roadmap.md.
 roadmap_path() {
   local root
-  root="$(require_root /planner)"
+  root="$(require_root /planner-brainstorm)"
   printf '%s\n' "$root/docs/ccharness/roadmap.md"
 }
 
@@ -320,7 +320,7 @@ cmd_roadmap() {
     open)
       local ccdir file
       file="$(roadmap_path)"
-      require_file "$file" /planner
+      require_file "$file" /planner-brainstorm
       open_in_editor "$file"
       ;;
     add)
@@ -342,7 +342,7 @@ cmd_roadmap() {
       fi
       local ccdir file
       file="$(roadmap_path)"
-      require_file "$file" /planner
+      require_file "$file" /planner-brainstorm
       local added
       added="$(roadmap_add_note "$section" "$text" "$file")"
       echo "Added to $section in $file:"
@@ -361,7 +361,7 @@ cmd_roadmap() {
       esac
       local ccdir file
       file="$(roadmap_path)"
-      require_file "$file" /planner
+      require_file "$file" /planner-brainstorm
       if [ -z "$section" ]; then
         cat -- "$file"
       else
@@ -371,14 +371,14 @@ cmd_roadmap() {
     renumber)
       local ccdir file
       file="$(roadmap_path)"
-      require_file "$file" /planner
+      require_file "$file" /planner-brainstorm
       roadmap_renumber "$file"
       echo "Renumbered every section in $file."
       ;;
     prune)
       local ccdir file removed
       file="$(roadmap_path)"
-      require_file "$file" /planner
+      require_file "$file" /planner-brainstorm
       removed="$(roadmap_prune "$file")"
       roadmap_renumber "$file"
       echo "Pruned $removed completed item(s) from $file and renumbered."
@@ -396,7 +396,7 @@ cmd_roadmap() {
         ''|*[!0-9]*) echo "ccpipelinectl: 'roadmap $sub $kind' needs a numeric item number." >&2; exit 2 ;;
       esac
       file="$(roadmap_path)"
-      require_file "$file" /planner
+      require_file "$file" /planner-brainstorm
       if [ "$sub" = "done" ]; then
         status="$(roadmap_mark_done "$section" "$num" "$file")"
         case "$status" in
@@ -451,17 +451,17 @@ architecture_list_tree() {
 # where to look.
 cmd_architecture() {
   local sub="${1:-open}" root archdir
-  root="$(require_root /sysdesign)"
+  root="$(require_root /sysdesign-brainstorm)"
   archdir="$root/docs/ccharness/architecture"
   case "$sub" in
     open)
-      require_file "$archdir/model.c4" /sysdesign
+      require_file "$archdir/model.c4" /sysdesign-brainstorm
       open_in_editor "$archdir/model.c4"
       ;;
     list)
       if [ ! -d "$archdir" ]; then
         echo "ccpipelinectl: $archdir does not exist yet." >&2
-        echo "Run /sysdesign to create it." >&2
+        echo "Run /sysdesign-brainstorm to create it." >&2
         exit 1
       fi
       architecture_list_tree "$archdir"

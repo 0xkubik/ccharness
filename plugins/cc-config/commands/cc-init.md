@@ -1,5 +1,5 @@
 ---
-description: "Onboarding orchestrator for the cc-* harness, driven by AskUserQuestion. Ships in cc-config (the front desk). Opens with an orientation explaining the plugins (cc-config, cc-tools, cc-pipeline, cc-worker, cc-chief); Stage 0 installs missing marketplace dependencies and offers the recommended external tools (codegraph, headroom); then it runs three cc-config commands behind skip/stop gates — rules-management (recommended + project rules), cheatsheet-management (the reminder cheat-sheet), docs-management (find stale prose) — and finally offers /planner. Every step is offered and skippable; idempotent — safe to re-run."
+description: "Onboarding orchestrator for the cc-* harness, driven by AskUserQuestion. Ships in cc-config (the front desk). Opens with an orientation explaining the plugins (cc-config, cc-tools, cc-pipeline, cc-worker, cc-chief); Stage 0 installs missing marketplace dependencies and offers the recommended external tools (codegraph, headroom); then it runs three cc-config commands behind skip/stop gates — rules-management (recommended + project rules), cheatsheet-management (the reminder cheat-sheet), docs-management (find stale prose) — and finally offers /planner-brainstorm. Every step is offered and skippable; idempotent — safe to re-run."
 argument-hint: "(no arguments)"
 ---
 
@@ -39,8 +39,8 @@ how they work together, and what's in each. Keep it short and concrete:
   (decide one fork) → `/do` (build one task by the writing rules) → `/refactor` → `/review` → `/test`
   (harden it). A diverge → decide → build → harden pipeline.
 - **cc-worker** — the **second pilot**: hand `/worker` any piece of work and it adapts — reading the
-  goal and design and reaching for the right skills to carry it out. Also houses `/planner` (draw the
-  product's features out of the human) and `/sysdesign` (shape the architecture as a living tree).
+  goal and design and reaching for the right skills to carry it out. Also houses `/planner-brainstorm` (draw the
+  product's features out of the human) and `/sysdesign-brainstorm` (draw the architecture out into a living tree).
   Ships as a skill and a native subagent, so it works in the conversation or is delegated a task on its own.
 - **cc-chief** — the **top brain**: `/chief` orchestrates the workers across a product's sub-projects
   (each a git repo under the current folder) — it keeps each sub-project's roadmap true and sequences
@@ -204,9 +204,9 @@ with nothing described yet, the command says so and does nothing.) It explains i
 ## Stage 4 — Set the product's direction
 
 **Gate** with `AskUserQuestion`:
-- question: "Run /planner now to start the product's roadmap?"
-- options: **Run /planner now** / **Not now**
+- question: "Run /planner-brainstorm now to start the product's roadmap?"
+- options: **Run /planner-brainstorm now** / **Not now**
 
-On **Run /planner now**, hand off to `/planner` (it draws the product's features out of you into the roadmap).
+On **Run /planner-brainstorm now**, hand off to `/planner-brainstorm` (it draws the product's features out of you into the roadmap).
 Note for the user: plugins installed in Stage 0 only activate on the next session, but
-`/planner` does not hard-require them, so running it now is safe.
+`/planner-brainstorm` does not hard-require them, so running it now is safe.

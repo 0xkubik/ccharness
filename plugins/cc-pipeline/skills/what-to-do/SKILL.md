@@ -6,7 +6,7 @@ argument-hint: "[optional focus — or nothing to survey the whole product]"
 
 ## Gate — ground before you fan out
 
-- **The roadmap** — `docs/ccharness/roadmap.md`. **Missing or no features yet → route to `/planner`**
+- **The roadmap** — `docs/ccharness/roadmap.md`. **Missing or no features yet → route to `/planner-brainstorm`**
   first (it grounds the feature list). Present → read the `## Features` **frontier** (first unchecked
   `[ ]`) as the steer. Then fan out.
 

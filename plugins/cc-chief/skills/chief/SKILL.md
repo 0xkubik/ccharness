@@ -58,7 +58,7 @@ actual content, each component's own architecture, lives in that component's own
 The product plan lives **in the sub-projects' roadmaps**, not in a file of your own. Holding the
 whole-product view, make sure each sub-project's roadmap reflects what it should do next — including the
 pieces that exist only because *another* sub-project needs them. When a roadmap needs a new or changed
-intention, record it through that repo's **`cc-worker:planner`** (which gates on the human's approval)
+intention, record it through that repo's **`/planner-brainstorm`** (which gates on the human's approval)
 — you don't hand-edit roadmaps and you don't keep a side product-file.
 
 ### 2. Orchestrate the workers
@@ -116,7 +116,7 @@ Putting a worker on every repo every time is the failure mode. Assign deliberate
 
 **Take stock:** discover git-repo subfolders → read each (roadmap + committed code) → hold the
 whole-product picture → offer a product `CLAUDE.md` if missing. **Responsibility 1 — roadmaps:** align each sub-project's roadmap via its
-`cc-worker:planner`. **Responsibility 2 — orchestrate:** find cross-repo dependencies → order them
+`/planner-brainstorm`. **Responsibility 2 — orchestrate:** find cross-repo dependencies → order them
 (provider-first) → dispatch `worker` subagents selectively (Agent tool, `subagent_type: "worker"`,
 `--auto`), parallel where independent → collect results → advance.
 

@@ -1,7 +1,7 @@
 {
   "name": "cc-chief",
   "version": "0.7.0",
-  "description": "cc-chief — the top brain of the cc-* harness: the `/chief` skill orchestrates the workers (second pilots) across a product's sub-projects (a backend, a frontend, a service… each a git repo under the current folder). Flexible like the worker but a level up, it holds two responsibilities: (1) keep each sub-project's roadmap true (through that repo's cc-worker:planner), and (2) orchestrate the workers — reason about how the sub-projects fit together, sequence cross-repo work provider-first, and dispatch workers as native subagents (the cc-worker `worker` agent) selectively, never one-per-repo. It conducts; the workers think and build. Depends on cc-worker.",
+  "description": "cc-chief — the top brain of the cc-* harness: the `/chief` skill orchestrates the workers (second pilots) across a product's sub-projects (a backend, a frontend, a service… each a git repo under the current folder). Flexible like the worker but a level up, it holds two responsibilities: (1) keep each sub-project's roadmap true (through that repo's /planner-brainstorm) and own the product North Star, and (2) orchestrate the workers — reason about how the sub-projects fit together, sequence cross-repo work provider-first, and dispatch workers as native subagents (the cc-worker `worker` agent) selectively, never one-per-repo. It conducts; the workers think and build. Depends on cc-worker.",
   "author": {
     "name": "kubik",
     "email": "dev@noxlabs.xyz"
