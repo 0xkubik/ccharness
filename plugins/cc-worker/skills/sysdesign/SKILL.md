@@ -14,10 +14,18 @@ LikeC4 syntax lives in **`cc-tools:likec4`** — load it before editing.
 **Rules & concepts — non-negotiable:**
 - **Always inside `model.c4`.** One unified model, in **your own project**, over that **one file**
   only — never scatter `.c4` files or write architecture anywhere else.
+- **Isolate the project — ship a `likec4.config.json`.** Next to `model.c4` sits a `likec4.config.json`
+  with a unique `name` (e.g. `{ "name": "<product>-<repo>", "title": "…" }`), so this model stands as
+  its own LikeC4 project. Create it if it's missing. Without it, LikeC4 merges every config-less `.c4`
+  in the workspace into one default project — and a sibling product's model bleeds into your index.
 - **A tree, root → leaves.** The root is a **high-level overview of the whole project**. Each node
   nests its components; each component nests its subcomponents — drilling down (LikeC4 component
   nesting) to the **finest component that still matters for reasoning**. One ontology all the way
   down: deeper just means a *smaller component*, never a switch into code. Structure, not a flat list.
+- **Everything reachable from the index.** Every component and every view must be reachable by
+  navigation starting at the **index** — through drill-down (nesting) or an explicit `navigateTo`. A
+  node or view you can't reach from the index is orphaned: wire it to where it belongs, or it doesn't
+  exist for the reader. Standalone views (a dynamic flow) especially need a `navigateTo` pointing at them.
 - **Components, not code structure — that's codegraph's map.** The tree holds components and their
   relationships. It does **not** mirror the code: inheritance chains, interface / ABI files, helper
   and math libraries, abstract base classes, individual functions — all **OUT**. codegraph already
@@ -42,6 +50,9 @@ LikeC4 syntax lives in **`cc-tools:likec4`** — load it before editing.
   don't dump new nodes at the root.
 - **Add / edit / expand as reality moves.** New component → a node under its parent. Something grew →
   expand it into subcomponents. Drifted, renamed, or gone → correct or prune the node.
+- **Wire every new view.** A view reached by drill-down (a scoped element view) is fine as-is; one that
+  isn't (a dynamic flow, a cross-cutting view) needs a `navigateTo` to it from the node or view where
+  it belongs — so it stays reachable from the index.
 - **Deeper only where a design earns it.** Stop at the component level by default. Drill a branch
   deeper only where a specific design genuinely needs it to be reasoned about — and even then as
   finer components, never a code dump.
