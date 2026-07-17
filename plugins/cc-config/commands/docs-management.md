@@ -29,5 +29,5 @@ checked and why a thing looks stale.
    "Here's what looks stale — which of these are actually wrong, and is anything else off?" Wait for
    their free-text reply.
 5. **Fix the confirmed ones.** For each, apply a **minimal** edit — the smallest diff that makes it true
-   again (follow the `keep-files-lean` rule) — or remove the obsolete with confirmation. Report what
+   again (follow the `stay-in-scope` rule) — or remove the obsolete with confirmation. Report what
    changed.

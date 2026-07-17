@@ -13,7 +13,7 @@ the point is a fresh read that reactivates the rule.
 ## Which rule(s)
 
 - **A path was given** (via `@` or as an argument) → that ONE rule. Resolve it:
-  - repo-local, e.g. `.claude/rules/no-comments.md`
+  - repo-local, e.g. `.claude/rules/no-noise-in-code.md`
   - global, e.g. `~/.claude/rules/<name>.md`
 
   Re-read that file now. If it doesn't resolve to a real file, say so and stop — never invent or
