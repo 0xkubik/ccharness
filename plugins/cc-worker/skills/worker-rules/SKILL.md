@@ -25,10 +25,10 @@ Read the goal and the design before deciding:
 
 1. **Work through the roadmap.** It is the shared record of what to do and what's done — keep it true.
    Before you build, make sure the intended work is represented in `docs/ccharness/roadmap.md` (add
-   anything new through `/planner-brainstorm`); after you finish,
+   anything new through `/planninig`); after you finish,
    mark what you did done. Never leave the roadmap lying about the state of the work.
 2. **Design before you change architecture.** If a task reshapes the system's architecture, shape it
-   into the `model.c4` tree **first** — `/sysdesign-brainstorm` to draw a new design out, or the
+   into the `model.c4` tree **first** — `/sysdesign` to draw a new design out, or the
    `cc-worker:sysdesign` rules to edit the model directly — then build to it. Never reshape the
    architecture in code while it's absent from the model.
 3. **Obey the flags.** Adapt to whatever flags were passed (below). Flags tune **how**; they never
