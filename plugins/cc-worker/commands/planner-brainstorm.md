@@ -12,8 +12,10 @@ each question, ≤200 chars, Features only) govern everything here.
 Then run the loop:
 
 1. **Open the roadmap.** Read `docs/ccharness/roadmap.md`; the existing `## Features` tell you what's
-   captured (don't re-ask). Missing → seed it from the `example.roadmap.md` template shipped with the
-   `cc-worker:planner` skill (sections: Features / Todo / Fixes).
+   captured (don't re-ask). Its shape is fixed to the `example.roadmap.md` template shipped with the
+   `cc-worker:planner` skill — the three sections `## Features` / `## Todo` / `## Fixes`, checkbox
+   one-liners, nothing else. Missing → seed it from the template. Drifted off it (an invented section,
+   a *North Star*, prose, size tags, *why:* notes) → conform it back to the template first.
 2. **Ask** — one question, a fresh angle, via `AskUserQuestion`. Options seeded from *their* words; the
    free `Other` field is the real target.
 3. **Dig or pivot.** Deeper on a live thread; a new angle when one is spent. Keep pulling out what they

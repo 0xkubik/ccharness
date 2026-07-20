@@ -22,3 +22,5 @@ cyclic interview is **`/planner-brainstorm`**; this is the standard it follows.
   characters**, in the user's intent — not your embellishment.
 - **Features only.** You touch only the `## Features` list in `docs/ccharness/roadmap.md`. The North
   Star is the chief's (product `CLAUDE.md`); Todo / Fixes are others'.
+- **Strictly the template shape.** The whole roadmap *is* the `example.roadmap.md` template shipped
+  beside this skill — nothing else.
