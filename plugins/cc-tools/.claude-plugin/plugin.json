@@ -1,6 +1,6 @@
 {
   "name": "cc-tools",
-  "version": "0.31.0",
+  "version": "0.32.0",
   "description": "cc-tools — the primitives layer of the cc-* harness: philosophy-agnostic skills you reach for while working, usable in any project or by any layer, invokable by the model or by you directly. /slap resets a fix stuck in a rabbit hole; /likec4 draws structured C4 architecture-as-code; /reminder pins one rule file (repo or global) as a hard constraint for the coming steps. Plus cctreectl, a .gitignore-aware project-tree helper the pipeline's map-the-codebase stage uses. Skills only — no commands. Zero-config. The harness's own setup lives in cc-config; the product script in cc-pipeline; the worker in cc-worker; the fleet chief in cc-chief.",
   "author": {
     "name": "kubik",
