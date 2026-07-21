@@ -55,6 +55,10 @@ force one route when the task wants several, and don't route when a plain answer
 ## Flags — how, not what
 
 - `--auto` — act without asking; resolve every fork yourself (no `AskUserQuestion`).
+- `--plan` — before any code, explain in plain human language what you'll do — no detail, no diff — and
+  wait for the human's approval; build only once they say go. Overrides `--auto`: you stop here for their
+  yes even under `--auto` (which still settles the smaller forks inside the plan). Pushed back on? Revise
+  the plan and re-present.
 - `--fast` — Bias to speed.
 - `--worktree` — force worktree isolation for the build.
 - `--ultracode` — maximum fan-out (a Workflow and/or parallel worktree-isolated `do` subagents). Bias to
