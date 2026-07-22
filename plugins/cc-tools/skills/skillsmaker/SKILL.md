@@ -10,15 +10,15 @@ A skill is a **standing constraint**, not a script. It hands the model the invar
 one kind of work, then trusts it to fly. Your one job: shape that constraint by the rules below — and
 obey them in the skill you write, so it reads like its siblings.
 
-## Rules & concepts — non-negotiable
+## Rules & concepts
 
 - **Crisp sentences.** Short, declarative, one idea a line. Cut every word that carries no load. Density
   over prose — a lozenge beats a paragraph.
 - **Rules, not stages.** State what must be **true**, never a numbered `1 → 2 → 3` of what to do next.
   Steps ossify and go stale; invariants hold. Name sections by concept (`Gate`, `Ground first`,
   `Rules & concepts`) — never `Step 1`. A skill that scripts the order is a checklist, not a skill.
-- **Invariants first.** Open the body with the non-negotiables — a `## Rules & concepts — non-negotiable`
-  block, or an `**Invariants — non-negotiable:**` line. Everything after serves them.
+- **Invariants first.** Open the body with the non-negotiables — a `## Rules & concepts`
+  block, or an `**Invariants:**` line. Everything after serves them.
 - **Small.** One screen — aim under ~70 lines. Past that you're explaining, not ruling. Cut, or split a
   sibling reference file out beside `SKILL.md` (a template, an example) and point to it by name.
 - **Bulletproof.** Close every loophole: `never`, `always`, the one exception spelled out inline. A rule
@@ -50,16 +50,8 @@ argument-hint: "<what to pass>"     # omit for a pure reference
 
 <2–4 line opener: the identity, the one job, the trust.>
 
-## Rules & concepts — non-negotiable
+## Rules & concepts
 - **<Imperative>.** <the rule, crisp and closed.>
 - …
-
-## Litmus
-<one or two self-checks the reader runs before shipping.>
 ```
 
-## Litmus
-
-- Strip the examples — does the model still know what's **forbidden**? Rules survive; prose doesn't.
-- Delete any line — is a constraint lost? If not, it was filler. Cut it.
-- Does it read like `Step 1 → 2 → 3`? Rewrite it as invariants.

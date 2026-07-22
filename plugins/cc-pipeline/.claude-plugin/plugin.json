@@ -1,7 +1,7 @@
 {
   "name": "cc-pipeline",
-  "version": "0.24.0",
-  "description": "cc-pipeline — the build pipeline of the cc-* harness: six stage skills that carry a product from a direction to hardened code (no commands — each invocable by you via slash or by the model). /what-to-do fans out four lenses and ranks where the product could go next; /how-to-do fans out four partisan poles and synthesizes ONE buildable approach for a fork; /do builds one concrete task by a tight set of writing rules (reuse-first, least code, modular bricks, SOLID, no comments, graded logs); then the code is hardened — /refactor reshapes it to the do rules behavior-preserving, /review hunts edge cases, vulnerabilities and bugs and fixes them, /test writes high-value coverage from the outside. Grounding (the roadmap) and architecture live in cc-worker (/planner-brainstorm, /sysdesign-brainstorm). Driven by cc-worker (the worker) and supervised by cc-chief. Depends on cc-tools (its likec4 reference and /slap).",
+  "version": "0.24.1",
+  "description": "Layer 3/5 of the cc-* harness — the build pipeline. Six stage skills that carry one task from a direction to hardened code: /what-to-do (where to go next), /how-to-do (decide a fork), /do (build it by a tight set of writing rules), then /refactor, /review, /test to harden and ship it. Skills only. Built on cc-tools; driven by cc-worker.",
   "author": {
     "name": "kubik",
     "email": "dev@noxlabs.xyz"
