@@ -14,6 +14,8 @@ Write the product root `CLAUDE.md` — *what the product IS*. One-shot; the chie
    ```
 2. **Ask.** Draw the product's single **North Star** (guiding intent) out of the human — never invent it.
 3. **Write on approval.** Compose the file, write it only once they approve.
+4. **Create empty product-roadmap.md**. Exaple from `cc-chief/skills/roadmap-management/example.product-roadmap.md`
+ to `roadmap.md` near to CLAUDE.md with empty list
 
 ## What it holds
 - **North Star** — from the human.
