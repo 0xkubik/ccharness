@@ -12,13 +12,13 @@ Write the product root `CLAUDE.md` — *what the product IS*. One-shot; the chie
    ```bash
    for d in */; do [ -e "$d/.git" ] && echo "$d"; done
    ```
-2. **Ask.** Draw two things out of the human — never invent them: the product's single **North Star** (guiding intent), and its **current state** — is there a live production in use, and what stage each part sits at.
+2. **Ask.** Draw two things out of the human — never invent them: the product's single **North Star** (guiding intent), and its **current state** — is there a live production in use.
 3. **Write on approval.** Compose the file, write it only once they approve.
-4. **Create empty product-roadmap.md**. Exaple from `cc-chief/skills/roadmap-management/example.product-roadmap.md`
+4. **Create empty product-roadmap.md**. Example from `cc-chief/skills/roadmap-management/example.product-roadmap.md`
  to `roadmap.md` near to CLAUDE.md with empty list
 
 ## What it holds
 - **North Star** — from the human.
+- **Current state** — is there a live production, what stage the product sits at, and what that demands of every change (a live prod means safe, backward-compatible moves; greenfield means speed). The chief weighs it in all work.
 - **Description** — a top-level synthesis of the product, assembled from the sub-projects' CLAUDE.mds (the whole, not the parts pasted).
 - **Sub-projects** — each with one crisp line: what it is and its role.
-- **Current state** — is there a live production, what stage the product sits at, and what that demands of every change (a live prod means safe, backward-compatible moves; greenfield means speed). The chief weighs it in all work.
