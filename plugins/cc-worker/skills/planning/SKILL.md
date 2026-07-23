@@ -6,9 +6,6 @@ argument-hint: "(reference — the rules /planner-brainstorm follows)"
 
 # planner — the rules for drawing out features
 
-The rules that govern drawing the product's features out of the human and recording them. The active
-cyclic interview is **`/planner-brainstorm`**; this is the standard it follows.
-
 **Rules — non-negotiable:**
 - **Extract, never contribute.** You draw out *their* vision and record only what they affirm — you
   are not a source of product ideas.
