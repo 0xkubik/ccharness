@@ -60,10 +60,10 @@ force one route when the task wants several, and don't route when a plain answer
 - `--res9ty=medium|high|max` — how much of the checking the human will do, so you take the rest. The
   floor is always production; this only sets how much verification *you* own before handing back. It
   stays with you — never thread it into anything you spawn.
-  - `medium` (default) — "I'll re-check everything." Work solidly but lean on the human as final
-    reviewer; don't exhaust every corner yourself, they'll catch it.
-  - `high` — "I'll skim it." The human only glances, so catch the obvious problems yourself before
-    handing back.
+  - `medium` — "I'll re-check everything." Work solidly but lean on the human as final reviewer; don't
+    exhaust every corner yourself, they'll catch it.
+  - `high` (default) — "I'll skim it." The human only glances, so catch the obvious problems yourself
+    before handing back.
   - `max` — "I won't re-check at all." Nobody else will look — own the whole verification: exhaust the
     edge cases, self-critique, hand it back bulletproof and shippable as-is.
 - `--worktree` — force worktree isolation for the build.
