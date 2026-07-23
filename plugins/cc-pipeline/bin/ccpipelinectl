@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 # ccpipelinectl — small terminal helpers for the cc-pipeline harness.
-# It opens the project's roadmap or cheat-sheet in your editor, and captures quick
-# roadmap notes from the shell, so you don't have to dig into .claude/ccharness/ by
-# hand. More helpers may be added over time.
+# It captures and edits quick roadmap notes from the shell, so you don't have to dig
+# into docs/ccharness/ by hand. More helpers may be added over time.
 set -eu
 
 usage() {
@@ -12,8 +11,7 @@ ccpipelinectl — small helpers for the cc-pipeline harness
 Usage: ccpipelinectl <command>
 
 Commands:
-  roadmap open              Open docs/ccharness/roadmap.md in your editor
-  roadmap add <kind> <text> Append a note to roadmap.md without opening it,
+  roadmap add <kind> <text> Append a note to roadmap.md,
                             where <kind> is one of:
                               feat      → the "## Features" section
                               todo      → the "## TODO" section
@@ -28,40 +26,11 @@ Commands:
   roadmap renumber          Renumber every section's items to 1..N in order
                             (fixes gaps and old "- [ ]" bullets)
   roadmap prune             Remove completed ("[x]") items, then renumber
-  cheatsheet                Open .claude/ccharness/cheatsheet.md in your editor
-  architecture open         Open docs/ccharness/architecture/model.c4 (the LikeC4 model) in your editor
-  architecture list         Print the docs/ccharness/architecture/ tree — every architecture doc
   help                      Show this help
 
-Files open in your OS default app (open / xdg-open) and the command returns at
-once; with no opener it falls back to $VISUAL / $EDITOR. ccpipelinectl finds the
-project (.claude/ccharness/ or docs/ccharness/) in the current directory or any
-parent, so it works from anywhere inside a project.
+ccpipelinectl finds the project (.claude/ccharness/ or docs/ccharness/) in the
+current directory or any parent, so it works from anywhere inside a project.
 EOF
-}
-
-# Walk up from the current directory to the nearest ancestor holding .claude/ccharness/.
-find_ccharness() {
-  local dir="$PWD"
-  while :; do
-    if [ -d "$dir/.claude/ccharness" ]; then
-      printf '%s\n' "$dir/.claude/ccharness"
-      return 0
-    fi
-    [ "$dir" = "/" ] && return 1
-    dir="$(dirname "$dir")"
-  done
-}
-
-# Print the ccharness dir, or exit 1 with a hint to run the owning skill.
-require_ccharness() {
-  local skill="$1" dir
-  if ! dir="$(find_ccharness)"; then
-    echo "ccpipelinectl: no .claude/ccharness/ found in '$PWD' or any parent." >&2
-    echo "Run $skill in your project to create it." >&2
-    exit 1
-  fi
-  printf '%s\n' "$dir"
 }
 
 # Walk up to the project root — the ancestor holding .claude/ccharness/ (runtime
@@ -102,26 +71,6 @@ require_file() {
   if [ ! -f "$file" ]; then
     echo "ccpipelinectl: $file does not exist yet." >&2
     echo "Run $skill to create it." >&2
-    exit 1
-  fi
-}
-
-# "Open it and get out of the way." Prefer the desktop opener (open / xdg-open) —
-# it hands the file to the default app and returns at once, so ccpipelinectl never
-# blocks. $VISUAL/$EDITOR are the headless/terminal fallback, launched detached so
-# a waiting editor (e.g. `code --wait`) can't hang the command either.
-open_in_editor() {
-  local file="$1"
-  if command -v open >/dev/null 2>&1; then
-    exec open "$file"
-  elif command -v xdg-open >/dev/null 2>&1; then
-    exec xdg-open "$file"
-  elif [ -n "${VISUAL:-}" ]; then
-    nohup ${VISUAL} "$file" >/dev/null 2>&1 &
-  elif [ -n "${EDITOR:-}" ]; then
-    nohup ${EDITOR} "$file" >/dev/null 2>&1 &
-  else
-    echo "ccpipelinectl: no way to open '$file' — install a desktop opener (open / xdg-open) or set \$EDITOR/\$VISUAL." >&2
     exit 1
   fi
 }
@@ -317,12 +266,6 @@ roadmap_drop_item() {
 cmd_roadmap() {
   local sub="${1:-}"
   case "$sub" in
-    open)
-      local ccdir file
-      file="$(roadmap_path)"
-      require_file "$file" /planner-brainstorm
-      open_in_editor "$file"
-      ;;
     add)
       shift || true
       local kind section
@@ -416,7 +359,7 @@ cmd_roadmap() {
       fi
       ;;
     "")
-      echo "ccpipelinectl: 'roadmap' needs a subcommand — 'open', 'add', 'view', 'done', 'drop', 'renumber', or 'prune'." >&2
+      echo "ccpipelinectl: 'roadmap' needs a subcommand — 'add', 'view', 'done', 'drop', 'renumber', or 'prune'." >&2
       echo >&2
       usage >&2
       exit 2
@@ -430,65 +373,10 @@ cmd_roadmap() {
   esac
 }
 
-# Print docs/ccharness/architecture/ as an indented tree (folders end with "/"). Depth is
-# counted in pure bash so this needs no extra tools beyond find + sort.
-architecture_list_tree() {
-  local root="$1" p rel rest depth indent name
-  printf '%s/\n' "${root##*/}"
-  find "$root" -mindepth 1 | LC_ALL=C sort | while IFS= read -r p; do
-    rel="${p#"$root"/}"
-    depth=0; rest="$rel"
-    while [ "$rest" != "${rest#*/}" ]; do depth=$((depth + 1)); rest="${rest#*/}"; done
-    indent="$(printf '%*s' "$(( (depth + 1) * 2 ))" '')"
-    name="${p##*/}"
-    [ -d "$p" ] && name="$name/"
-    printf '%s%s\n' "$indent" "$name"
-  done
-}
-
-# The sysdesign skill saves the model under docs/ccharness/architecture/ at the
-# project root. The LikeC4 model has a canonical path so `open` always knows
-# where to look.
-cmd_architecture() {
-  local sub="${1:-open}" root archdir
-  root="$(require_root /sysdesign-brainstorm)"
-  archdir="$root/docs/ccharness/architecture"
-  case "$sub" in
-    open)
-      require_file "$archdir/model.c4" /sysdesign-brainstorm
-      open_in_editor "$archdir/model.c4"
-      ;;
-    list)
-      if [ ! -d "$archdir" ]; then
-        echo "ccpipelinectl: $archdir does not exist yet." >&2
-        echo "Run /sysdesign-brainstorm to create it." >&2
-        exit 1
-      fi
-      architecture_list_tree "$archdir"
-      ;;
-    *)
-      echo "ccpipelinectl: unknown architecture subcommand '$sub' — use 'open' or 'list'." >&2
-      echo >&2
-      usage >&2
-      exit 2
-      ;;
-  esac
-}
-
 case "${1:-help}" in
   roadmap)
     shift
     cmd_roadmap "$@"
-    ;;
-  architecture)
-    shift
-    cmd_architecture "$@"
-    ;;
-  cheatsheet)
-    ccdir="$(require_ccharness /cheatsheet-management)"
-    file="$ccdir/cheatsheet.md"
-    require_file "$file" /cheatsheet-management
-    open_in_editor "$file"
     ;;
   -h|--help|help)
     usage

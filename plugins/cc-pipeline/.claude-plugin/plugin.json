@@ -1,6 +1,6 @@
 {
   "name": "cc-pipeline",
-  "version": "0.24.1",
+  "version": "0.25.0",
   "description": "Layer 3/5 of the cc-* harness — the build pipeline. Six stage skills that carry one task from a direction to hardened code: /what-to-do (where to go next), /how-to-do (decide a fork), /do (build it by a tight set of writing rules), then /refactor, /review, /test to harden and ship it. Skills only. Built on cc-tools; driven by cc-worker.",
   "author": {
     "name": "kubik",
