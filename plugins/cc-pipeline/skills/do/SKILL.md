@@ -16,7 +16,9 @@ Build only when it's clear **HOW**. Check before writing a line:
 
 ## Prepare the ground
 
-Before implementing, judge how the new code lands in the **existing** project:
+First **map the project** — build its file tree, honoring `.gitignore`, with each file's line count
+beside it. It shows where the new code belongs and which files are fat enough to need a seat cleared
+first. Then judge how the new code lands in the **existing** project:
 
 - **Fits as-is** → build.
 - **Needs a seat first** — it only lands cleanly if existing code is reshaped to receive it (a seam

@@ -44,13 +44,14 @@ State in one sentence **what is to be built** and the **decision that forks** it
 **criteria** — what "best" means *for this decision* (e.g. "lowest time-to-first-working" vs "lowest
 12-month maintenance"). Derive them from the task; the synthesis (Step 4) scores against exactly
 these. Handed a direction from `what-to-do`, this is that direction sharpened into a buildable
-question.
+question. Also **build the project's file tree** — honoring `.gitignore`, with each file's line count
+beside it — as shared ground handed to every pole.
 
 
 ## Step 2 — Fan out (four partisan subagents, parallel)
 
 Dispatch four subagents in parallel, one per pole, each on the **`sonnet` model**. Hand each the
-framed decision + its pole mandate. **Each runs internally before answering:** propose the strongest
+framed decision, its pole mandate, and the **file tree**. **Each runs internally before answering:** propose the strongest
 plan under its locked stance → self-attack (where does *this* plan break?) → repair → emit:
 
 ```

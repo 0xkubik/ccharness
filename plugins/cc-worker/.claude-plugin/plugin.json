@@ -1,6 +1,6 @@
 {
   "name": "cc-worker",
-  "version": "0.28.2",
+  "version": "0.29.0",
   "description": "Layer 4/5 of the cc-* harness — the second pilot. Hand /worker any piece of work (a fix, a change, a feature, a question) and it adapts: reads the goal (roadmap) and design (architecture), then drives the right cc-pipeline and cc-tools skills to finish it. Runs inline as /worker or as a native subagent you delegate a whole task to. Also owns the roadmap (/planner-brainstorm) and architecture (/sysdesign-brainstorm). Built on cc-pipeline + cc-tools.",
   "author": {
     "name": "kubik",

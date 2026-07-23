@@ -8,13 +8,16 @@ argument-hint: "[optional focus — or nothing to survey the whole product]"
 
 - **The roadmap** — `docs/ccharness/roadmap.md`. **Missing or no features yet → route to `/planner-brainstorm`**
   first (it grounds the feature list). Present → read the `## Features` **frontier** (first unchecked
-  `[ ]`) as the steer. Then fan out.
+  `[ ]`) as the steer.
+- **The file tree** — build it, honoring `.gitignore`, with each file's line count beside it. It's
+  shared ground handed to every lens. Then fan out.
 
 ## Step 1 — Fan out (four subagents, parallel)
 
 Dispatch four subagents in parallel, one per move, each on the **`sonnet` model**. Give each: its
-**move mandate**, the **North Star** (if any), and the **frontier milestone** as *orienting steer,
-not a gate*. Each explores the repo **in its own lane** and returns candidates in the contract below.
+**move mandate**, the **North Star** (if any), the **frontier milestone** as *orienting steer, not a
+gate*, and the **file tree**. Each explores the repo **in its own lane** and returns candidates in the
+contract below.
 
 - **ADD** — new capability that advances the North Star. _"What's missing that moves us toward the
   vision?"_ Includes bigger directional bets, not just small features.

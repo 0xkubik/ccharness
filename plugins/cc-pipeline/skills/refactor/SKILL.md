@@ -36,6 +36,8 @@ green / a smoke check. Evidence, not assumption.
 See where the code sits before you touch it — you reshape well, and spot reuse, only once you can
 place it. Mechanical, so **dispatch it to a subagent on the `haiku` model** and work from its map:
 
+- **Build the file tree** — honoring `.gitignore`, with each file's line count beside it. The counts
+  point straight at the blobs to split.
 - **Study the code** — **codegraph** if indexed (else **grep**) for modules, dependencies, call
   relationships.
 
