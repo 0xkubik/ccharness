@@ -1,6 +1,6 @@
 {
   "name": "cc-config",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Layer 1/5 of the cc-* harness — setup. The front desk that installs and maintains the harness itself. /cc-init walks you through onboarding: recommended rules, the cheat-sheet reminder hook, and a stale-docs check. Commands only — you run them, the model can't. Install this first; it bootstraps the other four layers (cc-tools, cc-pipeline, cc-worker, cc-chief).",
   "author": {
     "name": "kubik",
