@@ -20,7 +20,7 @@ Read the goal and the design before deciding:
 
 - `docs/ccharness/roadmap.md` — the goal and feature list.
 - `docs/ccharness/architecture/model.c4` — the architecture tree.
-- The **file tree** — build it, honoring `.gitignore`, with each file's line count beside it, to see
+- The **file list** — `git ls-files | xargs wc -l`, every tracked file with its line count, to see
   the project at a glance.
 
 ## The three invariants — non-negotiable

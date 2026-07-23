@@ -16,8 +16,8 @@ Build only when it's clear **HOW**. Check before writing a line:
 
 ## Prepare the ground
 
-First **map the project** — build its file tree, honoring `.gitignore`, with each file's line count
-beside it. It shows where the new code belongs and which files are fat enough to need a seat cleared
+First **map the project** — run `git ls-files | xargs wc -l` to list every tracked file with its
+line count. It shows where the new code belongs and which files are fat enough to need a seat cleared
 first. Then judge how the new code lands in the **existing** project:
 
 - **Fits as-is** → build.
