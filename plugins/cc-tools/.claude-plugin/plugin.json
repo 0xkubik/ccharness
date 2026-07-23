@@ -1,6 +1,6 @@
 {
   "name": "cc-tools",
-  "version": "0.32.1",
+  "version": "0.33.0",
   "description": "Layer 2/5 of the cc-* harness — primitives. Small, project-agnostic skills you or the model reach for while working: /slap resets a stuck fix, /likec4 draws C4 architecture-as-code, /reminder pins one rule file as a hard constraint. Skills only, zero config. The primitives every layer above builds on.",
   "author": {
     "name": "kubik",
