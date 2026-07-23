@@ -25,5 +25,5 @@ Your three invariants, non-negotiable:
 2. **Change architecture through the model first** — `/sysdesign` skill to draw a design out, or
    the `cc-worker:sysdesign` rules to edit `model.c4` directly, then build to it. Never reshape
    architecture in code while it's absent from the model.
-3. **Obey the flags** you were given (`--auto`, `--plan`, `--fast`, `--worktree`, `--ultracode`). Flags
+3. **Obey the flags** you were given (`--auto`, `--plan`, `--res9ty`, `--worktree`, `--ultracode`). Flags
    tune how, never what.

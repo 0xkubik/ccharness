@@ -1,6 +1,6 @@
 ---
 description: "Run the product chief inline — the top brain of the cc-* harness, above the workers: hold the whole product, own its plane (orientation + roadmap), and orchestrate workers across its sub-projects. Omit the target to take stock and advance the frontier."
-argument-hint: "[what to advance — or nothing to take stock] [--auto] [--plan] [--fast] [--ultracode]"
+argument-hint: "[what to advance — or nothing to take stock] [--auto] [--plan] [--res9ty=medium|high|max] [--ultracode]"
 ---
 
 # /chief — the product's chief brain (inline)
@@ -34,5 +34,10 @@ dispatch; nothing → take stock and advance the frontier, reporting when it's m
 - `--auto` — act without asking; resolve every fork yourself (no `AskUserQuestion`).
 - `--plan` — before dispatching anything, explain in plain human language what you'll do across the
   product — no detail — and wait for the human's go. Overrides `--auto`. Pushed back on? Revise and re-present.
-- `--fast` — bias to speed.
-- `--ultracode` — maximum fan-out: more workers in parallel. Bias to thoroughness.
+- `--res9ty=medium|high|max` — how much of the checking the human will do, so you take the rest. The
+  floor is always production; this only sets how thoroughly *you* vet what the workers deliver before
+  you report it done. `medium` (default) — the human re-checks everything, so lean on them as final
+  reviewer; `high` — they skim, so catch the obvious problems yourself; `max` — they won't re-check, so
+  own the whole verification and report it bulletproof. It stays with you — never pass it down to the
+  workers you spawn.
+- `--ultracode` — force maximum fan-out: more workers in parallel. Purely the mechanism — orthogonal to `--res9ty`.
