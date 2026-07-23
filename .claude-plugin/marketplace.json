@@ -16,7 +16,7 @@
     },
     {
       "name": "cc-tools",
-      "description": "Layer 2/5 — primitives. Small, project-agnostic skills you or the model reach for while working: /slap resets a stuck fix, /likec4 draws C4 architecture-as-code, /reminder pins one rule file as a hard constraint, plus cctreectl to map the project tree. Skills only, zero config. The primitives every layer above builds on.",
+      "description": "Layer 2/5 — primitives. Small, project-agnostic skills you or the model reach for while working: /slap resets a stuck fix, /likec4 draws C4 architecture-as-code, /reminder pins one rule file as a hard constraint. Skills only, zero config. The primitives every layer above builds on.",
       "author": { "name": "kubik" },
       "category": "workflow",
       "source": "./plugins/cc-tools"

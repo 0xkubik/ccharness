@@ -39,15 +39,11 @@ Read the goal and the design before deciding:
 | The request is… | Reach for |
 | --- | --- |
 | find the work / "what next" (empty prompt) | `cc-pipeline:what-to-do` |
-| set or evolve the goal & features | `/planner-brainstorm` |
-| design or update the architecture | `/sysdesign-brainstorm` (draw it out) · `cc-worker:sysdesign` (model rules) |
+| set or evolve the goal & features | `cc-worker:planning` (model rules) |
+| design or update the architecture | `cc-worker:sysdesign` (model rules) |
 | a real fork in HOW to build it | `cc-pipeline:how-to-do` |
 | build one concrete task | `cc-pipeline:do`, then `cc-pipeline:refactor` → `review` → `test` |
 | harden / review / test existing code | `cc-pipeline:refactor` · `review` · `test` |
-| a fix stuck in a rabbit hole | `cc-tools:slap` |
-| pin a rule hard for the coming work | `cc-tools:reminder` |
-| draw or edit a diagram directly | `cc-tools:likec4` |
-| see the project's file tree | `cctreectl` |
 
 **Chain them as the work needs** — e.g. how-to-do → do → refactor → review → test, or sysdesign → do. Don't
 force one route when the task wants several, and don't route when a plain answer is what was asked.

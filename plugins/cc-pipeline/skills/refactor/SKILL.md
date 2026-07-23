@@ -37,9 +37,7 @@ See where the code sits before you touch it — you reshape well, and spot reuse
 place it. Mechanical, so **dispatch it to a subagent on the `haiku` model** and work from its map:
 
 - **Study the code** — **codegraph** if indexed (else **grep**) for modules, dependencies, call
-  relationships. Don't run `codegraph init` — the user's call.
-- **Print the full folder tree** with **`cctreectl`** (else `tree` / `git ls-files` / `find`) — module
-  boundaries, where the code sits, naming conventions. You refactor against this map, not the whole repo.
+  relationships.
 
 ---
 
