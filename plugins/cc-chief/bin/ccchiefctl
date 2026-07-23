@@ -1,0 +1,242 @@
+#!/usr/bin/env bash
+# ccchiefctl — small terminal helpers for the cc-chief harness.
+# It captures and edits the product roadmap from the shell — the flat, numbered list
+# of big cross-cutting tasks at the product root — so you don't have to edit roadmap.md
+# by hand. More helpers may be added over time.
+set -eu
+
+usage() {
+  cat <<'EOF'
+ccchiefctl — small helpers for the cc-chief harness
+
+Usage: ccchiefctl <command>
+
+The product roadmap is roadmap.md at the product root: a flat, numbered list of big
+cross-cutting tasks, one per line ("N. [ ] ...").
+
+Commands:
+  add <text>       Append "N. [ ] <text>" to the roadmap (numbered next)
+  view             Print the product roadmap to the console
+  next             Print the first unchecked ("[ ]") item — the next task
+  done <n>         Mark item <n> done ("[x]")
+  drop <n>         Remove item <n>, then renumber
+  renumber         Renumber items to 1..N in order (fixes gaps and old "- [ ]" bullets)
+  prune            Remove completed ("[x]") items, then renumber
+  help             Show this help
+
+ccchiefctl finds the product root (the nearest ancestor holding a top-level
+roadmap.md) from the current directory or any parent, so it works from anywhere
+inside the product.
+EOF
+}
+
+# Walk up to the product root — the nearest ancestor holding a top-level roadmap.md
+# (the product's own roadmap, beside the product CLAUDE.md).
+find_product_root() {
+  local dir="$PWD"
+  while :; do
+    if [ -f "$dir/roadmap.md" ]; then
+      printf '%s\n' "$dir"
+      return 0
+    fi
+    [ "$dir" = "/" ] && return 1
+    dir="$(dirname "$dir")"
+  done
+}
+
+# Print the product roadmap path, or exit 1 with a hint to run /chief-init.
+require_roadmap() {
+  local dir
+  if ! dir="$(find_product_root)"; then
+    echo "ccchiefctl: no product roadmap.md found in '$PWD' or any parent." >&2
+    echo "Run /chief-init at the product root to create it." >&2
+    exit 1
+  fi
+  printf '%s\n' "$dir/roadmap.md"
+}
+
+# Highest leading "N." number among the roadmap's items (0 if none).
+max_num() {
+  awk '
+    { s = $0; sub(/^[[:space:]]+/, "", s) }
+    s ~ /^[0-9]+\.[[:space:]]+\[[ xX]\]/ {
+      num = s + 0
+      if (num > max) max = num
+    }
+    END { print max + 0 }
+  ' "$1"
+}
+
+# Append "N. [ ] <text>" to the roadmap, numbered next (highest + 1). Insert it right
+# after the last existing item, or at end of file if there are none yet.
+add_item() {
+  local text="$1" file="$2" num bullet tmp
+  num=$(( $(max_num "$file") + 1 ))
+  bullet="$num. [ ] $text"
+  tmp="$(mktemp)"
+  BULLET="$bullet" awk '
+    function is_item(l,   s) {
+      s = l; sub(/^[[:space:]]+/, "", s)
+      return s ~ /^([0-9]+\.|[-*])[[:space:]]+\[[ xX]\]/
+    }
+    { lines[NR] = $0; if (is_item($0)) last = NR }
+    END {
+      for (i = 1; i <= NR; i++) {
+        print lines[i]
+        if (i == last) print ENVIRON["BULLET"]
+      }
+      if (last == "") print ENVIRON["BULLET"]
+    }
+  ' "$file" > "$tmp"
+  mv "$tmp" "$file"
+  printf '%s\n' "$bullet"
+}
+
+# Renumber every item to a contiguous 1..N in document order — converts old "- [ ]"
+# bullets and closes gaps; the checkbox state is preserved. (The item regex is inlined
+# literally — passing it via `awk -v` would mangle the \[ \] escapes.)
+renumber() {
+  local file="$1" tmp
+  tmp="$(mktemp)"
+  awk '
+    /^[[:space:]]*(([0-9]+\.)|[-*])[[:space:]]+\[[ xX]\]/ {
+      count++
+      line = $0
+      sub(/^[[:space:]]*(([0-9]+\.)|[-*])[[:space:]]+/, "", line)
+      print count ". " line
+      next
+    }
+    { print }
+  ' "$file" > "$tmp"
+  mv "$tmp" "$file"
+}
+
+# Remove completed ("[x]") items, leaving the numbers as they are (the caller
+# renumbers afterward). Prints how many were removed.
+prune() {
+  local file="$1" tmp before after
+  tmp="$(mktemp)"
+  awk '/^[[:space:]]*(([0-9]+\.)|[-*])[[:space:]]+\[[xX]\]/ { next } { print }' "$file" > "$tmp"
+  before=$(wc -l < "$file")
+  after=$(wc -l < "$tmp")
+  mv "$tmp" "$file"
+  printf '%s\n' "$(( before - after ))"
+}
+
+# Flip item <num> from "[ ]" to "[x]". Prints changed | already | notfound.
+mark_done() {
+  local num="$1" file="$2" tmp st status
+  tmp="$(mktemp)"; st="$(mktemp)"
+  awk -v num="$num" -v st="$st" '
+    !found && /^[[:space:]]*[0-9]+\.[[:space:]]+\[[ xX]\]/ {
+      s = $0; sub(/^[[:space:]]*/, "", s)
+      if ((s + 0) == num) {
+        found = 1
+        if ($0 ~ /\[ \]/) { sub(/\[ \]/, "[x]"); changed = 1 }
+      }
+    }
+    { print }
+    END { print (found ? (changed ? "changed" : "already") : "notfound") > st }
+  ' "$file" > "$tmp"
+  mv "$tmp" "$file"
+  status="$(cat "$st")"; rm -f "$st"
+  printf '%s\n' "$status"
+}
+
+# Remove item <num>. Prints "dropped" or "notfound". Leaves numbering as-is (the
+# caller renumbers afterward).
+drop_item() {
+  local num="$1" file="$2" tmp st status
+  tmp="$(mktemp)"; st="$(mktemp)"
+  awk -v num="$num" -v st="$st" '
+    !found && /^[[:space:]]*[0-9]+\.[[:space:]]+\[[ xX]\]/ {
+      s = $0; sub(/^[[:space:]]*/, "", s)
+      if ((s + 0) == num) { found = 1; next }
+    }
+    { print }
+    END { print (found ? "dropped" : "notfound") > st }
+  ' "$file" > "$tmp"
+  mv "$tmp" "$file"
+  status="$(cat "$st")"; rm -f "$st"
+  printf '%s\n' "$status"
+}
+
+# Print the first unchecked ("[ ]") item — the next task, verbatim.
+show_next() {
+  local file="$1" line
+  line="$(awk '/^[[:space:]]*(([0-9]+\.)|[-*])[[:space:]]+\[ \]/ { print; exit }' "$file")"
+  if [ -n "$line" ]; then
+    printf '%s\n' "$line"
+  else
+    echo "ccchiefctl: no open ([ ]) items in the product roadmap."
+  fi
+}
+
+case "${1:-help}" in
+  add)
+    shift || true
+    text="$*"
+    if [ -z "$text" ]; then
+      echo "ccchiefctl: 'add' needs some text to record." >&2
+      exit 2
+    fi
+    file="$(require_roadmap)"
+    added="$(add_item "$text" "$file")"
+    echo "Added to $file:"
+    echo "  $added"
+    ;;
+  view)
+    file="$(require_roadmap)"
+    cat -- "$file"
+    ;;
+  next)
+    file="$(require_roadmap)"
+    show_next "$file"
+    ;;
+  done|drop)
+    sub="$1"
+    num="${2:-}"
+    case "$num" in
+      ''|*[!0-9]*) echo "ccchiefctl: '$sub' needs a numeric item number." >&2; exit 2 ;;
+    esac
+    file="$(require_roadmap)"
+    if [ "$sub" = "done" ]; then
+      status="$(mark_done "$num" "$file")"
+      case "$status" in
+        changed)  echo "Marked #$num done." ;;
+        already)  echo "#$num was already done." ;;
+        notfound) echo "ccchiefctl: no item #$num." >&2; exit 1 ;;
+      esac
+    else
+      status="$(drop_item "$num" "$file")"
+      if [ "$status" = "dropped" ]; then
+        renumber "$file"
+        echo "Dropped #$num and renumbered."
+      else
+        echo "ccchiefctl: no item #$num." >&2
+        exit 1
+      fi
+    fi
+    ;;
+  renumber)
+    file="$(require_roadmap)"
+    renumber "$file"
+    echo "Renumbered the product roadmap."
+    ;;
+  prune)
+    file="$(require_roadmap)"
+    removed="$(prune "$file")"
+    renumber "$file"
+    echo "Pruned $removed completed item(s) and renumbered."
+    ;;
+  -h|--help|help)
+    usage
+    exit 0
+    ;;
+  *)
+    echo "ccchiefctl: unknown command '$1'" >&2
+    echo >&2
+    usage >&2
+    exit 2
+    ;;
+esac

@@ -6,5 +6,5 @@
      sub-project's own docs/ccharness/roadmap.md. The North Star is NOT here — it lives in the product
      CLAUDE.md. Flat list; first unchecked [ ] = next. -->
 
-- [ ] <product-level idea — one line>
-- [x] <a product move already shipped>
+1. [ ] <product-level idea — one line>
+2. [x] <a product move already shipped>
