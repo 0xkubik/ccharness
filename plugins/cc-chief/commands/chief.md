@@ -34,10 +34,9 @@ dispatch; nothing → take stock and advance the frontier, reporting when it's m
 - `--auto` — act without asking; resolve every fork yourself (no `AskUserQuestion`).
 - `--plan` — before dispatching anything, explain in plain human language what you'll do across the
   product — no detail — and wait for the human's go. Overrides `--auto`. Pushed back on? Revise and re-present.
-- `--res9ty=medium|high|max` — how much of the checking the human will do, so you take the rest. The
-  floor is always production; this only sets how thoroughly *you* vet what the workers deliver before
-  you report it done. `medium` — the human re-checks everything, so lean on them as final reviewer;
-  `high` (default) — they skim, so catch the obvious problems yourself; `max` — they won't re-check, so
-  own the whole verification and report it bulletproof. It stays with you — never pass it down to the
-  workers you spawn.
+- `--res9ty=medium|high|max` — how much you carry the responsibility. This only sets how thoroughly *you* vet 
+  what the workers deliver before you report it done. `medium` — the human re-checks everything, 
+  so lean on them as final reviewer; `high` (default) — they skim, so catch the obvious problems yourself; 
+  `max` — they won't re-check, so own the whole verification and report it bulletproof.
+  It stays with you — never pass it down to the workers you spawn.
 - `--ultracode` — force maximum fan-out: more workers in parallel. Purely the mechanism — orthogonal to `--res9ty`.

@@ -57,15 +57,11 @@ force one route when the task wants several, and don't route when a plain answer
   wait for the human's approval; build only once they say go. Overrides `--auto`: you stop here for their
   yes even under `--auto` (which still settles the smaller forks inside the plan). Pushed back on? Revise
   the plan and re-present.
-- `--res9ty=medium|high|max` — how much of the checking the human will do, so you take the rest. The
-  floor is always production; this only sets how much verification *you* own before handing back. It
-  stays with you — never thread it into anything you spawn.
-  - `medium` — "I'll re-check everything." Work solidly but lean on the human as final reviewer; don't
-    exhaust every corner yourself, they'll catch it.
-  - `high` (default) — "I'll skim it." The human only glances, so catch the obvious problems yourself
-    before handing back.
-  - `max` — "I won't re-check at all." Nobody else will look — own the whole verification: exhaust the
-    edge cases, self-critique, hand it back bulletproof and shippable as-is.
+- `--res9ty=medium|high|max` — how much you carry the responsibility. This only sets how thoroughly *you* vet 
+  what the workers deliver before you report it done. `medium` — the human re-checks everything, 
+  so lean on them as final reviewer; `high` (default) — they skim, so catch the obvious problems yourself; 
+  `max` — they won't re-check, so own the whole verification and report it bulletproof.
+  It stays with you — never pass it down to the workers you spawn.
 - `--worktree` — force worktree isolation for the build.
 - `--ultracode` — force maximum fan-out: spread the work across a Workflow and/or parallel
   worktree-isolated subagents. Purely the mechanism — orthogonal to `--res9ty`.
