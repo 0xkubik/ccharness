@@ -24,7 +24,7 @@ obey them in the skill you write, so it reads like its siblings.
 - **Bulletproof.** Close every loophole: `never`, `always`, the one exception spelled out inline. A rule
   the model can rationalize around is not a rule. Route forks out instead of guessing; add a `## Litmus`
   the reader can self-check against.
-- **No hardcode.** Name the **concept** — the target, the roadmap, the model — not baked-in file lists,
+- **No hardcode.** Name the **concept** — the target, the features, the model — not baked-in file lists,
   magic values, or "then run X" the skill can't know. The invocation supplies the particulars. Hardcode
   rots; concepts hold. Only stable infra (a canonical path, a fixed subagent model) may be literal.
 - **Bold lead-in per rule.** Every bullet opens with a two-or-three-word imperative in **bold**, then the

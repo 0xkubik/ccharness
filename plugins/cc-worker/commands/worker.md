@@ -12,7 +12,7 @@ you do here. They are not optional.
 Then carry out what you were handed:
 
 - **A task / problem / idea** → do that piece of work, reaching for the right skills per the rules.
-- **Nothing** → find the work: read the goal (roadmap) and design, and surface or take the next thing.
+- **Nothing** → find the work: read the goal (features) and design, and surface or take the next thing.
 - **Flags** (`--auto`, `--plan`, `--res9ty`, `--worktree`, `--ultracode`) → tune *how* you work, never *what* —
   exactly as `worker-rules` defines them.
 

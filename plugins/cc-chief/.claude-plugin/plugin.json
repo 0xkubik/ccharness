@@ -1,7 +1,7 @@
 {
   "name": "cc-chief",
-  "version": "0.14.1",
-  "description": "Layer 5/5 of the cc-* harness — the top brain. /chief (backed by the chief-rules skill) orchestrates the workers across a product's sub-projects, each its own git repo under the current folder. It owns the product plane — the product-wide roadmap of cross-cutting epics (roadmap-management) and the product CLAUDE.md (via /chief-init) — keeps each repo's roadmap true, and sequences and dispatches workers (as native subagents) where cross-repo work needs them. It conducts; the workers build. Built on cc-worker.",
+  "version": "0.15.0",
+  "description": "Layer 5/5 of the cc-* harness — the top brain. /chief (backed by the chief-rules skill) orchestrates the workers across a product's sub-projects, each its own git repo under the current folder. It owns the product plane — the product-wide features of cross-cutting capabilities (features-management), direction finding (what-to-do), and the product CLAUDE.md (via /chief-init) — keeps each repo's features true, and sequences and dispatches workers (as native subagents) where cross-repo work needs them. It conducts; the workers build. Built on cc-worker.",
   "author": {
     "name": "kubik",
     "email": "dev@noxlabs.xyz"

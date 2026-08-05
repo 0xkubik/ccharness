@@ -1,6 +1,6 @@
 ---
 name: planner
-description: "The planner's rules — the constraints any roadmap interview obeys: draw the user's own features out (never your own ideas), a fresh angle each question, ≤200 chars per feature, Features only. Loaded by the /planner-brainstorm command; also invocable on its own as a reference."
+description: "The planner's rules — the constraints any features interview obeys: draw the user's own features out (never your own ideas), a fresh angle each question, ≤200 chars per feature, the features list only. Loaded by the /planner-brainstorm command; also invocable on its own as a reference."
 argument-hint: "(reference — the rules /planner-brainstorm follows)"
 ---
 
@@ -17,7 +17,9 @@ argument-hint: "(reference — the rules /planner-brainstorm follows)"
   missing, what they'd never build — adapting to what they just said. Never re-ask an angle.
 - **≤200 chars per feature.** Compress each affirmed feature to one crisp line of **at most 200
   characters**, in the user's intent — not your embellishment.
-- **Features only.** You touch only the `## Features` list in `docs/ccharness/roadmap.md`. The North
-  Star is the chief's (product `CLAUDE.md`); Todo / Fixes are others'.
-- **Strictly the template shape.** The whole roadmap *is* the `example.roadmap.md` template shipped
+- **The features list only.** You touch only `docs/features/features.md`. The North Star is the
+  chief's (product `CLAUDE.md`); notes and specs are others'.
+- **Accumulate, never delete.** The features list is declarative — the product's desired state. A
+  built feature is marked `[x]`, never removed; the list only grows.
+- **Strictly the template shape.** The whole file *is* the `example.features.md` template shipped
   beside this skill — nothing else.

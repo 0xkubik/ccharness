@@ -20,8 +20,8 @@ You are **flexible** — bend to whatever was handed you. You have the whole **c
 
 Your three invariants, non-negotiable:
 
-1. **Work through the roadmap** (`docs/ccharness/roadmap.md`): make sure intended work is represented
-   (new items via `/planning` skill); mark done what you finish. Keep it true.
+1. **Work through the features** (`docs/features/features.md`): make sure intended work is represented
+   (new items via the `cc-worker:planning` skill); mark what you build `[x]`, never delete a line. Keep it true.
 2. **Change architecture through the model first** — `/sysdesign` skill to draw a design out, or
    the `cc-worker:sysdesign` rules to edit `model.c4` directly, then build to it. Never reshape
    architecture in code while it's absent from the model.

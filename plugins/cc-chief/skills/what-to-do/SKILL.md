@@ -6,8 +6,8 @@ argument-hint: "[optional focus — or nothing to survey the whole product]"
 
 ## Gate — ground before you fan out
 
-- **The roadmap** — `docs/ccharness/roadmap.md`. **Missing or no features yet → route to `/planner-brainstorm`**
-  first (it grounds the feature list). Present → read the `## Features` **frontier** (first unchecked
+- **The features** — `docs/features/features.md`. **Missing or empty → route to `/planner-brainstorm`**
+  first (it grounds the feature list). Present → read the **frontier** (first unchecked
   `[ ]`) as the steer.
 - **The file list** — `git ls-files | xargs wc -l` (every tracked file with its line count). Shared
   ground handed to every lens. Then fan out.
@@ -15,7 +15,7 @@ argument-hint: "[optional focus — or nothing to survey the whole product]"
 ## Step 1 — Fan out (four subagents, parallel)
 
 Dispatch four subagents in parallel, one per move, each on the **`sonnet` model**. Give each: its
-**move mandate**, the **North Star** (if any), the **frontier milestone** as *orienting steer, not a
+**move mandate**, the **North Star** (if any), the **frontier feature** as *orienting steer, not a
 gate*, and the **file list**. Each explores the repo **in its own lane** and returns candidates in the
 contract below.
 
@@ -39,7 +39,7 @@ candidates:    [ {
   goal_fit:      high | med | low
   effort:        S | M | L
   reversibility: easy | hard
-  advances:      <frontier feature it advances | "off-roadmap">   # only if a roadmap exists
+  advances:      <frontier feature it advances | "off-list">   # only if a features file exists
 } ]
 empty_reason:  <if candidates == [] : why this lane has nothing real here>
 ```
@@ -49,8 +49,8 @@ empty_reason:  <if candidates == [] : why this lane has nothing real here>
 One pass, main thread. Collect all candidates, then **dedupe/merge** overlaps (a FINISH and a
 REBUILD on the same thing collapse to one) → **score** on goal-fit × effort, weighing reversibility
 more if the product is **live** (pre-production → carte blanche) → **rank** into one ordered menu.
-Roadmap-fit is a bias: advancing the frontier boosts, **off-roadmap is never dropped.** Drop nothing
-silently — if a strong candidate ranks low from production-caution or roadmap-fit, keep it and say why.
+Features-fit is a bias: advancing the frontier boosts, **off-list is never dropped.** Drop nothing
+silently — if a strong candidate ranks low from production-caution or features-fit, keep it and say why.
 
 ```
 rank:      <n>

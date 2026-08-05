@@ -113,7 +113,7 @@ GitHub-viewable image target from the model.
 ## File placement
 
 `.c4` files. When the architect skill is driving the work, they live under
-`docs/ccharness/architecture/`, kept together so the model stays a single source of truth.
+`docs/architecture/`, kept together so the model stays a single source of truth.
 
 ## Where the full syntax lives
 

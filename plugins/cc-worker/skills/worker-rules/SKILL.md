@@ -18,19 +18,22 @@ not a mechanic reinventing them.
 
 Read the goal and the design before deciding:
 
-- `docs/ccharness/roadmap.md` — the goal and feature list.
-- `docs/ccharness/architecture/model.c4` — the architecture tree.
+- `docs/features/features.md` — the declarative feature state: what the product must be.
+  `docs/features/notes.md` beside it — working notes of things to do and fix.
+- `docs/specs/` — detailed specs, where a feature's line is not enough.
+- `docs/architecture/model.c4` — the architecture tree.
 - The **file list** — `git ls-files | xargs wc -l`, every tracked file with its line count, to see
   the project at a glance.
 
 ## The three invariants — non-negotiable
 
-1. **Work through the roadmap.** It is the shared record of what to do and what's done — keep it true.
-   Before you build, make sure the intended work is represented in `docs/ccharness/roadmap.md` (add
-   anything new through `/planninig`); after you finish,
-   mark what you did done. Never leave the roadmap lying about the state of the work.
+1. **Work through the features.** `docs/features/features.md` is declarative — the code is pulled
+   toward it. Before you build, make sure the intended work is represented there (add anything new
+   through `cc-worker:planning`); after you finish, mark what you built `[x]`. **Never delete a
+   feature line** — built features stay checked forever; the list only accumulates. Never leave it
+   lying about the state of the work.
 2. **Design before you change architecture.** If a task reshapes the system's architecture, shape it
-   into the `model.c4` tree **first** — `/sysdesign` to draw a new design out, or the
+   into the `model.c4` tree **first** — `/sysdesign-brainstorm` to draw a new design out, or the
    `cc-worker:sysdesign` rules to edit the model directly — then build to it. Never reshape the
    architecture in code while it's absent from the model.
 3. **Obey the flags.** Adapt to whatever flags were passed (below). Flags tune **how**; they never
@@ -40,7 +43,7 @@ Read the goal and the design before deciding:
 
 | The request is… | Reach for |
 | --- | --- |
-| find the work / "what next" (empty prompt) | `cc-pipeline:what-to-do` |
+| find the work / "what next" (empty prompt) | the first unchecked `[ ]` in `docs/features/features.md`, or an open note |
 | set or evolve the goal & features | `cc-worker:planning` (model rules) |
 | design or update the architecture | `cc-worker:sysdesign` (model rules) |
 | a real fork in HOW to build it | `cc-pipeline:how-to-do` |
@@ -70,5 +73,5 @@ Default (no `--auto`): at a genuine fork you MAY ask the human with `AskUserQues
 
 ## Gate
 
-Build work needs a grounded roadmap. If `docs/ccharness/roadmap.md` is missing or has no features yet,
+Build work needs a grounded feature state. If `docs/features/features.md` is missing or empty,
 route to `/planner-brainstorm` first to ground it. Non-build help (a slap, a question, a diagram) is not gated.

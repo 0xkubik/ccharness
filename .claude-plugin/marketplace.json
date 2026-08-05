@@ -23,21 +23,21 @@
     },
     {
       "name": "cc-pipeline",
-      "description": "Layer 3/5 — the build pipeline. Six stage skills that carry one task from a direction to hardened code: /what-to-do (where to go next), /how-to-do (decide a fork), /do (build it by a tight set of writing rules), then /refactor, /review, /test to harden and ship it. Skills only. Built on cc-tools; driven by cc-worker.",
+      "description": "Layer 3/5 — the build pipeline. Five stage skills that carry one task from a decision to hardened code: /how-to-do (decide a fork), /do (build it by a tight set of writing rules), then /refactor, /review, /test to harden and ship it. Skills only. Built on cc-tools; driven by cc-worker.",
       "author": { "name": "kubik" },
       "category": "workflow",
       "source": "./plugins/cc-pipeline"
     },
     {
       "name": "cc-worker",
-      "description": "Layer 4/5 — the second pilot. Hand /worker any piece of work (a fix, a change, a feature, a question) and it adapts: reads the goal (roadmap) and design (architecture), then drives the right cc-pipeline and cc-tools skills to finish it. Runs inline as /worker or as a native subagent you delegate a whole task to. Also owns the roadmap (/planner-brainstorm) and architecture (/sysdesign-brainstorm). Built on cc-pipeline + cc-tools.",
+      "description": "Layer 4/5 — the second pilot. Hand /worker any piece of work (a fix, a change, a feature, a question) and it adapts: reads the goal (features) and design (architecture), then drives the right cc-pipeline and cc-tools skills to finish it. Runs inline as /worker or as a native subagent you delegate a whole task to. Also owns the features (/planner-brainstorm) and architecture (/sysdesign-brainstorm). Built on cc-pipeline + cc-tools.",
       "author": { "name": "kubik" },
       "category": "workflow",
       "source": "./plugins/cc-worker"
     },
     {
       "name": "cc-chief",
-      "description": "Layer 5/5 — the top brain. /chief (backed by the chief-rules skill) orchestrates the workers across a product's sub-projects, each its own git repo under the current folder. It owns the product plane — the product-wide roadmap of cross-cutting epics (roadmap-management) and the product CLAUDE.md (via /chief-init) — keeps each repo's roadmap true, and sequences and dispatches workers (as native subagents) where cross-repo work needs them. It conducts; the workers build. Built on cc-worker.",
+      "description": "Layer 5/5 — the top brain. /chief (backed by the chief-rules skill) orchestrates the workers across a product's sub-projects, each its own git repo under the current folder. It owns the product plane — the product-wide features of cross-cutting capabilities (features-management), direction finding (what-to-do), and the product CLAUDE.md (via /chief-init) — keeps each repo's features true, and sequences and dispatches workers (as native subagents) where cross-repo work needs them. It conducts; the workers build. Built on cc-worker.",
       "author": { "name": "kubik" },
       "category": "workflow",
       "source": "./plugins/cc-chief"
