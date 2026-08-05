@@ -1,43 +1,36 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
   "name": "cc-harness",
-  "description": "cc-harness — a five-layer harness for Claude Code, each layer built on the one below. 1) cc-config sets it up. 2) cc-tools gives you the primitives. 3) cc-pipeline is the build pipeline that carries a task from idea to hardened code. 4) cc-worker is the second pilot that drives the pipeline on one project. 5) cc-chief is the top brain that orchestrates workers across a product's sub-projects. Install cc-config first.",
+  "description": "cc-harness — a four-layer harness for Claude Code, each layer built on the one below. 1) cc-tools gives you the primitives and the house rules. 2) cc-pipeline is the build pipeline that carries a task from idea to hardened code. 3) cc-worker is the second pilot that drives the pipeline on one project. 4) cc-chief is the top brain that orchestrates workers across a product's sub-projects. Install cc-tools first.",
   "owner": {
     "name": "kubik",
     "email": "dev@noxlabs.xyz"
   },
   "plugins": [
     {
-      "name": "cc-config",
-      "description": "Layer 1/5 — setup. The front desk that installs and maintains the harness itself. /cc-init walks you through onboarding: recommended rules, the cheat-sheet reminder hook, and a stale-docs check. Commands only — you run them, the model can't. Install this first; it bootstraps the other four layers.",
-      "author": { "name": "kubik" },
-      "category": "workflow",
-      "source": "./plugins/cc-config"
-    },
-    {
       "name": "cc-tools",
-      "description": "Layer 2/5 — primitives. Small, project-agnostic skills you or the model reach for while working: /slap resets a stuck fix, /likec4 draws C4 architecture-as-code, /reminder pins one rule file as a hard constraint. Skills only, zero config. The primitives every layer above builds on.",
+      "description": "Layer 1/4 — primitives. Small, project-agnostic skills you or the model reach for while working: /slap resets a stuck fix, /likec4 draws C4 architecture-as-code, /reminder pins one rule file as a hard constraint. Also ships the harness's rule files (rules/) to copy into a project's .claude/rules/. The primitives every layer above builds on.",
       "author": { "name": "kubik" },
       "category": "workflow",
       "source": "./plugins/cc-tools"
     },
     {
       "name": "cc-pipeline",
-      "description": "Layer 3/5 — the build pipeline. Five stage skills that carry one task from a decision to hardened code: /how-to-do (decide a fork), /do (build it by a tight set of writing rules), then /refactor, /review, /test to harden and ship it. Skills only. Built on cc-tools; driven by cc-worker.",
+      "description": "Layer 2/4 — the build pipeline. Five stage skills that carry one task from a decision to hardened code: /how-to-do (decide a fork), /do (build it by a tight set of writing rules), then /refactor, /review, /test to harden and ship it. Skills only. Built on cc-tools; driven by cc-worker.",
       "author": { "name": "kubik" },
       "category": "workflow",
       "source": "./plugins/cc-pipeline"
     },
     {
       "name": "cc-worker",
-      "description": "Layer 4/5 — the second pilot. Hand /worker any piece of work (a fix, a change, a feature, a question) and it adapts: reads the goal (features) and design (architecture), then drives the right cc-pipeline and cc-tools skills to finish it. Runs inline as /worker or as a native subagent you delegate a whole task to. Also owns the features (/planner-brainstorm) and architecture (/sysdesign-brainstorm). Built on cc-pipeline + cc-tools.",
+      "description": "Layer 3/4 — the second pilot. Hand /worker any piece of work (a fix, a change, a feature, a question) and it adapts: reads the goal (features) and design (architecture), then drives the right cc-pipeline and cc-tools skills to finish it. Runs inline as /worker or as a native subagent you delegate a whole task to. Also owns the features (/planner-brainstorm) and architecture (/sysdesign-brainstorm). Built on cc-pipeline + cc-tools.",
       "author": { "name": "kubik" },
       "category": "workflow",
       "source": "./plugins/cc-worker"
     },
     {
       "name": "cc-chief",
-      "description": "Layer 5/5 — the top brain. /chief (backed by the chief-rules skill) orchestrates the workers across a product's sub-projects, each its own git repo under the current folder. It owns the product plane — the product-wide features of cross-cutting capabilities (features-management), direction finding (what-to-do), and the product CLAUDE.md (via /chief-init) — keeps each repo's features true, and sequences and dispatches workers (as native subagents) where cross-repo work needs them. It conducts; the workers build. Built on cc-worker.",
+      "description": "Layer 4/4 — the top brain. /chief (backed by the chief-rules skill) orchestrates the workers across a product's sub-projects, each its own git repo under the current folder. It owns the product plane — the product-wide features of cross-cutting capabilities (features-management), direction finding (what-to-do), and the product CLAUDE.md (via /chief-init) — keeps each repo's features true, and sequences and dispatches workers (as native subagents) where cross-repo work needs them. It conducts; the workers build. Built on cc-worker.",
       "author": { "name": "kubik" },
       "category": "workflow",
       "source": "./plugins/cc-chief"
