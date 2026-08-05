@@ -23,7 +23,7 @@
     },
     {
       "name": "cc-setup",
-      "description": "Layer 3/5 — repo preparation. The skills that ground a repo before any build: feature-management (the declarative features and notes in docs/features/), architecture-management (the model.c4 tree in docs/architecture/), spec-management (detailed specs in docs/specs/ — placeholder). Plus the interviews that fill them: /planner-brainstorm and /sysdesign-brainstorm. Built on cc-tools; driven by cc-worker.",
+      "description": "Layer 3/5 — repo preparation. The skills that ground a repo before any build: feature-management (the declarative features and notes in docs/features/), architecture-management (the model.c4 tree in docs/architecture/), spec-management (detailed specs in docs/specs/ — placeholder). Plus one interview that fills them all: /setup draws everything out of the human and files each piece where it lives. Built on cc-tools; driven by cc-worker.",
       "author": { "name": "kubik" },
       "category": "workflow",
       "source": "./plugins/cc-setup"

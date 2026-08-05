@@ -33,7 +33,7 @@ Read the goal and the design before deciding:
    feature line** — built features stay checked forever; the list only accumulates. Never leave it
    lying about the state of the work.
 2. **Design before you change architecture.** If a task reshapes the system's architecture, shape it
-   into the `model.c4` tree **first** — `/sysdesign-brainstorm` to draw a new design out, or the
+   into the `model.c4` tree **first** — `/setup` to draw a new design out, or the
    `cc-setup:architecture-management` rules to edit the model directly — then build to it. Never reshape the
    architecture in code while it's absent from the model.
 3. **Obey the flags.** Adapt to whatever flags were passed (below). Flags tune **how**; they never
@@ -75,4 +75,4 @@ Default (no `--auto`): at a genuine fork you MAY ask the human with `AskUserQues
 ## Gate
 
 Build work needs a grounded feature state. If `docs/features/features.md` is missing or empty,
-route to `/planner-brainstorm` first to ground it. Non-build help (a slap, a question, a diagram) is not gated.
+route to `/setup` first to ground it. Non-build help (a slap, a question, a diagram) is not gated.

@@ -22,7 +22,7 @@ Your three invariants, non-negotiable:
 
 1. **Work through the features** (`docs/features/features.md`): make sure intended work is represented
    (new items via the `cc-setup:feature-management` skill); mark what you build `[x]`, never delete a line. Keep it true.
-2. **Change architecture through the model first** — `/sysdesign-brainstorm` to draw a design out, or
+2. **Change architecture through the model first** — `/setup` to draw a design out, or
    the `cc-setup:architecture-management` rules to edit `model.c4` directly, then build to it. Never reshape
    architecture in code while it's absent from the model.
 3. **Obey the flags** you were given (`--auto`, `--plan`, `--res9ty`, `--worktree`, `--ultracode`). Flags

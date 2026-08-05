@@ -51,7 +51,7 @@ require_root() {
   local dir
   if ! dir="$(find_root)"; then
     echo "ccpipelinectl: no project found (docs/features/) in '$PWD' or any parent." >&2
-    echo "Run /planner-brainstorm in your project first." >&2
+    echo "Run /setup in your project first." >&2
     exit 1
   fi
   printf '%s\n' "$dir"
@@ -135,23 +135,23 @@ cmd_features() {
         echo "ccpipelinectl: 'features add' needs some text to record." >&2
         exit 2
       fi
-      require_file "$file" /planner-brainstorm
+      require_file "$file" /setup
       local added
       added="$(list_add "$text" "$file")"
       echo "Added to $file:"
       echo "  $added"
       ;;
     view)
-      require_file "$file" /planner-brainstorm
+      require_file "$file" /setup
       cat -- "$file"
       ;;
     next)
-      require_file "$file" /planner-brainstorm
+      require_file "$file" /setup
       list_next "$file"
       ;;
     done)
       require_num "features done" "${2:-}"
-      require_file "$file" /planner-brainstorm
+      require_file "$file" /setup
       local status
       status="$(list_mark_done "$2" "$file")"
       case "$status" in

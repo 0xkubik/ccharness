@@ -6,7 +6,7 @@ argument-hint: "[optional focus — or nothing to survey the whole product]"
 
 ## Gate — ground before you fan out
 
-- **The features** — `docs/features/features.md`. **Missing or empty → route to `/planner-brainstorm`**
+- **The features** — `docs/features/features.md`. **Missing or empty → route to `/setup`**
   first (it grounds the feature list). Present → read the **frontier** (first unchecked
   `[ ]`) as the steer.
 - **The file list** — `git ls-files | xargs wc -l` (every tracked file with its line count). Shared
