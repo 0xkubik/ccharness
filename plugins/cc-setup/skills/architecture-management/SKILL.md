@@ -1,12 +1,12 @@
 ---
-name: sysdesign
-description: "Use for anything about the project's architecture model — shaping, growing, or correcting the structure. Not WHAT to build (that's planner / what-to-do) but HOW the system is shaped: one living LikeC4 tree in docs/architecture/model.c4, root overview down to the finest component that matters — never a mirror of the code. Rules and concepts, not a fixed procedure."
+name: architecture-management
+description: "Use for anything about the project's architecture model — shaping, growing, or correcting the structure. Not WHAT to build (that's feature-management / what-to-do) but HOW the system is shaped: one living LikeC4 tree in docs/architecture/model.c4, root overview down to the finest component that matters — never a mirror of the code. Rules and concepts, not a fixed procedure."
 argument-hint: "<the architecture to shape, grow, or correct>"
 ---
 
-# sysdesign — the architecture, as a living tree
+# architecture-management — the architecture, as a living tree
 
-You describe and keep true the project's **structure** — not *what* to build (planner / what-to-do),
+You describe and keep true the project's **structure** — not *what* to build (feature-management / what-to-do),
 but *how* it's shaped. The architecture lives as **one living tree** in
 `docs/architecture/model.c4`; your job is to grow and correct that tree by the rules below.
 LikeC4 syntax lives in **`cc-tools:likec4`** — load it before editing.

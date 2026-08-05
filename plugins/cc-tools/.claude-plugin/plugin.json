@@ -1,7 +1,7 @@
 {
   "name": "cc-tools",
-  "version": "0.36.0",
-  "description": "Layer 1/4 of the cc-* harness — primitives. Small, project-agnostic skills you or the model reach for while working: /slap resets a stuck fix, /likec4 draws C4 architecture-as-code, /reminder pins one rule file as a hard constraint. Also ships the harness's rule files (rules/) to copy into a project's .claude/rules/. The primitives every layer above builds on.",
+  "version": "0.36.1",
+  "description": "Layer 1/5 of the cc-* harness — primitives. Small, project-agnostic skills you or the model reach for while working: /slap resets a stuck fix, /likec4 draws C4 architecture-as-code, /reminder pins one rule file as a hard constraint. Also ships the harness's rule files (rules/) to copy into a project's .claude/rules/. The primitives every layer above builds on.",
   "author": {
     "name": "kubik",
     "email": "dev@noxlabs.xyz"

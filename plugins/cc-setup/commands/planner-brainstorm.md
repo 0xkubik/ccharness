@@ -1,19 +1,19 @@
 ---
-description: "Run the endless features interview — cyclically draw the product's features out of the human, angle after angle, and record the ones they affirm (≤200 chars) into docs/features/features.md. Follows the planner rules; never contributes its own ideas; stops only when the user stops."
+description: "Run the endless features interview — cyclically draw the product's features out of the human, angle after angle, and record the ones they affirm (≤200 chars) into docs/features/features.md. Follows the feature-management rules; never contributes its own ideas; stops only when the user stops."
 argument-hint: "[a starting thread — or nothing to open the features]"
 ---
 
 # /planner-brainstorm — pull the features, endlessly
 
 You run an **endless interview** that draws the user's product features out of them. First **load and
-follow `cc-worker:planner`** — its rules (extract-never-contribute, never your ideas, a fresh angle
+follow `cc-setup:feature-management`** — its rules (extract-never-contribute, never your ideas, a fresh angle
 each question, ≤200 chars, the features list only, accumulate-never-delete) govern everything here.
 
 Then run the loop:
 
 1. **Open the features.** Read `docs/features/features.md`; the existing lines tell you what's
    captured (don't re-ask). Its shape is fixed to the `example.features.md` template shipped with the
-   `cc-worker:planner` skill — a flat checkbox list of one-liners, nothing else. Missing → seed it
+   `cc-setup:feature-management` skill — a flat checkbox list of one-liners, nothing else. Missing → seed it
    from the template. Drifted off it (an invented section, a *North Star*, prose, size tags, *why:*
    notes) → conform it back to the template first — but **never delete a feature line**; the list
    only accumulates.

@@ -15,15 +15,15 @@ the work is done and green, merge your branch back into the one you forked from,
 the grounding, the kit you route to, the invariants, the gate, and the flags. What follows is only the
 short version; the skill is the source of truth. If it isn't available, act on this summary.
 
-You are **flexible** — bend to whatever was handed you. You have the whole **cc-pipeline**,
-**cc-tools**
+You are **flexible** — bend to whatever was handed you. You have the whole **cc-setup**,
+**cc-pipeline**, **cc-tools**
 
 Your three invariants, non-negotiable:
 
 1. **Work through the features** (`docs/features/features.md`): make sure intended work is represented
-   (new items via the `cc-worker:planning` skill); mark what you build `[x]`, never delete a line. Keep it true.
-2. **Change architecture through the model first** — `/sysdesign` skill to draw a design out, or
-   the `cc-worker:sysdesign` rules to edit `model.c4` directly, then build to it. Never reshape
+   (new items via the `cc-setup:feature-management` skill); mark what you build `[x]`, never delete a line. Keep it true.
+2. **Change architecture through the model first** — `/sysdesign-brainstorm` to draw a design out, or
+   the `cc-setup:architecture-management` rules to edit `model.c4` directly, then build to it. Never reshape
    architecture in code while it's absent from the model.
 3. **Obey the flags** you were given (`--auto`, `--plan`, `--res9ty`, `--worktree`, `--ultracode`). Flags
    tune how, never what.

@@ -1,10 +1,10 @@
 ---
-name: planner
-description: "The planner's rules — the constraints any features interview obeys: draw the user's own features out (never your own ideas), a fresh angle each question, ≤200 chars per feature, the features list only. Loaded by the /planner-brainstorm command; also invocable on its own as a reference."
+name: feature-management
+description: "The feature-management rules — the constraints any features interview obeys: draw the user's own features out (never your own ideas), a fresh angle each question, ≤200 chars per feature, the features list only. Loaded by the /planner-brainstorm command; also invocable on its own as a reference."
 argument-hint: "(reference — the rules /planner-brainstorm follows)"
 ---
 
-# planner — the rules for drawing out features
+# feature-management — the rules for drawing out features
 
 **Rules — non-negotiable:**
 - **Extract, never contribute.** You draw out *their* vision and record only what they affirm — you
