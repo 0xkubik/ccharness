@@ -9,7 +9,7 @@
   "plugins": [
     {
       "name": "cc-tools",
-      "description": "Layer 1/5 — primitives. Small, project-agnostic skills you or the model reach for while working: /slap resets a stuck fix, /likec4 draws C4 architecture-as-code, /reminder pins one rule file as a hard constraint. Also ships the harness's rule files (rules/) to copy into a project's .claude/rules/. The primitives every layer above builds on.",
+      "description": "Layer 1/5 — primitives. Small, project-agnostic skills you or the model reach for while working: /slap resets a stuck fix, /likec4 draws C4 architecture-as-code, /reminder pins one rule file as a hard constraint, /retract hunts down information declared wrong and surgically removes it. Also ships the harness's rule files (rules/) to copy into a project's .claude/rules/. The primitives every layer above builds on.",
       "author": { "name": "kubik" },
       "category": "workflow",
       "source": "./plugins/cc-tools"
