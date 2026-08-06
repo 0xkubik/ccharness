@@ -1,0 +1,9 @@
+{
+  "name": "mycrew-chief",
+  "version": "0.16.0",
+  "description": "Layer 5/5 of the mycrew harness — the top brain. /chief (backed by the chief-rules skill) orchestrates the workers across a product's sub-projects, each its own git repo under the current folder. It owns the product plane — the product-wide features of cross-cutting capabilities (features-management), direction finding (what-to-do), and the product CLAUDE.md (via /chief-init) — keeps each repo's features true, and sequences and dispatches workers (as native subagents) where cross-repo work needs them. It conducts; the workers build. Built on mycrew-worker.",
+  "author": {
+    "name": "kubik",
+    "email": "dev@noxlabs.xyz"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "name": "mycrew-setup",
+  "version": "0.4.0",
+  "description": "Layer 3/5 of the mycrew harness — repo preparation. The skills that ground a repo before any build: feature-management (the declarative features and notes in docs/features/), architecture-management (the model.c4 tree in docs/architecture/), spec-management (detailed specs in docs/specs/ — placeholder). Plus one interview that fills them all: /setup draws everything out of the human and files each piece where it lives. Built on mycrew-tools; driven by mycrew-worker.",
+  "author": {
+    "name": "kubik",
+    "email": "dev@noxlabs.xyz"
+  }
+}

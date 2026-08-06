@@ -1,0 +1,264 @@
+#!/usr/bin/env bash
+# mycrewctl — small terminal helpers for the mycrew-setup harness.
+# It captures and edits the project's features and notes from the shell, so you
+# don't have to dig into docs/features/ by hand. More helpers may be added over time.
+set -eu
+
+usage() {
+  cat <<'EOF'
+mycrewctl — small helpers for the mycrew-setup harness
+
+Usage: mycrewctl <command>
+
+The features file is docs/features/features.md — the project's declarative feature
+state, a flat checkbox list ("- [ ] ..."). The code is pulled toward it: a built
+feature is marked "[x]" and never deleted; the list only accumulates. Working
+notes (things to do and fix) live beside it in docs/features/notes.md.
+
+Commands:
+  features add <text>   Append "- [ ] <text>" to features.md
+  features view         Print features.md to the console
+  features next         Print the first unchecked ("[ ]") feature — the frontier
+  features done <n>     Mark feature <n> (counting items from 1) done ("[x]")
+                        There is no drop or prune — features are never deleted.
+  notes add <text>      Append "- [ ] <text>" to notes.md (created if missing)
+  notes view            Print notes.md to the console
+  notes next            Print the first unchecked note
+  notes done <n>        Mark note <n> done ("[x]")
+  notes drop <n>        Remove note <n> — notes are scratch, unlike features
+  help                  Show this help
+
+mycrewctl finds the project (docs/features/) in the current directory or any
+parent, so it works from anywhere inside a project.
+EOF
+}
+
+# Walk up to the project root — the ancestor holding docs/features/.
+find_root() {
+  local dir="$PWD"
+  while :; do
+    if [ -d "$dir/docs/features" ]; then
+      printf '%s\n' "$dir"
+      return 0
+    fi
+    [ "$dir" = "/" ] && return 1
+    dir="$(dirname "$dir")"
+  done
+}
+
+# Print the project root, or exit 1 with a hint to run the owning skill.
+require_root() {
+  local dir
+  if ! dir="$(find_root)"; then
+    echo "mycrewctl: no project found (docs/features/) in '$PWD' or any parent." >&2
+    echo "Run /setup in your project first." >&2
+    exit 1
+  fi
+  printf '%s\n' "$dir"
+}
+
+# Exit 1 with a hint if the target file does not exist yet.
+require_file() {
+  local file="$1" skill="$2"
+  if [ ! -f "$file" ]; then
+    echo "mycrewctl: $file does not exist yet." >&2
+    echo "Run $skill to create it." >&2
+    exit 1
+  fi
+}
+
+# Append "- [ ] <text>" to the end of the file's checkbox list.
+list_add() {
+  local text="$1" file="$2" bullet
+  bullet="- [ ] $text"
+  [ -n "$(tail -c1 "$file")" ] && printf '\n' >> "$file"
+  printf '%s\n' "$bullet" >> "$file"
+  printf '%s\n' "$bullet"
+}
+
+# Print the first unchecked ("[ ]") item, or nothing.
+list_next() {
+  awk '/^[[:space:]]*(([0-9]+\.)|[-*])[[:space:]]+\[ \]/ { print; exit }' "$1"
+}
+
+# Flip item <num> (counting checkbox lines from 1) from "[ ]" to "[x]".
+# Prints one of: changed | already (was already done) | notfound.
+list_mark_done() {
+  local num="$1" file="$2" tmp st status
+  tmp="$(mktemp)"; st="$(mktemp)"
+  awk -v num="$num" -v st="$st" '
+    /^[[:space:]]*(([0-9]+\.)|[-*])[[:space:]]+\[[ xX]\]/ {
+      if (++count == num) {
+        found = 1
+        if ($0 ~ /\[ \]/) { sub(/\[ \]/, "[x]"); changed = 1 }
+      }
+    }
+    { print }
+    END { print (found ? (changed ? "changed" : "already") : "notfound") > st }
+  ' "$file" > "$tmp"
+  mv "$tmp" "$file"
+  status="$(cat "$st")"; rm -f "$st"
+  printf '%s\n' "$status"
+}
+
+# Remove item <num> (counting checkbox lines from 1). Prints "dropped" or "notfound".
+list_drop() {
+  local num="$1" file="$2" tmp st status
+  tmp="$(mktemp)"; st="$(mktemp)"
+  awk -v num="$num" -v st="$st" '
+    /^[[:space:]]*(([0-9]+\.)|[-*])[[:space:]]+\[[ xX]\]/ {
+      if (++count == num) { found = 1; next }
+    }
+    { print }
+    END { print (found ? "dropped" : "notfound") > st }
+  ' "$file" > "$tmp"
+  mv "$tmp" "$file"
+  status="$(cat "$st")"; rm -f "$st"
+  printf '%s\n' "$status"
+}
+
+require_num() {
+  local cmd="$1" num="$2"
+  case "$num" in
+    ''|*[!0-9]*) echo "mycrewctl: '$cmd' needs a numeric item number." >&2; exit 2 ;;
+  esac
+}
+
+cmd_features() {
+  local sub="${1:-}" file
+  file="$(require_root)/docs/features/features.md"
+  case "$sub" in
+    add)
+      shift || true
+      local text="$*"
+      if [ -z "$text" ]; then
+        echo "mycrewctl: 'features add' needs some text to record." >&2
+        exit 2
+      fi
+      require_file "$file" /setup
+      local added
+      added="$(list_add "$text" "$file")"
+      echo "Added to $file:"
+      echo "  $added"
+      ;;
+    view)
+      require_file "$file" /setup
+      cat -- "$file"
+      ;;
+    next)
+      require_file "$file" /setup
+      list_next "$file"
+      ;;
+    done)
+      require_num "features done" "${2:-}"
+      require_file "$file" /setup
+      local status
+      status="$(list_mark_done "$2" "$file")"
+      case "$status" in
+        changed)  echo "Marked feature #$2 done." ;;
+        already)  echo "Feature #$2 was already done." ;;
+        notfound) echo "mycrewctl: no feature #$2 in $file." >&2; exit 1 ;;
+      esac
+      ;;
+    drop|prune)
+      echo "mycrewctl: features are never deleted — mark them done instead." >&2
+      exit 2
+      ;;
+    "")
+      echo "mycrewctl: 'features' needs a subcommand — 'add', 'view', 'next', or 'done'." >&2
+      echo >&2
+      usage >&2
+      exit 2
+      ;;
+    *)
+      echo "mycrewctl: unknown features subcommand '$sub'." >&2
+      echo >&2
+      usage >&2
+      exit 2
+      ;;
+  esac
+}
+
+cmd_notes() {
+  local sub="${1:-}" file
+  file="$(require_root)/docs/features/notes.md"
+  case "$sub" in
+    add)
+      shift || true
+      local text="$*"
+      if [ -z "$text" ]; then
+        echo "mycrewctl: 'notes add' needs some text to record." >&2
+        exit 2
+      fi
+      [ -f "$file" ] || printf '# Notes\n\n' > "$file"
+      local added
+      added="$(list_add "$text" "$file")"
+      echo "Added to $file:"
+      echo "  $added"
+      ;;
+    view)
+      require_file "$file" "'mycrewctl notes add'"
+      cat -- "$file"
+      ;;
+    next)
+      require_file "$file" "'mycrewctl notes add'"
+      list_next "$file"
+      ;;
+    done)
+      require_num "notes done" "${2:-}"
+      require_file "$file" "'mycrewctl notes add'"
+      local status
+      status="$(list_mark_done "$2" "$file")"
+      case "$status" in
+        changed)  echo "Marked note #$2 done." ;;
+        already)  echo "Note #$2 was already done." ;;
+        notfound) echo "mycrewctl: no note #$2 in $file." >&2; exit 1 ;;
+      esac
+      ;;
+    drop)
+      require_num "notes drop" "${2:-}"
+      require_file "$file" "'mycrewctl notes add'"
+      local status
+      status="$(list_drop "$2" "$file")"
+      if [ "$status" = "dropped" ]; then
+        echo "Dropped note #$2."
+      else
+        echo "mycrewctl: no note #$2 in $file." >&2
+        exit 1
+      fi
+      ;;
+    "")
+      echo "mycrewctl: 'notes' needs a subcommand — 'add', 'view', 'next', 'done', or 'drop'." >&2
+      echo >&2
+      usage >&2
+      exit 2
+      ;;
+    *)
+      echo "mycrewctl: unknown notes subcommand '$sub'." >&2
+      echo >&2
+      usage >&2
+      exit 2
+      ;;
+  esac
+}
+
+case "${1:-help}" in
+  features)
+    shift
+    cmd_features "$@"
+    ;;
+  notes)
+    shift
+    cmd_notes "$@"
+    ;;
+  -h|--help|help)
+    usage
+    exit 0
+    ;;
+  *)
+    echo "mycrewctl: unknown command '$1'" >&2
+    echo >&2
+    usage >&2
+    exit 2
+    ;;
+esac

@@ -1,0 +1,9 @@
+{
+  "name": "mycrew-pipeline",
+  "version": "0.29.0",
+  "description": "Layer 2/5 of the mycrew harness — the build pipeline. Five stage skills that carry one task from a decision to hardened code: /how-to-do (decide a fork), /do (build it by a tight set of writing rules), then /refactor, /review, /test to harden and ship it. Skills only. Built on mycrew-tools; driven by mycrew-worker.",
+  "author": {
+    "name": "kubik",
+    "email": "dev@noxlabs.xyz"
+  }
+}

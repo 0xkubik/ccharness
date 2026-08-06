@@ -1,9 +1,0 @@
-{
-  "name": "cc-worker",
-  "version": "0.32.1",
-  "description": "Layer 4/5 of the cc-* harness — the second pilot. Hand /worker any piece of work (a fix, a change, a feature, a question) and it adapts: reads the goal (features) and design (architecture), then drives the right cc-setup, cc-pipeline, and cc-tools skills to finish it. Runs inline as /worker or as a native subagent you delegate a whole task to. Built on cc-setup + cc-pipeline + cc-tools.",
-  "author": {
-    "name": "kubik",
-    "email": "dev@noxlabs.xyz"
-  }
-}

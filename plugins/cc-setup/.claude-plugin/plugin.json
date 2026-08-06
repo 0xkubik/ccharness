@@ -1,9 +1,0 @@
-{
-  "name": "cc-setup",
-  "version": "0.3.0",
-  "description": "Layer 3/5 of the cc-* harness — repo preparation. The skills that ground a repo before any build: feature-management (the declarative features and notes in docs/features/), architecture-management (the model.c4 tree in docs/architecture/), spec-management (detailed specs in docs/specs/ — placeholder). Plus one interview that fills them all: /setup draws everything out of the human and files each piece where it lives. Built on cc-tools; driven by cc-worker.",
-  "author": {
-    "name": "kubik",
-    "email": "dev@noxlabs.xyz"
-  }
-}
